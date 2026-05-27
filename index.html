@@ -2,548 +2,489 @@
 <html lang="es">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1">
 <title>Pauper League 2025</title>
 <style>
-  *{box-sizing:border-box;margin:0;padding:0}
-  body{background:#0d1117;color:#e6edf3;font-family:'Segoe UI',sans-serif;padding:16px}
-  h1{text-align:center;color:#f97316;margin-bottom:4px;font-size:1.4rem;letter-spacing:2px;text-transform:uppercase}
-  .subtitle{text-align:center;color:#8b949e;margin-bottom:18px;font-size:0.8rem}
-  .nav{display:flex;gap:6px;justify-content:center;flex-wrap:wrap;margin-bottom:18px}
-  .nav-btn{padding:7px 16px;border-radius:6px;border:1px solid #30363d;background:#161b22;color:#8b949e;cursor:pointer;font-size:0.82rem;transition:all .2s}
-  .nav-btn:hover{border-color:#f97316;color:#f97316}
-  .nav-btn.active{background:#f97316;color:#fff;border-color:#f97316;font-weight:bold}
-  .page{display:none}.page.active{display:block}
-  .month-header{display:flex;align-items:center;gap:10px;cursor:pointer;padding:10px 14px;background:#161b22;border:1px solid #30363d;border-radius:8px;margin-bottom:6px;user-select:none}
-  .month-header:hover{border-color:#f97316}
-  .month-title{font-weight:bold;color:#f97316;font-size:1rem}
-  .month-stats{color:#8b949e;font-size:0.75rem;margin-left:auto;text-align:right}
-  .chevron{color:#8b949e;transition:transform .2s;font-size:0.9rem;flex-shrink:0}
-  .month-body{display:none;margin-bottom:14px}.month-body.open{display:block}
-  .table-wrap{overflow-x:auto;border-radius:8px;border:1px solid #30363d;margin-bottom:10px}
-  table{width:100%;border-collapse:collapse;min-width:480px}
-  thead{background:#161b22}
-  th{padding:10px 12px;text-align:left;font-size:0.72rem;color:#8b949e;text-transform:uppercase;letter-spacing:.8px;border-bottom:1px solid #30363d}
-  td{padding:10px 12px;font-size:0.85rem;border-bottom:1px solid #21262d}
-  tr:last-child td{border-bottom:none}
-  tr:hover td{background:#161b22}
-  .rank{font-weight:bold;color:#8b949e}
-  .r1{color:#ffd700}.r2{color:#c0c0c0}.r3{color:#cd7f32}
-  .me td{color:#f97316;font-weight:bold}
-  .pts{font-weight:bold}
-  .win{color:#3fb950}
-  .omw{color:#58a6ff}.gw{color:#bc8cff}
-  .dash{color:#333}
-  .ene{color:#58a6ff}.feb{color:#bc8cff}.mar{color:#3fb950}.abr{color:#f97316}
-  .cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:10px;margin-bottom:14px}
-  .card{background:#161b22;border:1px solid #30363d;border-radius:8px;padding:12px;text-align:center}
-  .card .val{font-size:1.5rem;font-weight:bold;color:#f97316}
-  .card .lbl{font-size:0.7rem;color:#8b949e;margin-top:3px}
-  .badge{display:inline-block;padding:2px 7px;border-radius:10px;font-size:0.7rem;font-weight:bold;background:#1f4068;color:#58a6ff}
-  .sec-label{color:#f97316;font-size:0.78rem;font-weight:bold;text-transform:uppercase;letter-spacing:1px;margin-bottom:8px}
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+body{background:#0d1117;color:#e6edf3;font-family:-apple-system,sans-serif;padding:12px;max-width:500px;margin:0 auto}
+h1{color:#f97316;font-size:1.1rem;text-align:center;text-transform:uppercase;letter-spacing:1px;padding:10px 0 3px}
+.sub{text-align:center;color:#8b949e;font-size:.72rem;margin-bottom:14px}
+/* NAV */
+.nav{display:flex;gap:5px;justify-content:center;flex-wrap:wrap;margin-bottom:14px}
+.nb{padding:8px 14px;border-radius:8px;border:1px solid #30363d;background:#161b22;color:#8b949e;font-size:.8rem;font-weight:600;cursor:pointer}
+.nb.on{background:#f97316;color:#fff;border-color:#f97316}
+.pg{display:none}.pg.on{display:block}
+/* ROWS */
+.row{display:flex;align-items:center;gap:8px;padding:10px 12px;background:#161b22;border-radius:9px;margin-bottom:4px}
+.row.me{background:#1e1408;border:1px solid #f97316}
+.rk{width:24px;text-align:center;font-weight:700;font-size:.82rem;color:#8b949e;flex-shrink:0}
+.r1{color:#ffd700}.r2{color:#c0c0c0}.r3{color:#cd7f32}
+.nm{flex:1;font-size:.9rem}
+.row.me .nm{color:#f97316;font-weight:700}
+.pt{font-weight:700;font-size:.95rem}
+.row.me .pt{color:#f97316}
+.wl{font-size:.73rem;color:#8b949e;min-width:52px;text-align:right}
+.omw{font-size:.7rem;color:#58a6ff;min-width:46px;text-align:right}
+/* COLORS */
+.g{color:#3fb950}.r{color:#f85149}.b{color:#58a6ff}.p{color:#bc8cff}
+/* CARDS */
+.cards{display:grid;grid-template-columns:repeat(3,1fr);gap:7px;margin-bottom:14px}
+.card{background:#161b22;border:1px solid #30363d;border-radius:9px;padding:10px 6px;text-align:center}
+.cv{font-size:1.2rem;font-weight:700;color:#f97316}
+.cl{font-size:.6rem;color:#8b949e;margin-top:3px;text-transform:uppercase;letter-spacing:.4px}
+/* SECTION LABEL */
+.sl{color:#f97316;font-size:.7rem;font-weight:700;text-transform:uppercase;letter-spacing:.8px;margin:13px 0 7px}
+/* COLLAPSIBLE */
+.mh{display:flex;align-items:center;gap:8px;padding:11px 13px;background:#161b22;border-radius:9px;margin-bottom:4px;cursor:pointer;user-select:none}
+.mh:active{background:#1e1408}
+.mt{font-weight:700;color:#f97316;font-size:.9rem}
+.ms{color:#8b949e;font-size:.72rem;flex:1;text-align:right}
+.ch{color:#8b949e;font-size:.78rem;flex-shrink:0;transition:transform .2s}
+.mb{display:none;margin-bottom:6px}.mb.op{display:block}
+/* NOTE */
+.note{color:#8b949e;font-size:.67rem;text-align:center;margin-top:9px;padding:0 6px}
 </style>
 </head>
 <body>
-
 <h1>⚔️ Pauper League 2025</h1>
-<p class="subtitle">Tracker anual · Christian Dav... en naranja</p>
+<p class="sub">Christian Donado · actualizado May 7</p>
 
 <div class="nav">
-  <button class="nav-btn active" onclick="showPage('general',this)">🏆 General</button>
-  <button class="nav-btn" onclick="showPage('mis-stats',this)">📊 Mis Stats</button>
-  <button class="nav-btn" onclick="showPage('enero',this)">Enero</button>
-  <button class="nav-btn" onclick="showPage('febrero',this)">Febrero</button>
-  <button class="nav-btn" onclick="showPage('marzo',this)">Marzo</button>
-  <button class="nav-btn" onclick="showPage('abril',this)">Abril</button>
+  <button class="nb on" onclick="sp('g',this)">🏆 General</button>
+  <button class="nb" onclick="sp('st',this)">📊 Stats</button>
+  <button class="nb" onclick="sp('en',this)">Enero</button>
+  <button class="nb" onclick="sp('fe',this)">Febrero</button>
+  <button class="nb" onclick="sp('ma',this)">Marzo</button>
+  <button class="nb" onclick="sp('ab',this)">Abril</button>
+  <button class="nb" onclick="sp('my',this)">Mayo</button>
 </div>
 
 <!-- ===== GENERAL ===== -->
-<div id="general" class="page active">
-  <p style="color:#8b949e;font-size:0.78rem;margin-bottom:10px;text-align:center">Ranking oficial de la liga · actualizado a Abr 9</p>
-  <div class="table-wrap">
-    <table>
-      <thead><tr><th>#</th><th>Jugador</th><th>Total Oficial</th></tr></thead>
-      <tbody>
-        <tr><td class="rank r1">1</td><td>Albert Loaiza</td><td class="pts">104</td></tr>
-        <tr><td class="rank r2">2</td><td>Santiago Ramos</td><td class="pts">101</td></tr>
-        <tr><td class="rank r3">3</td><td>Ivan Sepulveda</td><td class="pts">84</td></tr>
-        <tr><td class="rank">4</td><td>Yesid Soacha</td><td class="pts">82</td></tr>
-        <tr><td class="rank">5</td><td>Ivan Quiroga</td><td class="pts">76</td></tr>
-        <tr><td class="rank">6</td><td>Samuel Urueta</td><td class="pts">73</td></tr>
-        <tr><td class="rank">7</td><td>Esteban Zuleta</td><td class="pts">68</td></tr>
-        <tr><td class="rank">8</td><td>Sebastian Abello</td><td class="pts">63</td></tr>
-        <tr class="me"><td class="rank">9</td><td>Christian Donado</td><td class="pts">47</td></tr>
-        <tr><td class="rank">10</td><td>Balalaika</td><td class="pts">46</td></tr>
-        <tr><td class="rank">11</td><td>Camilo Arango</td><td class="pts">40</td></tr>
-        <tr><td class="rank">12</td><td>Angel Rodriguez</td><td class="pts">37</td></tr>
-        <tr><td class="rank">13</td><td>Felipe Parra</td><td class="pts">35</td></tr>
-        <tr><td class="rank">14</td><td>Andres Higuera</td><td class="pts">30</td></tr>
-        <tr><td class="rank">15</td><td>Camilo Mora</td><td class="pts">27</td></tr>
-        <tr><td class="rank">16</td><td>Juan Lozada 💀</td><td class="pts">25</td></tr>
-        <tr><td class="rank">17</td><td>Felipe Hurtado</td><td class="pts">24</td></tr>
-        <tr><td class="rank">17</td><td>Santiago Jimenez</td><td class="pts">24</td></tr>
-        <tr><td class="rank">19</td><td>Roosevelt Blanco</td><td class="pts">21</td></tr>
-        <tr><td class="rank">20</td><td>Alejandro Solano</td><td class="pts">14</td></tr>
-        <tr><td class="rank">21</td><td>Brayan Celis</td><td class="pts">11</td></tr>
-        <tr><td class="rank">22</td><td>Ricardo Moreno</td><td class="pts">10</td></tr>
-        <tr><td class="rank">23</td><td>Mateo Diaz</td><td class="pts">9</td></tr>
-        <tr><td class="rank">23</td><td>Diego Ardila</td><td class="pts">9</td></tr>
-        <tr><td class="rank">25</td><td>Miguel Bello</td><td class="pts">8</td></tr>
-        <tr><td class="rank">26</td><td>German Umaña</td><td class="pts">7</td></tr>
-        <tr><td class="rank">26</td><td>Noah Herrera</td><td class="pts">7</td></tr>
-        <tr><td class="rank">28</td><td>Germán Gabri...</td><td class="pts">6</td></tr>
-        <tr><td class="rank">28</td><td>Arturo Restrepo</td><td class="pts">6</td></tr>
-        <tr><td class="rank">28</td><td>Emilio Rengifo</td><td class="pts">6</td></tr>
-        <tr><td class="rank">28</td><td>Cristhian Mac...</td><td class="pts">6</td></tr>
-        <tr><td class="rank">32</td><td>Nubia Prada</td><td class="pts">5</td></tr>
-        <tr><td class="rank">33</td><td>Marcos Molina</td><td class="pts">4</td></tr>
-        <tr><td class="rank">33</td><td>Ruben Morea</td><td class="pts">4</td></tr>
-        <tr><td class="rank">35</td><td>Sergio Buitrago</td><td class="pts">3</td></tr>
-        <tr class="me"><td>16 Abr</td><td>🐧🔵🔴 Izzet</td><td><span class="badge">R4</span></td><td>14°</td><td class="pts">3</td><td>1-3-0</td><td class="omw">52.1%</td><td class="gw">33.3%</td></tr>
-      </tbody>
-    </table>
-  </div>
+<div id="g" class="pg on">
+  <p class="note" style="margin-bottom:8px">Puntos acumulados · pendiente recalibración oficial mayo · Top 8 → Jun 25</p>
+  <div class="row"><span class="rk r1">1</span><span class="nm">Albert Loaiza</span><span class="pt">178</span></div>
+  <div class="row"><span class="rk r2">2</span><span class="nm">Santiago Ramos</span><span class="pt">166</span></div>
+  <div class="row"><span class="rk r3">3</span><span class="nm">Yesid Soacha</span><span class="pt">137</span></div>
+  <div class="row"><span class="rk">4</span><span class="nm">Esteban Zuleta</span><span class="pt">113</span></div>
+  <div class="row"><span class="rk">5</span><span class="nm">Ivan Sepulveda</span><span class="pt">104</span></div>
+  <div class="row"><span class="rk">6</span><span class="nm">Sebastian Abello</span><span class="pt">101</span></div>
+  <div class="row"><span class="rk">7</span><span class="nm">Angel Rodriguez</span><span class="pt">97</span></div>
+  <div class="row"><span class="rk">8</span><span class="nm">Ivan Quiroga</span><span class="pt">88</span></div>
+  <div class="row"><span class="rk">9</span><span class="nm">Samuel Urueta</span><span class="pt">82</span></div>
+  <div class="row"><span class="rk">10</span><span class="nm">Felipe Parra</span><span class="pt">69</span></div>
+  <div class="row me"><span class="rk">11</span><span class="nm">Christian Donado</span><span class="pt">67</span></div>
+  <div class="row"><span class="rk">12</span><span class="nm">Andres Higuera</span><span class="pt">58</span></div>
+  <div class="row"><span class="rk">13</span><span class="nm">Camilo Arango</span><span class="pt">57</span></div>
+  <div class="row"><span class="rk">14</span><span class="nm">Camilo Mora</span><span class="pt">54</span></div>
+  <div class="row"><span class="rk">15</span><span class="nm">Balalaika</span><span class="pt">51</span></div>
+  <div class="row"><span class="rk">16</span><span class="nm">Juan Lozada 💀</span><span class="pt">46</span></div>
+  <div class="row"><span class="rk">17</span><span class="nm">Santiago Jimenez</span><span class="pt">24</span></div>
+  <div class="row"><span class="rk">17</span><span class="nm">Roosevelt Blanco</span><span class="pt">24</span></div>
+  <div class="row"><span class="rk">17</span><span class="nm">Felipe Hurtado</span><span class="pt">24</span></div>
+  <div class="row"><span class="rk">20</span><span class="nm">Mateo Diaz</span><span class="pt">12</span></div>
+  <div class="row"><span class="rk">21</span><span class="nm">Brayan Celis</span><span class="pt">11</span></div>
+  <div class="row"><span class="rk">22</span><span class="nm">Ricardo Moreno</span><span class="pt">10</span></div>
 </div>
 
-<!-- ===== MIS STATS ===== -->
-<div id="mis-stats" class="page">
+<!-- ===== STATS ===== -->
+<div id="st" class="pg">
   <div class="cards">
-    <div class="card"><div class="val">14</div><div class="lbl">Torneos jugados</div></div>
-    <div class="card"><div class="val">50</div><div class="lbl">Puntos totales</div></div>
-    <div class="card"><div class="val">13-37-0</div><div class="lbl">Record total</div></div>
-    <div class="card"><div class="val">3°</div><div class="lbl">Mejor posición</div></div>
-    <div class="card"><div class="val">9°</div><div class="lbl">Ranking oficial</div></div>
+    <div class="card"><div class="cv">20</div><div class="cl">Torneos</div></div>
+    <div class="card"><div class="cv">67</div><div class="cl">Pts acum</div></div>
+    <div class="card"><div class="cv">~11°</div><div class="cl">Ranking</div></div>
+    <div class="card"><div class="cv">3°</div><div class="cl">Mejor pos</div></div>
+    <div class="card"><div class="cv">18-58-3</div><div class="cl">W-L-D</div></div>
+    <div class="card"><div class="cv">5</div><div class="cl">Jueves rest</div></div>
   </div>
-
-  <p class="sec-label">📊 Rendimiento por Mazo</p>
-  <div class="table-wrap" style="margin-bottom:16px">
-    <table>
-      <thead><tr><th>Mazo</th><th>T</th><th>Pts</th><th>W-L-D</th><th>Win%</th><th>Pts/T</th><th>Mejor rank</th></tr></thead>
-      <tbody>
-        <tr>
-          <td>🐧🔵🔴 Pingüinos Izzet</td><td>7</td><td class="pts win">27</td><td>9-18-0</td>
-          <td>33.3%</td><td class="win">3.9</td><td class="win">3°</td>
-        </tr>
-        <tr>
-          <td>🐧🔵⚫🔴 Pingüinos Grixis</td><td>2</td><td class="pts">0</td><td>0-7-0</td>
-          <td style="color:#f85149">0.0%</td><td style="color:#f85149">0.0</td><td>8°</td>
-        </tr>
-        <tr>
-          <td>🧙 Magitos</td><td>4</td><td class="pts">12</td><td>4-12-0</td>
-          <td style="color:#f85149">25.0%</td><td>3.0</td><td>7°</td>
-        </tr>
-      </tbody>
-    </table>
-  </div>
-
-  <p class="sec-label">📋 Historial Completo</p>
-  <div class="table-wrap">
-    <table>
-      <thead><tr><th>Fecha</th><th>Mazo</th><th>R</th><th>Rank</th><th>Pts</th><th>W-L-D</th><th>OMW%</th><th>GW%</th></tr></thead>
-      <tbody>
-        <tr class="me"><td>9 Ene</td><td>🧙 Magitos</td><td><span class="badge">R4</span></td><td>7°</td><td class="pts">6</td><td>2-2-0</td><td class="omw">54.2%</td><td class="gw">44.4%</td></tr>
-        <tr class="me"><td>16 Ene</td><td>🧙 Magitos</td><td><span class="badge">R4</span></td><td>10°</td><td class="pts">0</td><td>0-4-0</td><td class="omw">56.2%</td><td class="gw">33.3%</td></tr>
-        <tr class="me"><td>23 Ene</td><td>🧙 Magitos</td><td><span class="badge">R4</span></td><td>14°</td><td class="pts">0</td><td>0-4-0</td><td class="omw">50.0%</td><td class="gw">33.3%</td></tr>
-        <tr class="me"><td>30 Ene</td><td>🧙 Magitos</td><td><span class="badge">R4</span></td><td>9°</td><td class="pts">6</td><td>2-2-0</td><td class="omw">52.8%</td><td class="gw">50.0%</td></tr>
-        <tr class="me"><td>5 Feb</td><td>🐧🔵🔴 Izzet</td><td><span class="badge">R4</span></td><td>3°</td><td class="pts win">6</td><td class="win">2-1-0</td><td class="omw">55.6%</td><td class="gw">55.6%</td></tr>
-        <tr class="me"><td>12 Feb</td><td>🐧🔵🔴 Izzet</td><td><span class="badge">R4</span></td><td>11°</td><td class="pts">3</td><td>1-3-0</td><td class="omw">47.9%</td><td class="gw">33.3%</td></tr>
-        <tr class="me"><td>19 Feb</td><td>🐧🔵🔴 Izzet</td><td><span class="badge">R4</span></td><td>8°</td><td class="pts">6</td><td>2-2-0</td><td class="omw">43.8%</td><td class="gw">45.5%</td></tr>
-        <tr class="me"><td>26 Feb</td><td>🐧🔵🔴 Izzet</td><td><span class="badge">R4</span></td><td>12°</td><td class="pts">3</td><td>1-3-0</td><td class="omw">54.2%</td><td class="gw">36.4%</td></tr>
-        <tr class="me"><td>5 Mar</td><td>🐧🔵🔴 Izzet</td><td><span class="badge">R4</span></td><td>8°</td><td class="pts">6</td><td>2-2-0</td><td class="omw">45.8%</td><td class="gw">44.4%</td></tr>
-        <tr class="me"><td>12 Mar</td><td colspan="7" style="color:#444;font-style:italic">No participó (viaje)</td></tr>
-        <tr class="me"><td>19 Mar</td><td>🐧🔵🔴 Izzet</td><td><span class="badge">R4</span></td><td>10°</td><td class="pts" style="color:#f85149">0</td><td style="color:#f85149">0-4-0</td><td class="omw">58.3%</td><td class="gw">33.3%</td></tr>
-        <tr class="me"><td>26 Mar</td><td>🐧🔵🔴 Izzet</td><td><span class="badge">R4</span></td><td>12°</td><td class="pts">3</td><td>1-3-0</td><td class="omw">43.8%</td><td class="gw">33.3%</td></tr>
-        <tr class="me"><td>1 Abr</td><td>🐧🔵⚫🔴 Grixis</td><td><span class="badge">R3</span></td><td>8°</td><td class="pts" style="color:#f85149">0</td><td style="color:#f85149">0-3-0</td><td class="omw">55.6%</td><td class="gw">33.3%</td></tr>
-        <tr class="me"><td>9 Abr</td><td>🐧🔵⚫🔴 Grixis</td><td><span class="badge">R4</span></td><td>16°</td><td class="pts" style="color:#f85149">0</td><td style="color:#f85149">0-4-0</td><td class="omw">45.8%</td><td class="gw">33.3%</td></tr>
-      </tbody>
-    </table>
-  </div>
+  <div class="sl">📊 Por Mazo</div>
+  <div class="row"><span class="nm">🐧🔵🔴 Izzet</span><span class="wl">11T · 12-31-1</span><span class="pt g" style="font-size:.85rem;min-width:52px;text-align:right">3.4 p/T</span></div>
+  <div class="row"><span class="nm">🐂🔴⚪ Torito Boros</span><span class="wl">3T · 2-8-2</span><span class="pt g" style="font-size:.85rem;min-width:52px;text-align:right">2.7 p/T</span></div>
+  <div class="row"><span class="nm">🐧🔵⚫🔴 Pingüinos Grixis</span><span class="wl">2T · 0-7</span><span class="pt r" style="font-size:.85rem;min-width:52px;text-align:right">0.0 p/T</span></div>
+  <div class="row"><span class="nm">🧙 Magitos</span><span class="wl">4T · 4-12</span><span class="pt" style="font-size:.85rem;min-width:52px;text-align:right">3.0 p/T</span></div>
+  <div class="sl">📋 Historial Completo</div>
+  <div class="row me"><span class="rk">7°</span><div style="flex:1"><div class="nm">9 Ene</div><div style="font-size:.68rem;color:#8b949e">🧙 Magitos</div></div><span class="pt">6</span><span class="wl">2-2-0</span></div>
+  <div class="row me"><span class="rk">10°</span><div style="flex:1"><div class="nm">16 Ene</div><div style="font-size:.68rem;color:#8b949e">🧙 Magitos</div></div><span class="pt r">0</span><span class="wl r">0-4-0</span></div>
+  <div class="row me"><span class="rk">14°</span><div style="flex:1"><div class="nm">23 Ene</div><div style="font-size:.68rem;color:#8b949e">🧙 Magitos</div></div><span class="pt r">0</span><span class="wl r">0-4-0</span></div>
+  <div class="row me"><span class="rk">9°</span><div style="flex:1"><div class="nm">30 Ene</div><div style="font-size:.68rem;color:#8b949e">🧙 Magitos</div></div><span class="pt">6</span><span class="wl">2-2-0</span></div>
+  <div class="row me"><span class="rk">3°</span><div style="flex:1"><div class="nm">5 Feb</div><div style="font-size:.68rem;color:#8b949e">🐧🔵🔴 Izzet</div></div><span class="pt g">6</span><span class="wl g">2-1-0</span></div>
+  <div class="row me"><span class="rk">11°</span><div style="flex:1"><div class="nm">12 Feb</div><div style="font-size:.68rem;color:#8b949e">🐧🔵🔴 Izzet</div></div><span class="pt">3</span><span class="wl">1-3-0</span></div>
+  <div class="row me"><span class="rk">8°</span><div style="flex:1"><div class="nm">19 Feb</div><div style="font-size:.68rem;color:#8b949e">🐧🔵🔴 Izzet</div></div><span class="pt">6</span><span class="wl">2-2-0</span></div>
+  <div class="row me"><span class="rk">12°</span><div style="flex:1"><div class="nm">26 Feb</div><div style="font-size:.68rem;color:#8b949e">🐧🔵🔴 Izzet</div></div><span class="pt">3</span><span class="wl">1-3-0</span></div>
+  <div class="row me"><span class="rk">8°</span><div style="flex:1"><div class="nm">5 Mar</div><div style="font-size:.68rem;color:#8b949e">🐧🔵🔴 Izzet</div></div><span class="pt">6</span><span class="wl">2-2-0</span></div>
+  <div class="row me"><span class="rk">—</span><div style="flex:1"><div class="nm">12 Mar</div><div style="font-size:.68rem;color:#444;font-style:italic">No participó</div></div><span class="pt" style="color:#333">—</span><span class="wl" style="color:#333">—</span></div>
+  <div class="row me"><span class="rk">10°</span><div style="flex:1"><div class="nm">19 Mar</div><div style="font-size:.68rem;color:#8b949e">🐧🔵🔴 Izzet</div></div><span class="pt r">0</span><span class="wl r">0-4-0</span></div>
+  <div class="row me"><span class="rk">12°</span><div style="flex:1"><div class="nm">26 Mar</div><div style="font-size:.68rem;color:#8b949e">🐧🔵🔴 Izzet</div></div><span class="pt">3</span><span class="wl">1-3-0</span></div>
+  <div class="row me"><span class="rk">8°</span><div style="flex:1"><div class="nm">1 Abr</div><div style="font-size:.68rem;color:#8b949e">🐧🔵⚫🔴 Grixis</div></div><span class="pt r">0</span><span class="wl r">0-3-0</span></div>
+  <div class="row me"><span class="rk">16°</span><div style="flex:1"><div class="nm">9 Abr</div><div style="font-size:.68rem;color:#8b949e">🐧🔵⚫🔴 Grixis</div></div><span class="pt r">0</span><span class="wl r">0-4-0</span></div>
+  <div class="row me"><span class="rk">12°</span><div style="flex:1"><div class="nm">23 Abr</div><div style="font-size:.68rem;color:#8b949e">🐧🔵🔴 Izzet</div></div><span class="pt">3</span><span class="wl">1-3-0</span></div>
+  <div class="row me"><span class="rk">10°</span><div style="flex:1"><div class="nm">7 May</div><div style="font-size:.68rem;color:#8b949e">🐂🔴⚪ Torito Boros</div></div><span class="pt r">1</span><span class="wl r">0-3-1</span></div>
+  <div class="row me"><span class="rk">3°</span><div style="flex:1"><div class="nm">14 May</div><div style="font-size:.68rem;color:#8b949e">🐂🔴⚪ Torito Boros</div></div><span class="pt g">7</span><span class="wl g">2-1-1</span></div>
+  <div class="row me"><span class="rk">12°</span><div style="flex:1"><div class="nm">21 May</div><div style="font-size:.68rem;color:#8b949e">🐂🔴⚪ Torito Boros</div></div><span class="pt r">0</span><span class="wl r">0-4-0</span></div>
 </div>
 
 <!-- ===== ENERO ===== -->
-<div id="enero" class="page">
-  <div class="month-header" onclick="toggleMonth('m-ene9')">
-    <span class="month-title">📅 Ene 9</span><span class="month-stats">R4 · 10p · Christian: 7° (2-2-0, 6pts)</span>
-    <span class="chevron" id="chev-ene9">▼</span>
+<div id="en" class="pg">
+  <div class="mh" onclick="tm('e1')"><span class="mt">📅 Ene 9</span><span class="ms">R4 · 10p · Christian: 7° · 2-2-0</span><span class="ch" id="ce1">▼</span></div>
+  <div class="mb" id="e1">
+    <div class="row"><span class="rk r1">1</span><span class="nm">Juan Lozada 💀</span><span class="pt">9</span><span class="wl g">3-1-0</span></div>
+    <div class="row"><span class="rk r2">2</span><span class="nm">Santiago Ramos</span><span class="pt">9</span><span class="wl g">3-1-0</span></div>
+    <div class="row"><span class="rk r3">3</span><span class="nm">Felipe Hurtado</span><span class="pt">9</span><span class="wl g">3-1-0</span></div>
+    <div class="row"><span class="rk">4</span><span class="nm">Germán Gabri...</span><span class="pt">7</span><span class="wl">2-1-1</span></div>
+    <div class="row"><span class="rk">5</span><span class="nm">Santiago Jimen...</span><span class="pt">6</span><span class="wl">2-2-0</span></div>
+    <div class="row"><span class="rk">6</span><span class="nm">Ivan Quiroga</span><span class="pt">6</span><span class="wl">2-2-0</span></div>
+    <div class="row me"><span class="rk">7</span><span class="nm">Christian Dav...</span><span class="pt">6</span><span class="wl">2-2-0</span></div>
+    <div class="row"><span class="rk">8</span><span class="nm">Yesid Soacha</span><span class="pt">4</span><span class="wl">1-2-1</span></div>
+    <div class="row"><span class="rk">9</span><span class="nm">Samuel Urueta</span><span class="pt">3</span><span class="wl">1-3-0</span></div>
+    <div class="row"><span class="rk">10</span><span class="nm">Ivan Javier sep...</span><span class="pt r">0</span><span class="wl r">0-4-0</span></div>
   </div>
-  <div class="month-body" id="m-ene9">
-    <div class="table-wrap"><table>
-      <thead><tr><th>#</th><th>Jugador</th><th>Pts</th><th>W-L-D</th><th>OMW%</th><th>GW%</th></tr></thead>
-      <tbody>
-        <tr><td class="rank r1">1</td><td>Juan Lozada 💀</td><td class="pts">9</td><td class="win">3-1-0</td><td>58.3%</td><td>63.6%</td></tr>
-        <tr><td class="rank r2">2</td><td>Santiago Ramo...</td><td class="pts">9</td><td class="win">3-1-0</td><td>56.2%</td><td>70.0%</td></tr>
-        <tr><td class="rank r3">3</td><td>Felipe Hurtado</td><td class="pts">9</td><td class="win">3-1-0</td><td>47.9%</td><td>63.6%</td></tr>
-        <tr><td class="rank">4</td><td>Germán Gabri...</td><td class="pts">7</td><td>2-1-1</td><td>41.7%</td><td>66.7%</td></tr>
-        <tr><td class="rank">5</td><td>Santiago Jimen...</td><td class="pts">6</td><td>2-2-0</td><td>64.6%</td><td>45.5%</td></tr>
-        <tr><td class="rank">6</td><td>Ivan Quiroga</td><td class="pts">6</td><td>2-2-0</td><td>54.2%</td><td>50.0%</td></tr>
-        <tr class="me"><td class="rank">7</td><td>Christian Dav...</td><td class="pts">6</td><td>2-2-0</td><td>54.2%</td><td>44.4%</td></tr>
-        <tr><td class="rank">8</td><td>Yesid Soacha</td><td class="pts">4</td><td>1-2-1</td><td>50.0%</td><td>45.5%</td></tr>
-        <tr><td class="rank">9</td><td>Samuel Urueta</td><td class="pts">3</td><td>1-3-0</td><td>54.2%</td><td>33.3%</td></tr>
-        <tr><td class="rank">10</td><td>Ivan Javier sep...</td><td class="pts">0</td><td>0-4-0</td><td>52.1%</td><td>33.3%</td></tr>
-      </tbody>
-    </table></div>
+
+  <div class="mh" onclick="tm('e2')"><span class="mt">📅 Ene 16</span><span class="ms">R4 · 10p · Christian: 10° · 0-4-0</span><span class="ch" id="ce2">▼</span></div>
+  <div class="mb" id="e2">
+    <div class="row"><span class="rk r1">1</span><span class="nm">Santiago Ramos</span><span class="pt">9</span><span class="wl g">3-1-0</span></div>
+    <div class="row"><span class="rk r2">2</span><span class="nm">Esteban Zuleta</span><span class="pt">9</span><span class="wl g">3-1-0</span></div>
+    <div class="row"><span class="rk r3">3</span><span class="nm">Camilo Mora</span><span class="pt">9</span><span class="wl g">3-1-0</span></div>
+    <div class="row"><span class="rk">4</span><span class="nm">Ivan Quiroga</span><span class="pt">7</span><span class="wl">2-1-1</span></div>
+    <div class="row"><span class="rk">5</span><span class="nm">Yesid Soacha</span><span class="pt">7</span><span class="wl">2-1-1</span></div>
+    <div class="row"><span class="rk">6</span><span class="nm">Emy Lyo</span><span class="pt">6</span><span class="wl">2-2-0</span></div>
+    <div class="row"><span class="rk">7</span><span class="nm">Ricardo Moreno</span><span class="pt">5</span><span class="wl">1-1-2</span></div>
+    <div class="row"><span class="rk">8</span><span class="nm">Samuel Urueta</span><span class="pt">3</span><span class="wl">1-3-0</span></div>
+    <div class="row"><span class="rk">9</span><span class="nm">Felipe Parra</span><span class="pt">3</span><span class="wl">1-3-0</span></div>
+    <div class="row me"><span class="rk">10</span><span class="nm">Christian Dav...</span><span class="pt r">0</span><span class="wl r">0-4-0</span></div>
   </div>
-  <div class="month-header" onclick="toggleMonth('m-ene16')">
-    <span class="month-title">📅 Ene 16</span><span class="month-stats">R4 · 10p · Christian: 10° (0-4-0, 0pts)</span>
-    <span class="chevron" id="chev-ene16">▼</span>
+
+  <div class="mh" onclick="tm('e3')"><span class="mt">📅 Ene 23</span><span class="ms">R4 · 14p · Christian: 14° · 0-4-0</span><span class="ch" id="ce3">▼</span></div>
+  <div class="mb" id="e3">
+    <div class="row"><span class="rk r1">1</span><span class="nm">Santiago Ramos</span><span class="pt">12</span><span class="wl g">4-0-0</span></div>
+    <div class="row"><span class="rk r2">2</span><span class="nm">Albert Loaiza</span><span class="pt">9</span><span class="wl g">3-1-0</span></div>
+    <div class="row"><span class="rk r3">3</span><span class="nm">Angel Rodríguez</span><span class="pt">7</span><span class="wl">2-1-1</span></div>
+    <div class="row"><span class="rk">4</span><span class="nm">Ivan Quiroga</span><span class="pt">7</span><span class="wl">2-1-1</span></div>
+    <div class="row"><span class="rk">5</span><span class="nm">Noah Herrera</span><span class="pt">7</span><span class="wl">2-1-1</span></div>
+    <div class="row"><span class="rk">6</span><span class="nm">Samuel Urueta</span><span class="pt">7</span><span class="wl">2-1-1</span></div>
+    <div class="row"><span class="rk">7</span><span class="nm">Sebastian Abello</span><span class="pt">6</span><span class="wl">2-2-0</span></div>
+    <div class="row"><span class="rk">8</span><span class="nm">Esteban Zuleta</span><span class="pt">6</span><span class="wl">2-2-0</span></div>
+    <div class="row"><span class="rk">9</span><span class="nm">Ricardo Moreno</span><span class="pt">5</span><span class="wl">1-1-2</span></div>
+    <div class="row"><span class="rk">10</span><span class="nm">Yesid Soacha</span><span class="pt">4</span><span class="wl">1-2-1</span></div>
+    <div class="row"><span class="rk">11</span><span class="nm">Rubén Darío M...</span><span class="pt">4</span><span class="wl">1-2-1</span></div>
+    <div class="row"><span class="rk">12</span><span class="nm">Ivan Sepulveda</span><span class="pt">3</span><span class="wl">1-3-0</span></div>
+    <div class="row"><span class="rk">13</span><span class="nm">Felipe Parra</span><span class="pt">3</span><span class="wl">1-3-0</span></div>
+    <div class="row me"><span class="rk">14</span><span class="nm">Christian Dav...</span><span class="pt r">0</span><span class="wl r">0-4-0</span></div>
   </div>
-  <div class="month-body" id="m-ene16">
-    <div class="table-wrap"><table>
-      <thead><tr><th>#</th><th>Jugador</th><th>Pts</th><th>W-L-D</th><th>OMW%</th><th>GW%</th></tr></thead>
-      <tbody>
-        <tr><td class="rank r1">1</td><td>Santiago Ramo...</td><td class="pts">9</td><td class="win">3-1-0</td><td>60.4%</td><td>70.0%</td></tr>
-        <tr><td class="rank r2">2</td><td>Esteban Zuleta</td><td class="pts">9</td><td class="win">3-1-0</td><td>60.4%</td><td>70.0%</td></tr>
-        <tr><td class="rank r3">3</td><td>Camilo Mora</td><td class="pts">9</td><td class="win">3-1-0</td><td>47.9%</td><td>54.5%</td></tr>
-        <tr><td class="rank">4</td><td>Ivan Quiroga</td><td class="pts">7</td><td>2-1-1</td><td>45.8%</td><td>60.0%</td></tr>
-        <tr><td class="rank">5</td><td>Yesid Soacha</td><td class="pts">7</td><td>2-1-1</td><td>45.8%</td><td>55.6%</td></tr>
-        <tr><td class="rank">6</td><td>Emy Lyo</td><td class="pts">6</td><td>2-2-0</td><td>64.6%</td><td>50.0%</td></tr>
-        <tr><td class="rank">7</td><td>Ricardo Moreno</td><td class="pts">5</td><td>1-1-2</td><td>56.2%</td><td>50.0%</td></tr>
-        <tr><td class="rank">8</td><td>Samuel Urueta</td><td class="pts">3</td><td>1-3-0</td><td>50.0%</td><td>44.4%</td></tr>
-        <tr><td class="rank">9</td><td>Felipe Parra</td><td class="pts">3</td><td>1-3-0</td><td>45.8%</td><td>33.3%</td></tr>
-        <tr class="me"><td class="rank">10</td><td>Christian Dav...</td><td class="pts">0</td><td>0-4-0</td><td>56.2%</td><td>33.3%</td></tr>
-      </tbody>
-    </table></div>
-  </div>
-  <div class="month-header" onclick="toggleMonth('m-ene23')">
-    <span class="month-title">📅 Ene 23</span><span class="month-stats">R4 · 14p · Christian: 14° (0-4-0, 0pts)</span>
-    <span class="chevron" id="chev-ene23">▼</span>
-  </div>
-  <div class="month-body" id="m-ene23">
-    <div class="table-wrap"><table>
-      <thead><tr><th>#</th><th>Jugador</th><th>Pts</th><th>W-L-D</th><th>OMW%</th><th>GW%</th></tr></thead>
-      <tbody>
-        <tr><td class="rank r1">1</td><td>Santiago Ramo...</td><td class="pts">12</td><td class="win">4-0-0</td><td>54.2%</td><td>87.5%</td></tr>
-        <tr><td class="rank r2">2</td><td>Albert Loaiza</td><td class="pts">9</td><td class="win">3-1-0</td><td>64.6%</td><td>58.3%</td></tr>
-        <tr><td class="rank r3">3</td><td>Angel Rodríguez</td><td class="pts">7</td><td>2-1-1</td><td>50.0%</td><td>54.5%</td></tr>
-        <tr><td class="rank">4</td><td>Ivan Quiroga</td><td class="pts">7</td><td>2-1-1</td><td>39.6%</td><td>60.0%</td></tr>
-        <tr><td class="rank">5</td><td>Noah Herrera</td><td class="pts">7</td><td>2-1-1</td><td>39.6%</td><td>59.3%</td></tr>
-        <tr><td class="rank">6</td><td>Samuel Urueta</td><td class="pts">7</td><td>2-1-1</td><td>35.4%</td><td>60.0%</td></tr>
-        <tr><td class="rank">7</td><td>Sebastian Abello</td><td class="pts">6</td><td>2-2-0</td><td>66.7%</td><td>44.4%</td></tr>
-        <tr><td class="rank">8</td><td>Esteban Zuleta</td><td class="pts">6</td><td>2-2-0</td><td>60.4%</td><td>55.6%</td></tr>
-        <tr><td class="rank">9</td><td>Ricardo Moreno</td><td class="pts">5</td><td>1-1-2</td><td>62.5%</td><td>57.1%</td></tr>
-        <tr><td class="rank">10</td><td>Yesid Soacha</td><td class="pts">4</td><td>1-2-1</td><td>50.0%</td><td>37.5%</td></tr>
-        <tr><td class="rank">11</td><td>Rubén Darío M...</td><td class="pts">4</td><td>1-2-1</td><td>45.8%</td><td>44.4%</td></tr>
-        <tr><td class="rank">12</td><td>Ivan Javier sep...</td><td class="pts">3</td><td>1-3-0</td><td>50.0%</td><td>33.3%</td></tr>
-        <tr><td class="rank">13</td><td>Felipe Parra</td><td class="pts">3</td><td>1-3-0</td><td>47.9%</td><td>33.3%</td></tr>
-        <tr class="me"><td class="rank">14</td><td>Christian Dav...</td><td class="pts">0</td><td>0-4-0</td><td>50.0%</td><td>33.3%</td></tr>
-      </tbody>
-    </table></div>
-  </div>
-  <div class="month-header" onclick="toggleMonth('m-ene30')">
-    <span class="month-title">📅 Ene 30</span><span class="month-stats">R4 · 15p · Christian: 9° (2-2-0, 6pts)</span>
-    <span class="chevron" id="chev-ene30">▼</span>
-  </div>
-  <div class="month-body" id="m-ene30">
-    <div class="table-wrap"><table>
-      <thead><tr><th>#</th><th>Jugador</th><th>Pts</th><th>W-L-D</th><th>OMW%</th><th>GW%</th></tr></thead>
-      <tbody>
-        <tr><td class="rank r1">1</td><td>Santiago Ram...</td><td class="pts">12</td><td class="win">4-0-0</td><td>64.6%</td><td>80.0%</td></tr>
-        <tr><td class="rank r2">2</td><td>Angel Rodríguez</td><td class="pts">10</td><td class="win">3-0-1</td><td>37.5%</td><td>63.0%</td></tr>
-        <tr><td class="rank r3">3</td><td>Albert Loaiza</td><td class="pts">9</td><td class="win">3-1-0</td><td>58.3%</td><td>77.0%</td></tr>
-        <tr><td class="rank">4</td><td>Yesid Soacha</td><td class="pts">9</td><td class="win">3-1-0</td><td>58.3%</td><td>70.0%</td></tr>
-        <tr><td class="rank">5</td><td>Ivan Javier sep...</td><td class="pts">9</td><td class="win">3-1-0</td><td>58.3%</td><td>66.0%</td></tr>
-        <tr><td class="rank">6</td><td>Balalaika Laika</td><td class="pts">6</td><td>2-2-0</td><td>66.7%</td><td>50.0%</td></tr>
-        <tr><td class="rank">7</td><td>Ivan Quiroga</td><td class="pts">6</td><td>2-2-0</td><td>60.4%</td><td>55.0%</td></tr>
-        <tr><td class="rank">8</td><td>Camilo Mora</td><td class="pts">6</td><td>2-2-0</td><td>56.2%</td><td>50.0%</td></tr>
-        <tr class="me"><td class="rank">9</td><td>Christian Dav...</td><td class="pts">6</td><td>2-2-0</td><td>52.8%</td><td>50.0%</td></tr>
-        <tr><td class="rank">10</td><td>Camilo Arango</td><td class="pts">6</td><td>2-2-0</td><td>43.8%</td><td>50.0%</td></tr>
-        <tr><td class="rank">11</td><td>Esteban Zuleta</td><td class="pts">6</td><td>2-2-0</td><td>41.7%</td><td>57.0%</td></tr>
-        <tr><td class="rank">12</td><td>Arturo Restrepo</td><td class="pts">3</td><td>1-3-0</td><td>77.8%</td><td>33.3%</td></tr>
-        <tr><td class="rank">13</td><td>Samuel Urueta</td><td class="pts">3</td><td>1-3-0</td><td>58.3%</td><td>37.0%</td></tr>
-        <tr><td class="rank">14</td><td>Sebastian Abello</td><td class="pts">3</td><td>1-3-0</td><td>58.3%</td><td>33.3%</td></tr>
-        <tr><td class="rank">15</td><td>Santiago Jimen...</td><td class="pts">1</td><td>0-3-1</td><td>70.8%</td><td>33.3%</td></tr>
-      </tbody>
-    </table></div>
+
+  <div class="mh" onclick="tm('e4')"><span class="mt">📅 Ene 30</span><span class="ms">R4 · 15p · Christian: 9° · 2-2-0</span><span class="ch" id="ce4">▼</span></div>
+  <div class="mb" id="e4">
+    <div class="row"><span class="rk r1">1</span><span class="nm">Santiago Ramos</span><span class="pt">12</span><span class="wl g">4-0-0</span></div>
+    <div class="row"><span class="rk r2">2</span><span class="nm">Angel Rodríguez</span><span class="pt">10</span><span class="wl g">3-0-1</span></div>
+    <div class="row"><span class="rk r3">3</span><span class="nm">Albert Loaiza</span><span class="pt">9</span><span class="wl g">3-1-0</span></div>
+    <div class="row"><span class="rk">4</span><span class="nm">Yesid Soacha</span><span class="pt">9</span><span class="wl g">3-1-0</span></div>
+    <div class="row"><span class="rk">5</span><span class="nm">Ivan Sepulveda</span><span class="pt">9</span><span class="wl g">3-1-0</span></div>
+    <div class="row"><span class="rk">6</span><span class="nm">Balalaika Laika</span><span class="pt">6</span><span class="wl">2-2-0</span></div>
+    <div class="row"><span class="rk">7</span><span class="nm">Ivan Quiroga</span><span class="pt">6</span><span class="wl">2-2-0</span></div>
+    <div class="row"><span class="rk">8</span><span class="nm">Camilo Mora</span><span class="pt">6</span><span class="wl">2-2-0</span></div>
+    <div class="row me"><span class="rk">9</span><span class="nm">Christian Dav...</span><span class="pt">6</span><span class="wl">2-2-0</span></div>
+    <div class="row"><span class="rk">10</span><span class="nm">Camilo Arango</span><span class="pt">6</span><span class="wl">2-2-0</span></div>
+    <div class="row"><span class="rk">11</span><span class="nm">Esteban Zuleta</span><span class="pt">6</span><span class="wl">2-2-0</span></div>
+    <div class="row"><span class="rk">12</span><span class="nm">Arturo Restrepo</span><span class="pt">3</span><span class="wl">1-3-0</span></div>
+    <div class="row"><span class="rk">13</span><span class="nm">Samuel Urueta</span><span class="pt">3</span><span class="wl">1-3-0</span></div>
+    <div class="row"><span class="rk">14</span><span class="nm">Sebastian Abello</span><span class="pt">3</span><span class="wl">1-3-0</span></div>
+    <div class="row"><span class="rk">15</span><span class="nm">Santiago Jimen...</span><span class="pt">1</span><span class="wl">0-3-1</span></div>
   </div>
 </div>
 
 <!-- ===== FEBRERO ===== -->
-<div id="febrero" class="page">
-  <div class="month-header" onclick="toggleMonth('m-feb5')">
-    <span class="month-title">📅 Feb 5</span><span class="month-stats">R3 · 8p · Christian: 3° (2-1-0, 6pts)</span>
-    <span class="chevron" id="chev-feb5">▼</span>
+<div id="fe" class="pg">
+  <div class="mh" onclick="tm('f1')"><span class="mt">📅 Feb 5</span><span class="ms">R3 · 8p · Christian: 3° · 2-1-0 🏆</span><span class="ch" id="cf1">▼</span></div>
+  <div class="mb" id="f1">
+    <div class="row"><span class="rk r1">1</span><span class="nm">Esteban Zuleta</span><span class="pt">9</span><span class="wl g">3-0-0</span></div>
+    <div class="row"><span class="rk r2">2</span><span class="nm">Ivan Quiroga</span><span class="pt">6</span><span class="wl g">2-1-0</span></div>
+    <div class="row me"><span class="rk r3">3</span><span class="nm">Christian Dav...</span><span class="pt g">6</span><span class="wl g">2-1-0</span></div>
+    <div class="row"><span class="rk">4</span><span class="nm">Santiago Ramos</span><span class="pt">5</span><span class="wl">1-0-2</span></div>
+    <div class="row"><span class="rk">5</span><span class="nm">Camilo Arango</span><span class="pt">4</span><span class="wl">1-1-1</span></div>
+    <div class="row"><span class="rk">6</span><span class="nm">Yesid Soacha</span><span class="pt">3</span><span class="wl">1-2-0</span></div>
+    <div class="row"><span class="rk">7</span><span class="nm">Arturo Restrepo</span><span class="pt">1</span><span class="wl">0-2-1</span></div>
+    <div class="row"><span class="rk">8</span><span class="nm">Juan Jose Restr...</span><span class="pt r">0</span><span class="wl r">0-3-0</span></div>
   </div>
-  <div class="month-body" id="m-feb5">
-    <div class="table-wrap"><table>
-      <thead><tr><th>#</th><th>Jugador</th><th>Pts</th><th>W-L-D</th><th>OMW%</th><th>GW%</th></tr></thead>
-      <tbody>
-        <tr><td class="rank r1">1</td><td>Esteban Zuleta</td><td class="pts">9</td><td class="win">3-0-0</td><td>59.3%</td><td>66.7%</td></tr>
-        <tr><td class="rank r2">2</td><td>Ivan Quiroga</td><td class="pts">6</td><td class="win">2-1-0</td><td>55.6%</td><td>71.4%</td></tr>
-        <tr class="me"><td class="rank r3">3</td><td>Christian Dav...</td><td class="pts">6</td><td class="win">2-1-0</td><td>55.6%</td><td>55.6%</td></tr>
-        <tr><td class="rank">4</td><td>Santiago Ramo...</td><td class="pts">5</td><td>1-0-2</td><td>37.0%</td><td>66.7%</td></tr>
-        <tr><td class="rank">5</td><td>Camilo Arango</td><td class="pts">4</td><td>1-1-1</td><td>63.0%</td><td>57.1%</td></tr>
-        <tr><td class="rank">6</td><td>Yesid Soacha</td><td class="pts">3</td><td>1-2-0</td><td>48.1%</td><td>42.9%</td></tr>
-        <tr><td class="rank">7</td><td>Arturo Restrepo</td><td class="pts">1</td><td>0-2-1</td><td>63.0%</td><td>33.3%</td></tr>
-        <tr><td class="rank">8</td><td>Juan Jose Restr...</td><td class="pts">0</td><td>0-3-0</td><td>51.9%</td><td>33.3%</td></tr>
-      </tbody>
-    </table></div>
+
+  <div class="mh" onclick="tm('f2')"><span class="mt">📅 Feb 12</span><span class="ms">R4 · 12p · Christian: 11° · 1-3-0</span><span class="ch" id="cf2">▼</span></div>
+  <div class="mb" id="f2">
+    <div class="row"><span class="rk r1">1</span><span class="nm">Albert Loaiza</span><span class="pt">10</span><span class="wl g">3-0-1</span></div>
+    <div class="row"><span class="rk r2">2</span><span class="nm">Yesid Soacha</span><span class="pt">10</span><span class="wl g">3-0-1</span></div>
+    <div class="row"><span class="rk r3">3</span><span class="nm">Juan Lozada 💀</span><span class="pt">9</span><span class="wl g">3-1-0</span></div>
+    <div class="row"><span class="rk">4</span><span class="nm">Sebastian Abello</span><span class="pt">9</span><span class="wl g">3-1-0</span></div>
+    <div class="row"><span class="rk">5</span><span class="nm">Ivan Quiroga</span><span class="pt">6</span><span class="wl">2-2-0</span></div>
+    <div class="row"><span class="rk">6</span><span class="nm">Camilo Arango</span><span class="pt">6</span><span class="wl">2-2-0</span></div>
+    <div class="row"><span class="rk">7</span><span class="nm">Balalaika Laika</span><span class="pt">6</span><span class="wl">2-2-0</span></div>
+    <div class="row"><span class="rk">8</span><span class="nm">Santiago Ramos</span><span class="pt">6</span><span class="wl">2-2-0</span></div>
+    <div class="row"><span class="rk">9</span><span class="nm">Samuel Urueta</span><span class="pt">3</span><span class="wl">1-3-0</span></div>
+    <div class="row"><span class="rk">10</span><span class="nm">Ivan Sepulveda</span><span class="pt">3</span><span class="wl">1-3-0</span></div>
+    <div class="row me"><span class="rk">11</span><span class="nm">Christian Dav...</span><span class="pt">3</span><span class="wl">1-3-0</span></div>
+    <div class="row"><span class="rk">12</span><span class="nm">Felipe Parra</span><span class="pt r">0</span><span class="wl r">0-4-0</span></div>
   </div>
-  <div class="month-header" onclick="toggleMonth('m-feb12')">
-    <span class="month-title">📅 Feb 12</span><span class="month-stats">R4 · 12p · Christian: 11° (1-3-0, 3pts)</span>
-    <span class="chevron" id="chev-feb12">▼</span>
+
+  <div class="mh" onclick="tm('f3')"><span class="mt">📅 Feb 19</span><span class="ms">R4 · 14p · Christian: 8° · 2-2-0</span><span class="ch" id="cf3">▼</span></div>
+  <div class="mb" id="f3">
+    <div class="row"><span class="rk r1">1</span><span class="nm">Albert Loaiza</span><span class="pt">12</span><span class="wl g">4-0-0</span></div>
+    <div class="row"><span class="rk r2">2</span><span class="nm">Sebastian Abello</span><span class="pt">9</span><span class="wl g">3-1-0</span></div>
+    <div class="row"><span class="rk r3">3</span><span class="nm">Fredy Castro</span><span class="pt">9</span><span class="wl g">3-1-0</span></div>
+    <div class="row"><span class="rk">4</span><span class="nm">Samuel Urueta</span><span class="pt">9</span><span class="wl g">3-1-0</span></div>
+    <div class="row"><span class="rk">5</span><span class="nm">Felipe Parra</span><span class="pt">7</span><span class="wl">2-1-1</span></div>
+    <div class="row"><span class="rk">6</span><span class="nm">Angel Rodríguez</span><span class="pt">6</span><span class="wl">2-2-0</span></div>
+    <div class="row"><span class="rk">7</span><span class="nm">Santiago Ramos</span><span class="pt">6</span><span class="wl">2-2-0</span></div>
+    <div class="row me"><span class="rk">8</span><span class="nm">Christian Dav...</span><span class="pt">6</span><span class="wl">2-2-0</span></div>
+    <div class="row"><span class="rk">9</span><span class="nm">Roosevelt Bla...</span><span class="pt">4</span><span class="wl">1-2-1</span></div>
+    <div class="row"><span class="rk">10</span><span class="nm">Yesid Soacha</span><span class="pt">4</span><span class="wl">1-2-1</span></div>
+    <div class="row"><span class="rk">11</span><span class="nm">Santiago Jimen...</span><span class="pt">3</span><span class="wl">1-3-0</span></div>
+    <div class="row"><span class="rk">12</span><span class="nm">Ivan Sepulveda</span><span class="pt">3</span><span class="wl">1-2-0</span></div>
+    <div class="row"><span class="rk">13</span><span class="nm">Balalaika Laika</span><span class="pt">2</span><span class="wl">0-2-2</span></div>
+    <div class="row"><span class="rk">14</span><span class="nm">Ivan Quiroga</span><span class="pt">1</span><span class="wl">0-3-1</span></div>
   </div>
-  <div class="month-body" id="m-feb12">
-    <div class="table-wrap"><table>
-      <thead><tr><th>#</th><th>Jugador</th><th>Pts</th><th>W-L-D</th><th>OMW%</th><th>GW%</th></tr></thead>
-      <tbody>
-        <tr><td class="rank r1">1</td><td>Albert Loaiza</td><td class="pts">10</td><td class="win">3-0-1</td><td>64.6%</td><td>77.8%</td></tr>
-        <tr><td class="rank r2">2</td><td>Yesid Soacha</td><td class="pts">10</td><td class="win">3-0-1</td><td>60.4%</td><td>77.8%</td></tr>
-        <tr><td class="rank r3">3</td><td>Juan Lozada 💀</td><td class="pts">9</td><td class="win">3-1-0</td><td>54.2%</td><td>66.7%</td></tr>
-        <tr><td class="rank">4</td><td>Sebastian Abello</td><td class="pts">9</td><td class="win">3-1-0</td><td>50.0%</td><td>66.7%</td></tr>
-        <tr><td class="rank">5</td><td>Ivan Quiroga</td><td class="pts">6</td><td>2-2-0</td><td>60.4%</td><td>55.6%</td></tr>
-        <tr><td class="rank">6</td><td>Camilo Arango</td><td class="pts">6</td><td>2-2-0</td><td>58.3%</td><td>45.5%</td></tr>
-        <tr><td class="rank">7</td><td>Balalaika Laika</td><td class="pts">6</td><td>2-2-0</td><td>47.9%</td><td>57.1%</td></tr>
-        <tr><td class="rank">8</td><td>Santiago Ramo...</td><td class="pts">6</td><td>2-2-0</td><td>43.8%</td><td>50.0%</td></tr>
-        <tr><td class="rank">9</td><td>Samuel Urueta</td><td class="pts">3</td><td>1-3-0</td><td>56.2%</td><td>33.3%</td></tr>
-        <tr><td class="rank">10</td><td>Ivan Javier sep...</td><td class="pts">3</td><td>1-3-0</td><td>52.1%</td><td>36.4%</td></tr>
-        <tr class="me"><td class="rank">11</td><td>Christian Dav...</td><td class="pts">3</td><td>1-3-0</td><td>47.9%</td><td>33.3%</td></tr>
-        <tr><td class="rank">12</td><td>Felipe Parra</td><td class="pts">0</td><td>0-4-0</td><td>54.2%</td><td>33.3%</td></tr>
-      </tbody>
-    </table></div>
-  </div>
-  <div class="month-header" onclick="toggleMonth('m-feb19')">
-    <span class="month-title">📅 Feb 19</span><span class="month-stats">R4 · 14p · Christian: 8° (2-2-0, 6pts)</span>
-    <span class="chevron" id="chev-feb19">▼</span>
-  </div>
-  <div class="month-body" id="m-feb19">
-    <div class="table-wrap"><table>
-      <thead><tr><th>#</th><th>Jugador</th><th>Pts</th><th>W-L-D</th><th>OMW%</th><th>GW%</th></tr></thead>
-      <tbody>
-        <tr><td class="rank r1">1</td><td>Albert Loaiza</td><td class="pts">12</td><td class="win">4-0-0</td><td>58.3%</td><td>88.9%</td></tr>
-        <tr><td class="rank r2">2</td><td>Sebastian Abello</td><td class="pts">9</td><td class="win">3-1-0</td><td>58.3%</td><td>66.7%</td></tr>
-        <tr><td class="rank r3">3</td><td>Fredy Castro</td><td class="pts">9</td><td class="win">3-1-0</td><td>56.2%</td><td>66.7%</td></tr>
-        <tr><td class="rank">4</td><td>Samuel Urueta</td><td class="pts">9</td><td class="win">3-1-0</td><td>41.7%</td><td>63.6%</td></tr>
-        <tr><td class="rank">5</td><td>Felipe Parra</td><td class="pts">7</td><td>2-1-1</td><td>43.8%</td><td>57.1%</td></tr>
-        <tr><td class="rank">6</td><td>Angel Rodríguez</td><td class="pts">6</td><td>2-2-0</td><td>70.8%</td><td>50.0%</td></tr>
-        <tr><td class="rank">7</td><td>Santiago Ramo...</td><td class="pts">6</td><td>2-2-0</td><td>43.8%</td><td>60.0%</td></tr>
-        <tr class="me"><td class="rank">8</td><td>Christian Dav...</td><td class="pts">6</td><td>2-2-0</td><td>43.8%</td><td>45.5%</td></tr>
-        <tr><td class="rank">9</td><td>Roosevelt Bla...</td><td class="pts">4</td><td>1-2-1</td><td>61.1%</td><td>50.0%</td></tr>
-        <tr><td class="rank">10</td><td>Yesid Soacha</td><td class="pts">4</td><td>1-2-1</td><td>47.9%</td><td>33.3%</td></tr>
-        <tr><td class="rank">11</td><td>Santiago Jimen...</td><td class="pts">3</td><td>1-3-0</td><td>64.6%</td><td>33.3%</td></tr>
-        <tr><td class="rank">12</td><td>Ivan Javier sep...</td><td class="pts">3</td><td>1-2-0</td><td>44.4%</td><td>42.9%</td></tr>
-        <tr><td class="rank">13</td><td>Balalaika Laika</td><td class="pts">2</td><td>0-2-2</td><td>50.0%</td><td>33.3%</td></tr>
-        <tr><td class="rank">14</td><td>Ivan Quiroga</td><td class="pts">1</td><td>0-3-1</td><td>58.3%</td><td>33.3%</td></tr>
-      </tbody>
-    </table></div>
-  </div>
-  <div class="month-header" onclick="toggleMonth('m-feb26')">
-    <span class="month-title">📅 Feb 26</span><span class="month-stats">R4 · 16p · Christian: 12° (1-3-0, 3pts)</span>
-    <span class="chevron" id="chev-feb26">▼</span>
-  </div>
-  <div class="month-body" id="m-feb26">
-    <div class="table-wrap"><table>
-      <thead><tr><th>#</th><th>Jugador</th><th>Pts</th><th>W-L-D</th><th>OMW%</th><th>GW%</th></tr></thead>
-      <tbody>
-        <tr><td class="rank r1">1</td><td>Albert Loaiza</td><td class="pts">12</td><td class="win">4-0-0</td><td>52.1%</td><td>72.7%</td></tr>
-        <tr><td class="rank r2">2</td><td>Ivan Javier sep...</td><td class="pts">10</td><td class="win">3-0-1</td><td>50.0%</td><td>87.5%</td></tr>
-        <tr><td class="rank r3">3</td><td>Santiago Ramo...</td><td class="pts">9</td><td class="win">3-1-0</td><td>45.8%</td><td>58.3%</td></tr>
-        <tr><td class="rank">4</td><td>Ivan Quiroga</td><td class="pts">7</td><td>2-1-1</td><td>68.8%</td><td>66.7%</td></tr>
-        <tr><td class="rank">5</td><td>Yesid Soacha</td><td class="pts">7</td><td>2-1-1</td><td>52.1%</td><td>55.6%</td></tr>
-        <tr><td class="rank">6</td><td>Balalaika Laika</td><td class="pts">7</td><td>2-1-1</td><td>45.8%</td><td>62.5%</td></tr>
-        <tr><td class="rank">7</td><td>Miguel Bello</td><td class="pts">6</td><td>2-2-0</td><td>72.9%</td><td>40.0%</td></tr>
-        <tr><td class="rank">8</td><td>Esteban Zuleta</td><td class="pts">6</td><td>2-2-0</td><td>60.4%</td><td>54.5%</td></tr>
-        <tr><td class="rank">9</td><td>Camilo Mora</td><td class="pts">6</td><td>2-2-0</td><td>50.0%</td><td>54.5%</td></tr>
-        <tr><td class="rank">10</td><td>Samuel Urueta</td><td class="pts">6</td><td>2-2-0</td><td>43.8%</td><td>55.6%</td></tr>
-        <tr><td class="rank">11</td><td>Felipe Parra</td><td class="pts">3</td><td>1-3-0</td><td>60.4%</td><td>33.3%</td></tr>
-        <tr class="me"><td class="rank">12</td><td>Christian Dav...</td><td class="pts">3</td><td>1-3-0</td><td>54.2%</td><td>36.4%</td></tr>
-        <tr><td class="rank">13</td><td>Juan Lozada 💀</td><td class="pts">3</td><td>1-2-0</td><td>52.8%</td><td>33.3%</td></tr>
-        <tr><td class="rank">14</td><td>Sebastian Abello</td><td class="pts">3</td><td>1-3-0</td><td>50.0%</td><td>33.3%</td></tr>
-        <tr><td class="rank">15</td><td>Roosevelt Bla...</td><td class="pts">3</td><td>1-3-0</td><td>44.4%</td><td>33.3%</td></tr>
-        <tr><td class="rank">16</td><td>Nubia Prada</td><td class="pts">3</td><td>1-3-0</td><td>37.5%</td><td>40.0%</td></tr>
-      </tbody>
-    </table></div>
+
+  <div class="mh" onclick="tm('f4')"><span class="mt">📅 Feb 26</span><span class="ms">R4 · 16p · Christian: 12° · 1-3-0</span><span class="ch" id="cf4">▼</span></div>
+  <div class="mb" id="f4">
+    <div class="row"><span class="rk r1">1</span><span class="nm">Albert Loaiza</span><span class="pt">12</span><span class="wl g">4-0-0</span></div>
+    <div class="row"><span class="rk r2">2</span><span class="nm">Ivan Sepulveda</span><span class="pt">10</span><span class="wl g">3-0-1</span></div>
+    <div class="row"><span class="rk r3">3</span><span class="nm">Santiago Ramos</span><span class="pt">9</span><span class="wl g">3-1-0</span></div>
+    <div class="row"><span class="rk">4</span><span class="nm">Ivan Quiroga</span><span class="pt">7</span><span class="wl">2-1-1</span></div>
+    <div class="row"><span class="rk">5</span><span class="nm">Yesid Soacha</span><span class="pt">7</span><span class="wl">2-1-1</span></div>
+    <div class="row"><span class="rk">6</span><span class="nm">Balalaika Laika</span><span class="pt">7</span><span class="wl">2-1-1</span></div>
+    <div class="row"><span class="rk">7</span><span class="nm">Miguel Bello</span><span class="pt">6</span><span class="wl">2-2-0</span></div>
+    <div class="row"><span class="rk">8</span><span class="nm">Esteban Zuleta</span><span class="pt">6</span><span class="wl">2-2-0</span></div>
+    <div class="row"><span class="rk">9</span><span class="nm">Camilo Mora</span><span class="pt">6</span><span class="wl">2-2-0</span></div>
+    <div class="row"><span class="rk">10</span><span class="nm">Samuel Urueta</span><span class="pt">6</span><span class="wl">2-2-0</span></div>
+    <div class="row"><span class="rk">11</span><span class="nm">Felipe Parra</span><span class="pt">3</span><span class="wl">1-3-0</span></div>
+    <div class="row me"><span class="rk">12</span><span class="nm">Christian Dav...</span><span class="pt">3</span><span class="wl">1-3-0</span></div>
+    <div class="row"><span class="rk">13</span><span class="nm">Juan Lozada 💀</span><span class="pt">3</span><span class="wl">1-2-0</span></div>
+    <div class="row"><span class="rk">14</span><span class="nm">Sebastian Abello</span><span class="pt">3</span><span class="wl">1-3-0</span></div>
+    <div class="row"><span class="rk">15</span><span class="nm">Roosevelt Bla...</span><span class="pt">3</span><span class="wl">1-3-0</span></div>
+    <div class="row"><span class="rk">16</span><span class="nm">Nubia Prada</span><span class="pt">3</span><span class="wl">1-3-0</span></div>
   </div>
 </div>
 
 <!-- ===== MARZO ===== -->
-<div id="marzo" class="page">
-  <div class="month-header" onclick="toggleMonth('m-mar26')">
-    <span class="month-title">📅 Mar 26</span><span class="month-stats">R4 · 14p · Christian: 12° (1-3-0, 3pts)</span>
-    <span class="chevron" id="chev-mar26">▼</span>
+<div id="ma" class="pg">
+  <div class="mh" onclick="tm('m1')"><span class="mt">📅 Mar 5</span><span class="ms">R4 · 12p · Christian: 8° · 2-2-0</span><span class="ch" id="cm1">▼</span></div>
+  <div class="mb" id="m1">
+    <div class="row"><span class="rk r1">1</span><span class="nm">Ivan Sepulveda</span><span class="pt">10</span><span class="wl g">3-0-1</span></div>
+    <div class="row"><span class="rk r2">2</span><span class="nm">Albert Loaiza</span><span class="pt">9</span><span class="wl g">3-1-0</span></div>
+    <div class="row"><span class="rk r3">3</span><span class="nm">Diego Ardila</span><span class="pt">9</span><span class="wl g">3-1-0</span></div>
+    <div class="row"><span class="rk">4</span><span class="nm">Ivan Quiroga</span><span class="pt">7</span><span class="wl">2-1-1</span></div>
+    <div class="row"><span class="rk">5</span><span class="nm">Santiago Ramos</span><span class="pt">6</span><span class="wl">2-2-0</span></div>
+    <div class="row"><span class="rk">6</span><span class="nm">Balalaika Laika</span><span class="pt">6</span><span class="wl">2-2-0</span></div>
+    <div class="row"><span class="rk">7</span><span class="nm">Mateo Diaz</span><span class="pt">6</span><span class="wl">2-2-0</span></div>
+    <div class="row me"><span class="rk">8</span><span class="nm">Christian Dav...</span><span class="pt">6</span><span class="wl">2-2-0</span></div>
+    <div class="row"><span class="rk">9</span><span class="nm">Yesid Soacha</span><span class="pt">6</span><span class="wl">2-2-0</span></div>
+    <div class="row"><span class="rk">10</span><span class="nm">Samuel Urueta</span><span class="pt">3</span><span class="wl">1-3-0</span></div>
+    <div class="row"><span class="rk">11</span><span class="nm">Felipe Hurtado</span><span class="pt">3</span><span class="wl">1-3-0</span></div>
+    <div class="row"><span class="rk">12</span><span class="nm">Angel Rodríguez</span><span class="pt r">0</span><span class="wl r">0-4-0</span></div>
   </div>
-  <div class="month-body" id="m-mar26">
-    <div class="table-wrap"><table>
-      <thead><tr><th>#</th><th>Jugador</th><th>Pts</th><th>W-L-D</th><th>OMW%</th><th>GW%</th></tr></thead>
-      <tbody>
-        <tr><td class="rank r1">1</td><td>Andrés Higuera</td><td class="pts">10</td><td class="win">3-0-1</td><td>56.2%</td><td>87.5%</td></tr>
-        <tr><td class="rank r2">2</td><td>Albert Loaiza</td><td class="pts">10</td><td class="win">3-0-1</td><td>56.2%</td><td>70.0%</td></tr>
-        <tr><td class="rank r3">3</td><td>Samuel Urueta</td><td class="pts">9</td><td class="win">3-1-0</td><td>64.6%</td><td>62.5%</td></tr>
-        <tr><td class="rank">4</td><td>Esteban Zuleta</td><td class="pts">9</td><td class="win">3-1-0</td><td>56.2%</td><td>63.6%</td></tr>
-        <tr><td class="rank">5</td><td>Roosevelt Bla...</td><td class="pts">7</td><td>2-1-1</td><td>52.1%</td><td>50.0%</td></tr>
-        <tr><td class="rank">6</td><td>Ivan Javier sep...</td><td class="pts">7</td><td>2-1-1</td><td>43.8%</td><td>50.0%</td></tr>
-        <tr><td class="rank">7</td><td>Angel Rodríguez</td><td class="pts">6</td><td>2-2-0</td><td>60.4%</td><td>55.6%</td></tr>
-        <tr><td class="rank">8</td><td>Camilo Arango</td><td class="pts">6</td><td>2-2-0</td><td>56.2%</td><td>44.4%</td></tr>
-        <tr><td class="rank">9</td><td>Felipe Parra</td><td class="pts">6</td><td>2-2-0</td><td>54.2%</td><td>50.0%</td></tr>
-        <tr><td class="rank">10</td><td>Kbra Espacial</td><td class="pts">3</td><td>1-3-0</td><td>56.2%</td><td>40.0%</td></tr>
-        <tr><td class="rank">11</td><td>Alejandro Anto...</td><td class="pts">3</td><td>1-3-0</td><td>54.2%</td><td>45.5%</td></tr>
-        <tr class="me"><td class="rank">12</td><td>Christian Dav...</td><td class="pts">3</td><td>1-3-0</td><td>43.8%</td><td>33.3%</td></tr>
-        <tr><td class="rank">13</td><td>Yesid Soacha</td><td class="pts">1</td><td>0-3-1</td><td>56.2%</td><td>33.3%</td></tr>
-        <tr><td class="rank">14</td><td>Sebastian Abello</td><td class="pts">1</td><td>0-3-1</td><td>39.6%</td><td>33.3%</td></tr>
-      </tbody>
-    </table></div>
+
+  <div class="mh" onclick="tm('m2')"><span class="mt">📅 Mar 12</span><span class="ms">R4 · 12p · Christian: no participó</span><span class="ch" id="cm2">▼</span></div>
+  <div class="mb" id="m2">
+    <div class="row"><span class="rk r1">1</span><span class="nm">Santiago Ramos</span><span class="pt">9</span><span class="wl g">3-1-0</span></div>
+    <div class="row"><span class="rk r2">2</span><span class="nm">Albert Loaiza</span><span class="pt">9</span><span class="wl g">3-1-0</span></div>
+    <div class="row"><span class="rk r3">3</span><span class="nm">Ivan Sepulveda</span><span class="pt">9</span><span class="wl g">3-1-0</span></div>
+    <div class="row"><span class="rk">4</span><span class="nm">Balalaika Laika</span><span class="pt">8</span><span class="wl">2-0-2</span></div>
+    <div class="row"><span class="rk">5</span><span class="nm">Sebastian Abello</span><span class="pt">6</span><span class="wl">2-2-0</span></div>
+    <div class="row"><span class="rk">6</span><span class="nm">Brayan Celis</span><span class="pt">6</span><span class="wl">2-2-0</span></div>
+    <div class="row"><span class="rk">7</span><span class="nm">Felipe Hurtado</span><span class="pt">6</span><span class="wl">2-2-0</span></div>
+    <div class="row"><span class="rk">8</span><span class="nm">Ivan Quiroga</span><span class="pt">5</span><span class="wl">1-1-2</span></div>
+    <div class="row"><span class="rk">9</span><span class="nm">Marcos Molina</span><span class="pt">4</span><span class="wl">1-2-1</span></div>
+    <div class="row"><span class="rk">10</span><span class="nm">Yesid Soacha</span><span class="pt">4</span><span class="wl">1-2-1</span></div>
+    <div class="row"><span class="rk">11</span><span class="nm">Samuel Urueta</span><span class="pt">3</span><span class="wl">1-3-0</span></div>
+    <div class="row"><span class="rk">12</span><span class="nm">Camilo Arango</span><span class="pt r">0</span><span class="wl r">0-4-0</span></div>
   </div>
-  <div class="month-header" onclick="toggleMonth('m-mar19')">
-    <span class="month-title">📅 Mar 19</span><span class="month-stats">R4 · 10p · Christian: 10° (0-4-0, 0pts)</span>
-    <span class="chevron" id="chev-mar19">▼</span>
+
+  <div class="mh" onclick="tm('m3')"><span class="mt">📅 Mar 19</span><span class="ms">R4 · 10p · Christian: 10° · 0-4-0</span><span class="ch" id="cm3">▼</span></div>
+  <div class="mb" id="m3">
+    <div class="row"><span class="rk r1">1</span><span class="nm">Santiago Jimen...</span><span class="pt">10</span><span class="wl g">3-0-1</span></div>
+    <div class="row"><span class="rk r2">2</span><span class="nm">Ivan Quiroga</span><span class="pt">9</span><span class="wl g">3-1-0</span></div>
+    <div class="row"><span class="rk r3">3</span><span class="nm">Albert Loaiza</span><span class="pt">7</span><span class="wl">2-1-1</span></div>
+    <div class="row"><span class="rk">4</span><span class="nm">Felipe Parra</span><span class="pt">7</span><span class="wl">2-1-1</span></div>
+    <div class="row"><span class="rk">5</span><span class="nm">Sebastian Abello</span><span class="pt">6</span><span class="wl">2-2-0</span></div>
+    <div class="row"><span class="rk">6</span><span class="nm">Ivan Sepulveda</span><span class="pt">6</span><span class="wl">2-2-0</span></div>
+    <div class="row"><span class="rk">7</span><span class="nm">Yesid Soacha</span><span class="pt">6</span><span class="wl">2-2-0</span></div>
+    <div class="row"><span class="rk">8</span><span class="nm">Angel Rodríguez</span><span class="pt">4</span><span class="wl">1-2-1</span></div>
+    <div class="row"><span class="rk">9</span><span class="nm">Esteban Zuleta</span><span class="pt">3</span><span class="wl">1-3-0</span></div>
+    <div class="row me"><span class="rk">10</span><span class="nm">Christian Dav...</span><span class="pt r">0</span><span class="wl r">0-4-0</span></div>
   </div>
-  <div class="month-body" id="m-mar19">
-    <div class="table-wrap"><table>
-      <thead><tr><th>#</th><th>Jugador</th><th>Pts</th><th>W-L-D</th><th>OMW%</th><th>GW%</th></tr></thead>
-      <tbody>
-        <tr><td class="rank r1">1</td><td>Santiago Jimen...</td><td class="pts">10</td><td class="win">3-0-1</td><td>47.9%</td><td>77.8%</td></tr>
-        <tr><td class="rank r2">2</td><td>Ivan Quiroga</td><td class="pts">9</td><td class="win">3-1-0</td><td>43.8%</td><td>70.0%</td></tr>
-        <tr><td class="rank r3">3</td><td>Albert Loaiza</td><td class="pts">7</td><td>2-1-1</td><td>66.7%</td><td>60.0%</td></tr>
-        <tr><td class="rank">4</td><td>Felipe Parra</td><td class="pts">7</td><td>2-1-1</td><td>39.6%</td><td>60.0%</td></tr>
-        <tr><td class="rank">5</td><td>Sebastian Abello</td><td class="pts">6</td><td>2-2-0</td><td>60.4%</td><td>50.0%</td></tr>
-        <tr><td class="rank">6</td><td>Ivan Javier sep...</td><td class="pts">6</td><td>2-2-0</td><td>45.8%</td><td>50.0%</td></tr>
-        <tr><td class="rank">7</td><td>Yesid Soacha</td><td class="pts">6</td><td>2-2-0</td><td>43.8%</td><td>42.9%</td></tr>
-        <tr><td class="rank">8</td><td>Angel Rodríguez</td><td class="pts">4</td><td>1-2-1</td><td>60.4%</td><td>40.0%</td></tr>
-        <tr><td class="rank">9</td><td>Esteban Zuleta</td><td class="pts">3</td><td>1-3-0</td><td>58.3%</td><td>33.3%</td></tr>
-        <tr class="me"><td class="rank">10</td><td>Christian Dav...</td><td class="pts">0</td><td>0-4-0</td><td>58.3%</td><td>33.3%</td></tr>
-      </tbody>
-    </table></div>
-  </div>
-  <div class="month-header" onclick="toggleMonth('m-mar12')">
-    <span class="month-title">📅 Mar 12</span><span class="month-stats">R4 · 12p · Christian: no participó</span>
-    <span class="chevron" id="chev-mar12">▼</span>
-  </div>
-  <div class="month-body" id="m-mar12">
-    <div class="table-wrap"><table>
-      <thead><tr><th>#</th><th>Jugador</th><th>Pts</th><th>W-L-D</th><th>OMW%</th><th>GW%</th></tr></thead>
-      <tbody>
-        <tr><td class="rank r1">1</td><td>Santiago Ram...</td><td class="pts">9</td><td class="win">3-1-0</td><td>62.5%</td><td>66%</td></tr>
-        <tr><td class="rank r2">2</td><td>Albert Loaiza</td><td class="pts">9</td><td class="win">3-1-0</td><td>52.1%</td><td>70%</td></tr>
-        <tr><td class="rank r3">3</td><td>Ivan Javier sep...</td><td class="pts">9</td><td class="win">3-1-0</td><td>52.1%</td><td>66%</td></tr>
-        <tr><td class="rank">4</td><td>Balalaika Laika</td><td class="pts">8</td><td>2-0-2</td><td>35.4%</td><td>66%</td></tr>
-        <tr><td class="rank">5</td><td>Sebastian Abello</td><td class="pts">6</td><td>2-2-0</td><td>64.6%</td><td>44%</td></tr>
-        <tr><td class="rank">6</td><td>Bryan Celis</td><td class="pts">6</td><td>2-2-0</td><td>60.4%</td><td>45%</td></tr>
-        <tr><td class="rank">7</td><td>Felipe Hurtado</td><td class="pts">6</td><td>2-2-0</td><td>47.9%</td><td>55%</td></tr>
-        <tr><td class="rank">8</td><td>Ivan Quiroga</td><td class="pts">5</td><td>1-1-2</td><td>45.8%</td><td>55%</td></tr>
-        <tr><td class="rank">9</td><td>Marcos Molina</td><td class="pts">4</td><td>1-2-1</td><td>47.9%</td><td>44%</td></tr>
-        <tr><td class="rank">10</td><td>Yesid Soacha</td><td class="pts">4</td><td>1-2-1</td><td>43.8%</td><td>37%</td></tr>
-        <tr><td class="rank">11</td><td>Samuel Urueta</td><td class="pts">3</td><td>1-3-0</td><td>62.5%</td><td>33%</td></tr>
-        <tr><td class="rank">12</td><td>Camilo Arango</td><td class="pts">0</td><td>0-4-0</td><td>41.7%</td><td>33%</td></tr>
-      </tbody>
-    </table></div>
-  </div>
-  <div class="month-header" onclick="toggleMonth('m-mar5')">
-    <span class="month-title">📅 Mar 5</span><span class="month-stats">R4 · 12p · Christian: 8° (2-2-0, 6pts)</span>
-    <span class="chevron" id="chev-mar5">▼</span>
-  </div>
-  <div class="month-body" id="m-mar5">
-    <div class="table-wrap"><table>
-      <thead><tr><th>#</th><th>Jugador</th><th>Pts</th><th>W-L-D</th><th>OMW%</th><th>GW%</th></tr></thead>
-      <tbody>
-        <tr><td class="rank r1">1</td><td>Ivan Javier sep...</td><td class="pts">10</td><td class="win">3-0-1</td><td>64.6%</td><td>87.5%</td></tr>
-        <tr><td class="rank r2">2</td><td>Albert Loaiza</td><td class="pts">9</td><td class="win">3-1-0</td><td>56.2%</td><td>60.0%</td></tr>
-        <tr><td class="rank r3">3</td><td>Diego Ardila</td><td class="pts">9</td><td class="win">3-1-0</td><td>50.0%</td><td>60.0%</td></tr>
-        <tr><td class="rank">4</td><td>Ivan Quiroga</td><td class="pts">7</td><td>2-1-1</td><td>60.4%</td><td>62.5%</td></tr>
-        <tr><td class="rank">5</td><td>Santiago Ramo...</td><td class="pts">6</td><td>2-2-0</td><td>62.5%</td><td>55.6%</td></tr>
-        <tr><td class="rank">6</td><td>Balalaika Laika</td><td class="pts">6</td><td>2-2-0</td><td>56.2%</td><td>40.0%</td></tr>
-        <tr><td class="rank">7</td><td>Mateo Diaz</td><td class="pts">6</td><td>2-2-0</td><td>45.8%</td><td>60.0%</td></tr>
-        <tr class="me"><td class="rank">8</td><td>Christian Dav...</td><td class="pts">6</td><td>2-2-0</td><td>45.8%</td><td>44.4%</td></tr>
-        <tr><td class="rank">9</td><td>Yesid Soacha</td><td class="pts">6</td><td>2-2-0</td><td>45.8%</td><td>44.4%</td></tr>
-        <tr><td class="rank">10</td><td>Samuel Urueta</td><td class="pts">3</td><td>1-3-0</td><td>58.3%</td><td>40.0%</td></tr>
-        <tr><td class="rank">11</td><td>Felipe Hurtado</td><td class="pts">3</td><td>1-3-0</td><td>54.2%</td><td>33.3%</td></tr>
-        <tr><td class="rank">12</td><td>Angel Rodríguez</td><td class="pts">0</td><td>0-4-0</td><td>41.7%</td><td>33.3%</td></tr>
-      </tbody>
-    </table></div>
+
+  <div class="mh" onclick="tm('m4')"><span class="mt">📅 Mar 26</span><span class="ms">R4 · 14p · Christian: 12° · 1-3-0</span><span class="ch" id="cm4">▼</span></div>
+  <div class="mb" id="m4">
+    <div class="row"><span class="rk r1">1</span><span class="nm">Andrés Higuera</span><span class="pt">10</span><span class="wl g">3-0-1</span></div>
+    <div class="row"><span class="rk r2">2</span><span class="nm">Albert Loaiza</span><span class="pt">10</span><span class="wl g">3-0-1</span></div>
+    <div class="row"><span class="rk r3">3</span><span class="nm">Samuel Urueta</span><span class="pt">9</span><span class="wl g">3-1-0</span></div>
+    <div class="row"><span class="rk">4</span><span class="nm">Esteban Zuleta</span><span class="pt">9</span><span class="wl g">3-1-0</span></div>
+    <div class="row"><span class="rk">5</span><span class="nm">Roosevelt Bla...</span><span class="pt">7</span><span class="wl">2-1-1</span></div>
+    <div class="row"><span class="rk">6</span><span class="nm">Ivan Sepulveda</span><span class="pt">7</span><span class="wl">2-1-1</span></div>
+    <div class="row"><span class="rk">7</span><span class="nm">Angel Rodríguez</span><span class="pt">6</span><span class="wl">2-2-0</span></div>
+    <div class="row"><span class="rk">8</span><span class="nm">Camilo Arango</span><span class="pt">6</span><span class="wl">2-2-0</span></div>
+    <div class="row"><span class="rk">9</span><span class="nm">Felipe Parra</span><span class="pt">6</span><span class="wl">2-2-0</span></div>
+    <div class="row"><span class="rk">10</span><span class="nm">Kbra Espacial</span><span class="pt">3</span><span class="wl">1-3-0</span></div>
+    <div class="row"><span class="rk">11</span><span class="nm">Alejandro Anto...</span><span class="pt">3</span><span class="wl">1-3-0</span></div>
+    <div class="row me"><span class="rk">12</span><span class="nm">Christian Dav...</span><span class="pt">3</span><span class="wl">1-3-0</span></div>
+    <div class="row"><span class="rk">13</span><span class="nm">Yesid Soacha</span><span class="pt">1</span><span class="wl">0-3-1</span></div>
+    <div class="row"><span class="rk">14</span><span class="nm">Sebastian Abello</span><span class="pt">1</span><span class="wl">0-3-1</span></div>
   </div>
 </div>
 
 <!-- ===== ABRIL ===== -->
-<div id="abril" class="page">
-  <div class="month-header" onclick="toggleMonth('m-abr16')">
-    <span class="month-title">📅 Abr 16</span><span class="month-stats">R4 · 16p · Christian: 14° (1-3-0, 3pts)</span>
-    <span class="chevron" id="chev-abr16">▼</span>
-  </div>
-  <div class="month-body" id="m-abr16">
-    <div class="table-wrap"><table>
-      <thead><tr><th>#</th><th>Jugador</th><th>Pts</th><th>W-L-D</th><th>OMW%</th><th>GW%</th></tr></thead>
-      <tbody>
-        <tr><td class="rank r1">1</td><td>Angel Rodríguez</td><td class="pts">10</td><td class="win">3-0-1</td><td>60.4%</td><td>87.5%</td></tr>
-        <tr><td class="rank r2">2</td><td>Albert Loaiza</td><td class="pts">10</td><td class="win">3-0-1</td><td>45.8%</td><td>77.8%</td></tr>
-        <tr><td class="rank r3">3</td><td>Esteban Zuleta</td><td class="pts">9</td><td class="win">3-1-0</td><td>50.0%</td><td>54.5%</td></tr>
-        <tr><td class="rank">4</td><td>Andrés Higuera</td><td class="pts">9</td><td class="win">3-1-0</td><td>47.9%</td><td>75.0%</td></tr>
-        <tr><td class="rank">5</td><td>Santiago Ramo...</td><td class="pts">7</td><td>2-1-1</td><td>72.9%</td><td>55.6%</td></tr>
-        <tr><td class="rank">6</td><td>Camilo Arango</td><td class="pts">7</td><td>2-1-1</td><td>62.5%</td><td>54.5%</td></tr>
-        <tr><td class="rank">7</td><td>Sergio Buitrago</td><td class="pts">6</td><td>2-2-0</td><td>54.2%</td><td>57.1%</td></tr>
-        <tr><td class="rank">8</td><td>Henry Beltran</td><td class="pts">6</td><td>2-2-0</td><td>54.2%</td><td>55.6%</td></tr>
-        <tr><td class="rank">9</td><td>Cristhian Mac...</td><td class="pts">6</td><td>2-2-0</td><td>54.2%</td><td>55.6%</td></tr>
-        <tr><td class="rank">10</td><td>Yesid Soacha</td><td class="pts">6</td><td>2-2-0</td><td>47.9%</td><td>50.0%</td></tr>
-        <tr><td class="rank">11</td><td>Felipe Parra</td><td class="pts">6</td><td>2-2-0</td><td>37.5%</td><td>57.1%</td></tr>
-        <tr><td class="rank">12</td><td>José Alvarado</td><td class="pts">3</td><td>1-3-0</td><td>54.2%</td><td>33.3%</td></tr>
-        <tr><td class="rank">13</td><td>Emy Lyo</td><td class="pts">3</td><td>1-3-0</td><td>52.1%</td><td>33.3%</td></tr>
-        <tr class="me"><td class="rank">14</td><td>Christian Do...</td><td class="pts">3</td><td>1-3-0</td><td>52.1%</td><td>33.3%</td></tr>
-        <tr><td class="rank">15</td><td>Sebastian Abello</td><td class="pts">1</td><td>0-3-1</td><td>54.2%</td><td>33.3%</td></tr>
-        <tr><td class="rank">16</td><td>bob dol</td><td class="pts">1</td><td>0-3-1</td><td>50.0%</td><td>33.3%</td></tr>
-      </tbody>
-    </table></div>
+<div id="ab" class="pg">
+  <div class="mh" onclick="tm('a3')"><span class="mt">📅 Abr 1</span><span class="ms">R3 · 8p · Christian: 8° · 0-3-0</span><span class="ch" id="ca3">▼</span></div>
+  <div class="mb" id="a3">
+    <div class="row"><span class="rk r1">1</span><span class="nm">Andrés Higuera</span><span class="pt">9</span><span class="wl g">3-0-0</span></div>
+    <div class="row"><span class="rk r2">2</span><span class="nm">Germán Gabri...</span><span class="pt">6</span><span class="wl g">2-1-0</span></div>
+    <div class="row"><span class="rk r3">3</span><span class="nm">Camilo Arango</span><span class="pt">6</span><span class="wl g">2-1-0</span></div>
+    <div class="row"><span class="rk">4</span><span class="nm">Esteban Zuleta</span><span class="pt">6</span><span class="wl g">2-1-0</span></div>
+    <div class="row"><span class="rk">5</span><span class="nm">Sergio Buitrago</span><span class="pt">3</span><span class="wl">1-2-0</span></div>
+    <div class="row"><span class="rk">6</span><span class="nm">Ivan Sepulveda</span><span class="pt">3</span><span class="wl">1-2-0</span></div>
+    <div class="row"><span class="rk">7</span><span class="nm">Mateo Diaz</span><span class="pt">3</span><span class="wl">1-2-0</span></div>
+    <div class="row me"><span class="rk">8</span><span class="nm">Christian Dav...</span><span class="pt r">0</span><span class="wl r">0-3-0</span></div>
   </div>
 
-  <div class="month-header" onclick="toggleMonth('m-abr9')">
-    <span class="month-title">📅 Abr 9</span><span class="month-stats">R4 · 16p · Christian: 16° (0-4-0, 0pts)</span>
-    <span class="chevron" id="chev-abr9">▼</span>
-  </div>
-  <div class="month-body" id="m-abr9">
-    <div class="table-wrap"><table>
-      <thead><tr><th>#</th><th>Jugador</th><th>Pts</th><th>W-L-D</th><th>OMW%</th><th>GW%</th></tr></thead>
-      <tbody>
-        <tr><td class="rank r1">1</td><td>Samuel Urueta</td><td class="pts">10</td><td class="win">3-0-1</td><td>70.8%</td><td>63.6%</td></tr>
-        <tr><td class="rank r2">2</td><td>Sebastian Abello</td><td class="pts">10</td><td class="win">3-0-1</td><td>54.2%</td><td>63.6%</td></tr>
-        <tr><td class="rank r3">3</td><td>Andrés Higuera</td><td class="pts">9</td><td class="win">3-1-0</td><td>64.6%</td><td>63.6%</td></tr>
-        <tr><td class="rank">4</td><td>Alejandro Anto...</td><td class="pts">9</td><td class="win">3-1-0</td><td>52.1%</td><td>54.5%</td></tr>
-        <tr><td class="rank">5</td><td>Ivan Javier sep...</td><td class="pts">9</td><td class="win">3-1-0</td><td>50.0%</td><td>70.0%</td></tr>
-        <tr><td class="rank">6</td><td>Cristhian Mac...</td><td class="pts">6</td><td>2-2-0</td><td>64.6%</td><td>50.0%</td></tr>
-        <tr><td class="rank">7</td><td>Yesid Soacha</td><td class="pts">6</td><td>2-2-0</td><td>62.5%</td><td>50.0%</td></tr>
-        <tr><td class="rank">8</td><td>Santiago Ramo...</td><td class="pts">6</td><td>2-2-0</td><td>54.2%</td><td>50.0%</td></tr>
-        <tr><td class="rank">9</td><td>Camilo Arango</td><td class="pts">6</td><td>2-2-0</td><td>47.9%</td><td>60.0%</td></tr>
-        <tr><td class="rank">10</td><td>Felipe Hurtado</td><td class="pts">6</td><td>2-2-0</td><td>47.9%</td><td>54.5%</td></tr>
-        <tr><td class="rank">11</td><td>Esteban Zuleta</td><td class="pts">6</td><td>2-2-0</td><td>37.5%</td><td>55.6%</td></tr>
-        <tr><td class="rank">12</td><td>Roosevelt Bla...</td><td class="pts">3</td><td>1-3-0</td><td>54.2%</td><td>45.5%</td></tr>
-        <tr><td class="rank">13</td><td>Balalaika Laika</td><td class="pts">3</td><td>1-3-0</td><td>52.1%</td><td>41.7%</td></tr>
-        <tr><td class="rank">14</td><td>Ivan Quiroga</td><td class="pts">3</td><td>1-3-0</td><td>52.1%</td><td>33.3%</td></tr>
-        <tr><td class="rank">15</td><td>Albert Loaiza</td><td class="pts">3</td><td>1-3-0</td><td>47.9%</td><td>36.4%</td></tr>
-        <tr class="me"><td class="rank">16</td><td>Christian Dav...</td><td class="pts">0</td><td>0-4-0</td><td>45.8%</td><td>33.3%</td></tr>
-      </tbody>
-    </table></div>
+  <div class="mh" onclick="tm('a2')"><span class="mt">📅 Abr 9</span><span class="ms">R4 · 16p · Christian: 16° · 0-4-0</span><span class="ch" id="ca2">▼</span></div>
+  <div class="mb" id="a2">
+    <div class="row"><span class="rk r1">1</span><span class="nm">Samuel Urueta</span><span class="pt">10</span><span class="wl g">3-0-1</span></div>
+    <div class="row"><span class="rk r2">2</span><span class="nm">Sebastian Abello</span><span class="pt">10</span><span class="wl g">3-0-1</span></div>
+    <div class="row"><span class="rk r3">3</span><span class="nm">Andrés Higuera</span><span class="pt">9</span><span class="wl g">3-1-0</span></div>
+    <div class="row"><span class="rk">4</span><span class="nm">Alejandro Anto...</span><span class="pt">9</span><span class="wl g">3-1-0</span></div>
+    <div class="row"><span class="rk">5</span><span class="nm">Ivan Sepulveda</span><span class="pt">9</span><span class="wl g">3-1-0</span></div>
+    <div class="row"><span class="rk">6</span><span class="nm">Cristhian Mac...</span><span class="pt">6</span><span class="wl">2-2-0</span></div>
+    <div class="row"><span class="rk">7</span><span class="nm">Yesid Soacha</span><span class="pt">6</span><span class="wl">2-2-0</span></div>
+    <div class="row"><span class="rk">8</span><span class="nm">Santiago Ramos</span><span class="pt">6</span><span class="wl">2-2-0</span></div>
+    <div class="row"><span class="rk">9</span><span class="nm">Camilo Arango</span><span class="pt">6</span><span class="wl">2-2-0</span></div>
+    <div class="row"><span class="rk">10</span><span class="nm">Felipe Hurtado</span><span class="pt">6</span><span class="wl">2-2-0</span></div>
+    <div class="row"><span class="rk">11</span><span class="nm">Esteban Zuleta</span><span class="pt">6</span><span class="wl">2-2-0</span></div>
+    <div class="row"><span class="rk">12</span><span class="nm">Roosevelt Bla...</span><span class="pt">3</span><span class="wl">1-3-0</span></div>
+    <div class="row"><span class="rk">13</span><span class="nm">Balalaika Laika</span><span class="pt">3</span><span class="wl">1-3-0</span></div>
+    <div class="row"><span class="rk">14</span><span class="nm">Ivan Quiroga</span><span class="pt">3</span><span class="wl">1-3-0</span></div>
+    <div class="row"><span class="rk">15</span><span class="nm">Albert Loaiza</span><span class="pt">3</span><span class="wl">1-3-0</span></div>
+    <div class="row me"><span class="rk">16</span><span class="nm">Christian Dav...</span><span class="pt r">0</span><span class="wl r">0-4-0</span></div>
   </div>
 
-  <div class="month-header" onclick="toggleMonth('m-abr1')">
-    <span class="month-title">📅 Abr 1</span><span class="month-stats">R3 · 8p · Christian: 8° (0-3-0, 0pts)</span>
-    <span class="chevron" id="chev-abr1">▼</span>
+  <div class="mh" onclick="tm('a1')"><span class="mt">📅 Abr 16</span><span class="ms">R4 · 16p · Christian: 14° · 1-3-0</span><span class="ch" id="ca1">▼</span></div>
+  <div class="mb" id="a1">
+    <div class="row"><span class="rk r1">1</span><span class="nm">Angel Rodríguez</span><span class="pt">10</span><span class="wl g">3-0-1</span></div>
+    <div class="row"><span class="rk r2">2</span><span class="nm">Albert Loaiza</span><span class="pt">10</span><span class="wl g">3-0-1</span></div>
+    <div class="row"><span class="rk r3">3</span><span class="nm">Esteban Zuleta</span><span class="pt">9</span><span class="wl g">3-1-0</span></div>
+    <div class="row"><span class="rk">4</span><span class="nm">Andrés Higuera</span><span class="pt">9</span><span class="wl g">3-1-0</span></div>
+    <div class="row"><span class="rk">5</span><span class="nm">Santiago Ramos</span><span class="pt">7</span><span class="wl">2-1-1</span></div>
+    <div class="row"><span class="rk">6</span><span class="nm">Camilo Arango</span><span class="pt">7</span><span class="wl">2-1-1</span></div>
+    <div class="row"><span class="rk">7</span><span class="nm">Sergio Buitrago</span><span class="pt">6</span><span class="wl">2-2-0</span></div>
+    <div class="row"><span class="rk">8</span><span class="nm">Henry Beltran</span><span class="pt">6</span><span class="wl">2-2-0</span></div>
+    <div class="row"><span class="rk">9</span><span class="nm">Cristhian Mac...</span><span class="pt">6</span><span class="wl">2-2-0</span></div>
+    <div class="row"><span class="rk">10</span><span class="nm">Yesid Soacha</span><span class="pt">6</span><span class="wl">2-2-0</span></div>
+    <div class="row"><span class="rk">11</span><span class="nm">Felipe Parra</span><span class="pt">6</span><span class="wl">2-2-0</span></div>
+    <div class="row"><span class="rk">12</span><span class="nm">José Alvarado</span><span class="pt">3</span><span class="wl">1-3-0</span></div>
+    <div class="row"><span class="rk">13</span><span class="nm">Emy Lyo</span><span class="pt">3</span><span class="wl">1-3-0</span></div>
+    <div class="row me"><span class="rk">14</span><span class="nm">Christian Dav...</span><span class="pt">3</span><span class="wl">1-3-0</span></div>
+    <div class="row"><span class="rk">15</span><span class="nm">Sebastian Abello</span><span class="pt">1</span><span class="wl">0-3-1</span></div>
+    <div class="row"><span class="rk">16</span><span class="nm">bob dol</span><span class="pt">1</span><span class="wl">0-3-1</span></div>
   </div>
-  <div class="month-body" id="m-abr1">
-    <div class="table-wrap"><table>
-      <thead><tr><th>#</th><th>Jugador</th><th>Pts</th><th>W-L-D</th><th>OMW%</th><th>GW%</th></tr></thead>
-      <tbody>
-        <tr><td class="rank r1">1</td><td>Andrés Higuera</td><td class="pts">9</td><td class="win">3-0-0</td><td>44.4%</td><td>75.0%</td></tr>
-        <tr><td class="rank r2">2</td><td>Germán Gabri...</td><td class="pts">6</td><td class="win">2-1-0</td><td>66.7%</td><td>57.1%</td></tr>
-        <tr><td class="rank r3">3</td><td>Camilo Arango</td><td class="pts">6</td><td class="win">2-1-0</td><td>44.4%</td><td>62.5%</td></tr>
-        <tr><td class="rank">4</td><td>Esteban Zuleta</td><td class="pts">6</td><td class="win">2-1-0</td><td>33.3%</td><td>57.1%</td></tr>
-        <tr><td class="rank">5</td><td>Sergio Buitrago</td><td class="pts">3</td><td>1-2-0</td><td>77.8%</td><td>42.9%</td></tr>
-        <tr><td class="rank">6</td><td>Ivan Javier sep...</td><td class="pts">3</td><td>1-2-0</td><td>66.7%</td><td>44.4%</td></tr>
-        <tr><td class="rank">7</td><td>Mateo Diaz</td><td class="pts">3</td><td>1-2-0</td><td>44.4%</td><td>42.9%</td></tr>
-        <tr class="me"><td class="rank">8</td><td>Christian Dav...</td><td class="pts">0</td><td>0-3-0</td><td>55.6%</td><td>33.3%</td></tr>
-      </tbody>
-    </table></div>
+
+  <div class="mh" onclick="tm('a05')"><span class="mt">📅 Abr 23</span><span class="ms">R4 · 14p · Christian: 12° · 1-3-0 · 3pts</span><span class="ch" id="ca05">▼</span></div>
+  <div class="mb" id="a05">
+    <div class="row"><span class="rk r1">1</span><span class="nm">Albert Loaiza</span><span class="pt">12</span><span class="wl g">4-0-0</span></div>
+    <div class="row"><span class="rk r2">2</span><span class="nm">Felipe Parra</span><span class="pt">9</span><span class="wl g">3-1-0</span></div>
+    <div class="row"><span class="rk r3">3</span><span class="nm">Angel Rodríguez</span><span class="pt">9</span><span class="wl g">3-1-0</span></div>
+    <div class="row"><span class="rk">4</span><span class="nm">José Alvarado</span><span class="pt">9</span><span class="wl g">3-1-0</span></div>
+    <div class="row"><span class="rk">5</span><span class="nm">Emy Lyo</span><span class="pt">7</span><span class="wl">2-1-1</span></div>
+    <div class="row"><span class="rk">6</span><span class="nm">Yesid Soacha</span><span class="pt">7</span><span class="wl">2-1-1</span></div>
+    <div class="row"><span class="rk">7</span><span class="nm">Santiago Ramos</span><span class="pt">6</span><span class="wl">2-2-0</span></div>
+    <div class="row"><span class="rk">8</span><span class="nm">Andrés Higuera</span><span class="pt">6</span><span class="wl">2-2-0</span></div>
+    <div class="row"><span class="rk">9</span><span class="nm">Darth Lotus</span><span class="pt">6</span><span class="wl">2-2-0</span></div>
+    <div class="row"><span class="rk">10</span><span class="nm">Esteban Zuleta</span><span class="pt">3</span><span class="wl">1-3-0</span></div>
+    <div class="row"><span class="rk">11</span><span class="nm">Samuel Urueta</span><span class="pt">3</span><span class="wl">1-3-0</span></div>
+    <div class="row me"><span class="rk">12</span><span class="nm">Christian Do...</span><span class="pt">3</span><span class="wl">1-3-0</span></div>
+    <div class="row"><span class="rk">13</span><span class="nm">Cristhian Mac...</span><span class="pt">3</span><span class="wl">1-3-0</span></div>
+    <div class="row"><span class="rk">14</span><span class="nm">Monarca Pepo</span><span class="pt r">0</span><span class="wl r">0-4-0</span></div>
+  </div>
+
+  <div class="mh" onclick="tm('a0')"><span class="mt">📅 Abr 30</span><span class="ms">R5 · 19p · Christian: 19° · 1-4-0 · 3pts</span><span class="ch" id="ca0">▼</span></div>
+  <div class="mb" id="a0">
+    <div class="row"><span class="rk r1">1</span><span class="nm">Fredy Castro</span><span class="pt g">15</span><span class="wl g">5-0-0</span></div>
+    <div class="row"><span class="rk r2">2</span><span class="nm">Santiago Ramos</span><span class="pt">12</span><span class="wl g">4-1-0</span></div>
+    <div class="row"><span class="rk r3">3</span><span class="nm">Albert Loaiza</span><span class="pt">12</span><span class="wl g">4-1-0</span></div>
+    <div class="row"><span class="rk">4</span><span class="nm">Ivan Quiroga</span><span class="pt">10</span><span class="wl">3-1-1</span></div>
+    <div class="row"><span class="rk">5</span><span class="nm">Camilo Mora</span><span class="pt">9</span><span class="wl">3-2-0</span></div>
+    <div class="row"><span class="rk">6</span><span class="nm">Ivan Sepulveda</span><span class="pt">9</span><span class="wl">3-2-0</span></div>
+    <div class="row"><span class="rk">7</span><span class="nm">Sebastian Abello</span><span class="pt">9</span><span class="wl">3-2-0</span></div>
+    <div class="row"><span class="rk">8</span><span class="nm">Angel Rodríguez</span><span class="pt">9</span><span class="wl">3-2-0</span></div>
+    <div class="row"><span class="rk">9</span><span class="nm">Juan Lozada 💀</span><span class="pt">9</span><span class="wl">3-2-0</span></div>
+    <div class="row"><span class="rk">10</span><span class="nm">Yesid Soacha</span><span class="pt">7</span><span class="wl">2-1-2</span></div>
+    <div class="row"><span class="rk">11</span><span class="nm">Monarca Pepo</span><span class="pt">7</span><span class="wl">2-2-1</span></div>
+    <div class="row"><span class="rk">12</span><span class="nm">Cristhian Mac...</span><span class="pt">7</span><span class="wl">2-2-1</span></div>
+    <div class="row"><span class="rk">13</span><span class="nm">Cristhian Cami...</span><span class="pt">6</span><span class="wl">2-3-0</span></div>
+    <div class="row"><span class="rk">14</span><span class="nm">Felipe Parra</span><span class="pt">6</span><span class="wl">2-3-0</span></div>
+    <div class="row"><span class="rk">15</span><span class="nm">duvancillo .</span><span class="pt">6</span><span class="wl">2-3-0</span></div>
+    <div class="row"><span class="rk">16</span><span class="nm">Esteban Zuleta</span><span class="pt">4</span><span class="wl">1-3-1</span></div>
+    <div class="row"><span class="rk">17</span><span class="nm">Esteban Galin...</span><span class="pt">3</span><span class="wl">1-4-0</span></div>
+    <div class="row"><span class="rk">18</span><span class="nm">Balalaika Laika</span><span class="pt">3</span><span class="wl">1-4-0</span></div>
+    <div class="row me"><span class="rk">19</span><span class="nm">Christian Do...</span><span class="pt">3</span><span class="wl r">1-4-0</span></div>
+  </div>
+</div>
+
+<!-- ===== MAYO ===== -->
+<div id="my" class="pg">
+  <div class="mh" onclick="tm('my0')"><span class="mt">📅 May 7</span><span class="ms">R4 · 10p · Christian: 10° · 0-3-1 · 1pt</span><span class="ch" id="cmy0">▼</span></div>
+  <div class="mb" id="my0">
+    <div class="row"><span class="rk r1">1</span><span class="nm">Albert Loaiza</span><span class="pt">10</span><span class="wl g">3-0-1</span></div>
+    <div class="row"><span class="rk r2">2</span><span class="nm">Santiago Ramos</span><span class="pt">9</span><span class="wl g">3-1-0</span></div>
+    <div class="row"><span class="rk r3">3</span><span class="nm">Camilo Mora</span><span class="pt">8</span><span class="wl">2-0-2</span></div>
+    <div class="row"><span class="rk">4</span><span class="nm">Angel Rodríguez</span><span class="pt">7</span><span class="wl">2-1-1</span></div>
+    <div class="row"><span class="rk">5</span><span class="nm">Sebastian Abello</span><span class="pt">6</span><span class="wl">2-2-0</span></div>
+    <div class="row"><span class="rk">6</span><span class="nm">Yesid Soacha</span><span class="pt">6</span><span class="wl">2-2-0</span></div>
+    <div class="row"><span class="rk">7</span><span class="nm">Monarca Pepo</span><span class="pt">4</span><span class="wl">1-2-1</span></div>
+    <div class="row"><span class="rk">8</span><span class="nm">Cristhian Mac...</span><span class="pt">3</span><span class="wl">1-3-0</span></div>
+    <div class="row"><span class="rk">9</span><span class="nm">Esteban Zuleta</span><span class="pt">2</span><span class="wl">0-2-2</span></div>
+    <div class="row me"><span class="rk">10</span><span class="nm">Christian Do...</span><span class="pt r">1</span><span class="wl r">0-3-1</span></div>
+  </div>
+
+  <div class="mh" onclick="tm('my1')"><span class="mt">📅 May 14</span><span class="ms">R4 · 12p · Christian: 3° · 2-1-1 · 7pts 🏆</span><span class="ch" id="cmy1">▼</span></div>
+  <div class="mb" id="my1">
+    <div class="row"><span class="rk r1">1</span><span class="nm">Santiago Ramos</span><span class="pt">12</span><span class="wl g">4-0-0</span></div>
+    <div class="row"><span class="rk r2">2</span><span class="nm">Angel Rodríguez</span><span class="pt">10</span><span class="wl g">3-0-1</span></div>
+    <div class="row me"><span class="rk r3">3</span><span class="nm">Christian Do...</span><span class="pt g">7</span><span class="wl g">2-1-1</span></div>
+    <div class="row"><span class="rk">4</span><span class="nm">Felipe Parra</span><span class="pt">7</span><span class="wl">2-1-1</span></div>
+    <div class="row"><span class="rk">5</span><span class="nm">Yesid Soacha</span><span class="pt">6</span><span class="wl">2-2-0</span></div>
+    <div class="row"><span class="rk">6</span><span class="nm">Albert Loaiza</span><span class="pt">6</span><span class="wl">2-2-0</span></div>
+    <div class="row"><span class="rk">7</span><span class="nm">Esteban Zuleta</span><span class="pt">6</span><span class="wl">2-2-0</span></div>
+    <div class="row"><span class="rk">8</span><span class="nm">Cristhian Mac...</span><span class="pt">6</span><span class="wl">2-2-0</span></div>
+    <div class="row"><span class="rk">9</span><span class="nm">Esteban Galin...</span><span class="pt">4</span><span class="wl">1-2-1</span></div>
+    <div class="row"><span class="rk">10</span><span class="nm">Ivan Sepulveda</span><span class="pt">3</span><span class="wl">1-3-0</span></div>
+    <div class="row"><span class="rk">11</span><span class="nm">Sebastian Abello</span><span class="pt">3</span><span class="wl">1-3-0</span></div>
+    <div class="row"><span class="rk">12</span><span class="nm">Fabian Martinez</span><span class="pt r">0</span><span class="wl r">0-4-0</span></div>
+  </div>
+
+  <div class="mh" onclick="tm('my2')"><span class="mt">📅 May 21</span><span class="ms">R4 · 12p · Christian: 12° · 0-4-0 · 0pts</span><span class="ch" id="cmy2">▼</span></div>
+  <div class="mb" id="my2">
+    <div class="row"><span class="rk r1">1</span><span class="nm">Juan Lozada 💀</span><span class="pt">10</span><span class="wl g">3-0-1</span></div>
+    <div class="row"><span class="rk r2">2</span><span class="nm">Yesid Soacha</span><span class="pt">10</span><span class="wl g">3-0-1</span></div>
+    <div class="row"><span class="rk r3">3</span><span class="nm">Sebastian Abello</span><span class="pt">9</span><span class="wl g">3-1-0</span></div>
+    <div class="row"><span class="rk">4</span><span class="nm">Esteban Zuleta</span><span class="pt">9</span><span class="wl g">3-1-0</span></div>
+    <div class="row"><span class="rk">5</span><span class="nm">Ivan Sepulveda</span><span class="pt">6</span><span class="wl">2-2-0</span></div>
+    <div class="row"><span class="rk">6</span><span class="nm">Albert Loaiza</span><span class="pt">6</span><span class="wl">2-2-0</span></div>
+    <div class="row"><span class="rk">7</span><span class="nm">Santiago Ramos</span><span class="pt">6</span><span class="wl">2-2-0</span></div>
+    <div class="row"><span class="rk">8</span><span class="nm">Emy Lyo</span><span class="pt">4</span><span class="wl">1-2-1</span></div>
+    <div class="row"><span class="rk">9</span><span class="nm">Angel Rodríguez</span><span class="pt">4</span><span class="wl">1-2-1</span></div>
+    <div class="row"><span class="rk">10</span><span class="nm">Roosevelt Bla...</span><span class="pt">3</span><span class="wl">1-3-0</span></div>
+    <div class="row"><span class="rk">11</span><span class="nm">Samuel Urueta</span><span class="pt">2</span><span class="wl">0-2-2</span></div>
+    <div class="row me"><span class="rk">12</span><span class="nm">Christian Do...</span><span class="pt r">0</span><span class="wl r">0-4-0</span></div>
   </div>
 </div>
 
 <script>
-function showPage(id, btn) {
-  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
-  document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
-  document.getElementById(id).classList.add('active');
-  btn.classList.add('active');
+function sp(id,btn){
+  document.querySelectorAll('.pg').forEach(p=>p.classList.remove('on'));
+  document.querySelectorAll('.nb').forEach(b=>b.classList.remove('on'));
+  document.getElementById(id).classList.add('on');
+  btn.classList.add('on');
 }
-function toggleMonth(id) {
-  const body = document.getElementById(id);
-  const key = id.replace('m-','');
-  const chev = document.getElementById('chev-' + key);
-  const isOpen = body.classList.contains('open');
-  body.classList.toggle('open', !isOpen);
-  if(chev) chev.style.transform = isOpen ? '' : 'rotate(180deg)';
+function tm(id){
+  const b=document.getElementById(id);
+  if(!b)return;
+  const c=document.getElementById('c'+id);
+  const o=b.classList.contains('op');
+  b.classList.toggle('op',!o);
+  if(c)c.style.transform=o?'':'rotate(180deg)';
 }
 </script>
 </body>
