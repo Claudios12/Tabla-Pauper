@@ -369,10 +369,6 @@
             <option value="🐂⚪🔴 Torito Boros 🏆">🐂⚪🔴 Torito Boros 🏆</option>
             <option value="🐧🔵🔴 Pingüinos Izzet">🐧🔵🔴 Pingüinos Izzet</option>
             <option value="🧙⚫🔴 Magitos Rakdos">🧙⚫🔴 Magitos Rakdos</option>
-            <option value="🔵⚫🔴 Grixis Affinity / Control">🔵⚫🔴 Grixis Affinity / Control</option>
-            <option value="🌿⚪🔴 Naya Synthesizer">🌿⚪🔴 Naya Synthesizer</option>
-            <option value="⚫🟢 Golgari Gardens">⚫🟢 Golgari Gardens</option>
-            <option value="⚪🔵 Caw-Gates">⚪🔵 Caw-Gates</option>
             <option value="other">➕ Otro mazo (escribir)...</option>
           </select>
         </div>
@@ -382,11 +378,6 @@
           <input type="text" id="scan-custom-deck" placeholder="Ej: 🟢⚪ Bogles" class="input-ctrl">
         </div>
 
-        <!-- OPTIONAL RANK INPUT -->
-        <div class="field-group">
-          <label for="scan-rank">🏆 Posición de Christian (Opcional si viene en captura)</label>
-          <input type="text" id="scan-rank" placeholder="Ej: 3° o 8° (dejar vacío para auto-detectar)" class="input-ctrl">
-        </div>
 
         <!-- SCREENSHOT FILE INPUT -->
         <div class="field-group">
@@ -400,11 +391,9 @@
           <input type="checkbox" id="reto-mode" style="accent-color:#f97316; width:18px; height:18px; cursor:pointer;">
         </div>
 
-        <div class="field-group" style="flex-direction:row; align-items:center; gap:8px; margin:8px 0 12px 0;">
-          <input type="checkbox" id="same-day-continuation" style="accent-color:#f97316; width:16px; height:16px; cursor:pointer;">
-          <label for="same-day-continuation" style="margin:0; cursor:pointer; font-size:0.75rem;">
-            🔗 Continuación de la misma fecha (Parte 2 de captura)
-          </label>
+        <div class="field-group" style="flex-direction:row; align-items:center; justify-content:space-between; margin:10px 0 12px 0;">
+          <label for="same-day-continuation" style="margin:0; cursor:pointer;">🔗 Continuación de fecha (Parte 2 captura)</label>
+          <input type="checkbox" id="same-day-continuation" style="accent-color:#f97316; width:18px; height:18px; cursor:pointer;">
         </div>
 
         <!-- STATUS -->
