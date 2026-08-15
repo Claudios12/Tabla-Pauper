@@ -1,491 +1,1053 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1">
-<title>Pauper League 2025</title>
-<style>
-*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
-body{background:#0d1117;color:#e6edf3;font-family:-apple-system,sans-serif;padding:12px;max-width:500px;margin:0 auto}
-h1{color:#f97316;font-size:1.1rem;text-align:center;text-transform:uppercase;letter-spacing:1px;padding:10px 0 3px}
-.sub{text-align:center;color:#8b949e;font-size:.72rem;margin-bottom:14px}
-/* NAV */
-.nav{display:flex;gap:5px;justify-content:center;flex-wrap:wrap;margin-bottom:14px}
-.nb{padding:8px 14px;border-radius:8px;border:1px solid #30363d;background:#161b22;color:#8b949e;font-size:.8rem;font-weight:600;cursor:pointer}
-.nb.on{background:#f97316;color:#fff;border-color:#f97316}
-.pg{display:none}.pg.on{display:block}
-/* ROWS */
-.row{display:flex;align-items:center;gap:8px;padding:10px 12px;background:#161b22;border-radius:9px;margin-bottom:4px}
-.row.me{background:#1e1408;border:1px solid #f97316}
-.rk{width:24px;text-align:center;font-weight:700;font-size:.82rem;color:#8b949e;flex-shrink:0}
-.r1{color:#ffd700}.r2{color:#c0c0c0}.r3{color:#cd7f32}
-.nm{flex:1;font-size:.9rem}
-.row.me .nm{color:#f97316;font-weight:700}
-.pt{font-weight:700;font-size:.95rem}
-.row.me .pt{color:#f97316}
-.wl{font-size:.73rem;color:#8b949e;min-width:52px;text-align:right}
-.omw{font-size:.7rem;color:#58a6ff;min-width:46px;text-align:right}
-/* COLORS */
-.g{color:#3fb950}.r{color:#f85149}.b{color:#58a6ff}.p{color:#bc8cff}
-/* CARDS */
-.cards{display:grid;grid-template-columns:repeat(3,1fr);gap:7px;margin-bottom:14px}
-.card{background:#161b22;border:1px solid #30363d;border-radius:9px;padding:10px 6px;text-align:center}
-.cv{font-size:1.2rem;font-weight:700;color:#f97316}
-.cl{font-size:.6rem;color:#8b949e;margin-top:3px;text-transform:uppercase;letter-spacing:.4px}
-/* SECTION LABEL */
-.sl{color:#f97316;font-size:.7rem;font-weight:700;text-transform:uppercase;letter-spacing:.8px;margin:13px 0 7px}
-/* COLLAPSIBLE */
-.mh{display:flex;align-items:center;gap:8px;padding:11px 13px;background:#161b22;border-radius:9px;margin-bottom:4px;cursor:pointer;user-select:none}
-.mh:active{background:#1e1408}
-.mt{font-weight:700;color:#f97316;font-size:.9rem}
-.ms{color:#8b949e;font-size:.72rem;flex:1;text-align:right}
-.ch{color:#8b949e;font-size:.78rem;flex-shrink:0;transition:transform .2s}
-.mb{display:none;margin-bottom:6px}.mb.op{display:block}
-/* NOTE */
-.note{color:#8b949e;font-size:.67rem;text-align:center;margin-top:9px;padding:0 6px}
-</style>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <meta name="theme-color" content="#0d1117">
+  <meta name="background-color" content="#0d1117">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="Pauper">
+  <meta name="description" content="Pauper League Tracker - Tablas, Estadísticas y Escáner OCR de Torneos">
+  <title>Pauper League Tracker</title>
+  <link rel="manifest" href="./manifest.json">
+  <link rel="icon" type="image/png" sizes="192x192" href="./icon-192.png">
+  <link rel="icon" type="image/png" sizes="512x512" href="./icon-512.png">
+  <link rel="apple-touch-icon" href="./icon-192.png">
+  <link rel="apple-touch-icon" sizes="192x192" href="./icon-192.png">
+  <link rel="apple-touch-icon" sizes="512x512" href="./icon-512.png">
+  <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
+  <style>
+    * {
+      box-sizing: border-box;
+      -webkit-tap-highlight-color: transparent;
+    }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      background: #0d1117;
+      color: #e6edf3;
+      margin: 0;
+      padding: 0 0 calc(75px + env(safe-area-inset-bottom, 0px)) 0;
+      min-height: 100vh;
+    }
+    header {
+      background: #161b22;
+      border-bottom: 1px solid #30363d;
+      padding: max(12px, env(safe-area-inset-top, 12px)) 16px 12px 16px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      position: sticky;
+      top: 0;
+      z-index: 10;
+    }
+    h1 {
+      font-size: 1.1rem;
+      margin: 0;
+      color: #f97316;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .container {
+      padding: 12px;
+      max-width: 500px;
+      margin: 0 auto;
+    }
+    .pg {
+      display: none;
+    }
+    .pg.on {
+      display: block;
+    }
+    .row {
+      display: flex;
+      align-items: center;
+      background: #161b22;
+      border: 1px solid #30363d;
+      border-radius: 9px;
+      padding: 10px 12px;
+      margin-bottom: 4px;
+      gap: 8px;
+    }
+    .row.me {
+      border: 1px solid #f97316;
+      background: #1e1408;
+    }
+    .row.me .nm {
+      font-weight: 700;
+      color: #f97316;
+    }
+    .rk {
+      font-weight: 700;
+      min-width: 28px;
+      color: #8b949e;
+      font-size: 0.9rem;
+    }
+    .rk.r1 { color: #ffd700; }
+    .rk.r2 { color: #c0c0c0; }
+    .rk.r3 { color: #cd7f32; }
+    .nm {
+      flex: 1;
+      color: #e6edf3;
+      font-size: 0.9rem;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .pt {
+      font-weight: 700;
+      color: #e6edf3;
+      font-size: 0.95rem;
+      min-width: 32px;
+      text-align: right;
+    }
+    .wl {
+      font-size: 0.73rem;
+      color: #8b949e;
+      min-width: 52px;
+      text-align: right;
+    }
+    .cutline {
+      text-align: center;
+      color: #f97316;
+      font-size: 0.75rem;
+      font-weight: 600;
+      margin: 12px 0;
+      letter-spacing: 0.5px;
+      border-top: 1px dashed #f9731640;
+      border-bottom: 1px dashed #f9731640;
+      padding: 4px 0;
+    }
+    .cards {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 7px;
+      margin-bottom: 14px;
+    }
+    .card {
+      background: #161b22;
+      border: 1px solid #30363d;
+      border-radius: 9px;
+      padding: 10px 6px;
+      text-align: center;
+    }
+    .cv {
+      font-size: 1.2rem;
+      font-weight: 700;
+      color: #f97316;
+    }
+    .cl {
+      font-size: 0.6rem;
+      color: #8b949e;
+      text-transform: uppercase;
+      letter-spacing: 0.4px;
+      margin-top: 2px;
+    }
+    .sl {
+      font-size: 0.7rem;
+      font-weight: 700;
+      color: #f97316;
+      text-transform: uppercase;
+      margin: 16px 0 8px 0;
+      letter-spacing: 0.8px;
+    }
+    .note {
+      font-size: 0.67rem;
+      color: #8b949e;
+      text-align: center;
+      margin-top: 9px;
+      margin-bottom: 8px;
+    }
+    .mh {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      background: #161b22;
+      border: 1px solid #30363d;
+      border-radius: 9px;
+      padding: 11px 13px;
+      cursor: pointer;
+      margin-bottom: 4px;
+      gap: 8px;
+    }
+    .mh:active {
+      background: #1e1408;
+    }
+    .mt {
+      font-size: 0.9rem;
+      font-weight: 700;
+      color: #f97316;
+    }
+    .ms {
+      font-size: 0.72rem;
+      color: #8b949e;
+      flex: 1;
+      text-align: right;
+    }
+    .ch {
+      font-size: 0.78rem;
+      color: #8b949e;
+      transition: transform 0.2s;
+    }
+    .mb {
+      display: none;
+      margin-bottom: 12px;
+    }
+    .season-tag {
+      font-size: 0.6rem;
+      color: #8b949e;
+      background: #21262d;
+      padding: 2px 8px;
+      border-radius: 6px;
+    }
+    nav {
+      position: fixed;
+      bottom: 0;
+      left: 0;
+      width: 100%;
+      background: #161b22;
+      border-top: 1px solid #30363d;
+      display: flex;
+      justify-content: space-around;
+      padding: 8px 0 max(8px, env(safe-area-inset-bottom, 8px)) 0;
+      z-index: 100;
+    }
+    .nb {
+      background: none;
+      border: none;
+      color: #8b949e;
+      font-size: 0.8rem;
+      font-weight: 600;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 2px;
+      cursor: pointer;
+      padding: 8px 14px;
+      border-radius: 8px;
+    }
+    .nb.on {
+      color: #fff;
+      background: #f97316;
+      font-weight: 600;
+    }
+  </style>
 </head>
 <body>
-<h1>⚔️ Pauper League 2025</h1>
-<p class="sub">Christian Donado · actualizado May 21</p>
 
-<div class="nav">
-  <button class="nb on" onclick="sp('g',this)">🏆 General</button>
-  <button class="nb" onclick="sp('st',this)">📊 Stats</button>
-  <button class="nb" onclick="sp('en',this)">Enero</button>
-  <button class="nb" onclick="sp('fe',this)">Febrero</button>
-  <button class="nb" onclick="sp('ma',this)">Marzo</button>
-  <button class="nb" onclick="sp('ab',this)">Abril</button>
-  <button class="nb" onclick="sp('my',this)">Mayo</button>
+  <header>
+    <h1>📜 Pauper League</h1>
+    <span style="font-size: 0.72rem; color: #8b949e;">Temporada 2026-2</span>
+  </header>
+
+  <div class="container">
+
+    <!-- GENERAL -->
+    <div id="g" class="pg on">
+      <div id="general-list"></div>
+    </div>
+
+    <!-- STATS TAB -->
+    <div id="st" class="pg">
+      <div class="cards">
+        <div class="card"><div class="cv" id="stat-tourneys">0</div><div class="cl">Torneos</div></div>
+        <div class="card"><div class="cv" id="stat-pts">0</div><div class="cl">Pts acum</div></div>
+        <div class="card"><div class="cv" id="stat-rank">--</div><div class="cl">Ranking</div></div>
+        <div class="card"><div class="cv" id="stat-best-rank">--</div><div class="cl">Mejor pos</div></div>
+        <div class="card"><div class="cv" id="stat-record">0-0-0</div><div class="cl">W-L-D</div></div>
+        <div class="card"><div class="cv" id="stat-remaining">0</div><div class="cl">Fechas rest</div></div>
+      </div>
+      <p class="note">Solo liga 2026-2. Para acumulado histórico revisa 📜 Histórico.</p>
+      
+      <div class="sl">📊 Por Mazo (2026-2)</div>
+      <div id="current-season-decks"></div>
+
+      <div class="sl">📋 Torneos jugados (2026-2)</div>
+      <div id="current-season-tournaments"></div>
+    </div>
+
+<!-- SCANNER TAB -->
+<div id="scanner" class="pg">
+  <div class="card" style="background:#161b22; border-color:#30363d; text-align:center; padding:16px;">
+    <div class="sl" style="margin-top:0;">📸 Registrar Nueva Fecha</div>
+    <p class="note" style="margin:2px 0 12px 0;">Sube la captura de pantalla para registrar la fecha.</p>
+    
+    <!-- DATE PICKER -->
+    <div class="field-group">
+      <label for="scan-date">Fecha del Torneo</label>
+      <input type="date" id="scan-date" class="input-ctrl">
+    </div>
+
+    <!-- DECK PICKER -->
+    <div class="field-group">
+      <label for="scan-deck">Mazo Jugado</label>
+      <select id="scan-deck" class="input-ctrl">
+        <option value="🐂⚪🔴 Torito Boros 🏆">🐂⚪🔴 Torito Boros 🏆</option>
+        <option value="🐧🔵🔴 Pingüinos Izzet">🐧🔵🔴 Pingüinos Izzet</option>
+        <option value="🧙⚫🔴 Magitos Rakdos">🧙⚫🔴 Magitos Rakdos</option>
+      </select>
+    </div>
+
+    <div class="field-group">
+      <label for="screenshot-file">Captura de pantalla</label>
+      <input type="file" id="screenshot-file" accept="image/*" class="input-ctrl">
+    </div>
+
+    <div class="field-group" style="flex-direction:row; align-items:center; justify-content:space-between; margin:12px 0;">
+  <label for="reto-mode" style="margin:0; cursor:pointer;">🎯 Sumar Puntos de RETO Mensual</label>
+  <input type="checkbox" id="reto-mode" style="accent-color:#f97316; width:18px; height:18px; cursor:pointer;">
 </div>
 
-<!-- ===== GENERAL ===== -->
-<div id="g" class="pg on">
-  <p class="note" style="margin-bottom:8px">Puntos acumulados · pendiente recalibración oficial mayo · Top 8 → Jun 25</p>
-  <div class="row"><span class="rk r1">1</span><span class="nm">Albert Loaiza</span><span class="pt">178</span></div>
-  <div class="row"><span class="rk r2">2</span><span class="nm">Santiago Ramos</span><span class="pt">166</span></div>
-  <div class="row"><span class="rk r3">3</span><span class="nm">Yesid Soacha</span><span class="pt">137</span></div>
-  <div class="row"><span class="rk">4</span><span class="nm">Esteban Zuleta</span><span class="pt">113</span></div>
-  <div class="row"><span class="rk">5</span><span class="nm">Ivan Sepulveda</span><span class="pt">104</span></div>
-  <div class="row"><span class="rk">6</span><span class="nm">Sebastian Abello</span><span class="pt">101</span></div>
-  <div class="row"><span class="rk">7</span><span class="nm">Angel Rodriguez</span><span class="pt">97</span></div>
-  <div class="row"><span class="rk">8</span><span class="nm">Ivan Quiroga</span><span class="pt">88</span></div>
-  <div class="row"><span class="rk">9</span><span class="nm">Samuel Urueta</span><span class="pt">82</span></div>
-  <div class="row"><span class="rk">10</span><span class="nm">Felipe Parra</span><span class="pt">69</span></div>
-  <div class="row me"><span class="rk">11</span><span class="nm">Christian Donado</span><span class="pt">67</span></div>
-  <div class="row"><span class="rk">12</span><span class="nm">Andres Higuera</span><span class="pt">58</span></div>
-  <div class="row"><span class="rk">13</span><span class="nm">Camilo Arango</span><span class="pt">57</span></div>
-  <div class="row"><span class="rk">14</span><span class="nm">Camilo Mora</span><span class="pt">54</span></div>
-  <div class="row"><span class="rk">15</span><span class="nm">Balalaika</span><span class="pt">51</span></div>
-  <div class="row"><span class="rk">16</span><span class="nm">Juan Lozada 💀</span><span class="pt">46</span></div>
-  <div class="row"><span class="rk">17</span><span class="nm">Santiago Jimenez</span><span class="pt">24</span></div>
-  <div class="row"><span class="rk">17</span><span class="nm">Roosevelt Blanco</span><span class="pt">24</span></div>
-  <div class="row"><span class="rk">17</span><span class="nm">Felipe Hurtado</span><span class="pt">24</span></div>
-  <div class="row"><span class="rk">20</span><span class="nm">Mateo Diaz</span><span class="pt">12</span></div>
-  <div class="row"><span class="rk">21</span><span class="nm">Brayan Celis</span><span class="pt">11</span></div>
-  <div class="row"><span class="rk">22</span><span class="nm">Ricardo Moreno</span><span class="pt">10</span></div>
+<div class="field-group" style="flex-direction:row; align-items:center; gap:8px; margin:10px 0;">
+  <input type="checkbox" id="same-day-continuation" style="accent-color:#f97316; width:16px; height:16px; cursor:pointer;">
+  <label for="same-day-continuation" style="margin:0; cursor:pointer;">
+    🔗 Continuación de la misma fecha (No duplicar torneo en historial)
+  </label>
 </div>
 
-<!-- ===== STATS ===== -->
-<div id="st" class="pg">
-  <div class="cards">
-    <div class="card"><div class="cv">20</div><div class="cl">Torneos</div></div>
-    <div class="card"><div class="cv">67</div><div class="cl">Pts acum</div></div>
-    <div class="card"><div class="cv">11°</div><div class="cl">Ranking</div></div>
-    <div class="card"><div class="cv">3°</div><div class="cl">Mejor pos</div></div>
-    <div class="card"><div class="cv">18-58-3</div><div class="cl">W-L-D</div></div>
-    <div class="card"><div class="cv">5</div><div class="cl">Jueves rest</div></div>
-  </div>
-  <div class="sl">📊 Por Mazo</div>
-  <div class="row"><span class="nm">🐧🔵🔴 Izzet</span><span class="wl">12T · 12-34-2</span><span class="pt g" style="font-size:.85rem;min-width:52px;text-align:right">3.2 p/T</span></div>
-  <div class="row"><span class="nm">🐂🔴⚪ Torito Boros</span><span class="wl">1T · 2-1-1</span><span class="pt g" style="font-size:.85rem;min-width:52px;text-align:right">7.0 p/T</span></div>
-  <div class="row"><span class="nm">🧙⚫🔴 Magitos</span><span class="wl">4T · 4-12</span><span class="pt" style="font-size:.85rem;min-width:52px;text-align:right">3.0 p/T</span></div>
-  <div class="sl">📋 Historial Completo</div>
-  <div class="row me"><span class="rk">7°</span><div style="flex:1"><div class="nm">9 Ene</div><div style="font-size:.68rem;color:#8b949e">🧙⚫🔴 Magitos</div></div><span class="pt">6</span><span class="wl">2-2-0</span></div>
-  <div class="row me"><span class="rk">10°</span><div style="flex:1"><div class="nm">16 Ene</div><div style="font-size:.68rem;color:#8b949e">🧙⚫🔴 Magitos</div></div><span class="pt r">0</span><span class="wl r">0-4-0</span></div>
-  <div class="row me"><span class="rk">14°</span><div style="flex:1"><div class="nm">23 Ene</div><div style="font-size:.68rem;color:#8b949e">🧙⚫🔴 Magitos</div></div><span class="pt r">0</span><span class="wl r">0-4-0</span></div>
-  <div class="row me"><span class="rk">9°</span><div style="flex:1"><div class="nm">30 Ene</div><div style="font-size:.68rem;color:#8b949e">🧙⚫🔴 Magitos</div></div><span class="pt">6</span><span class="wl">2-2-0</span></div>
-  <div class="row me"><span class="rk">3°</span><div style="flex:1"><div class="nm">5 Feb</div><div style="font-size:.68rem;color:#8b949e">🐧🔵🔴 Izzet</div></div><span class="pt g">6</span><span class="wl g">2-1-0</span></div>
-  <div class="row me"><span class="rk">11°</span><div style="flex:1"><div class="nm">12 Feb</div><div style="font-size:.68rem;color:#8b949e">🐧🔵🔴 Izzet</div></div><span class="pt">3</span><span class="wl">1-3-0</span></div>
-  <div class="row me"><span class="rk">8°</span><div style="flex:1"><div class="nm">19 Feb</div><div style="font-size:.68rem;color:#8b949e">🐧🔵🔴 Izzet</div></div><span class="pt">6</span><span class="wl">2-2-0</span></div>
-  <div class="row me"><span class="rk">12°</span><div style="flex:1"><div class="nm">26 Feb</div><div style="font-size:.68rem;color:#8b949e">🐧🔵🔴 Izzet</div></div><span class="pt">3</span><span class="wl">1-3-0</span></div>
-  <div class="row me"><span class="rk">8°</span><div style="flex:1"><div class="nm">5 Mar</div><div style="font-size:.68rem;color:#8b949e">🐧🔵🔴 Izzet</div></div><span class="pt">6</span><span class="wl">2-2-0</span></div>
-  <div class="row me"><span class="rk">—</span><div style="flex:1"><div class="nm">12 Mar</div><div style="font-size:.68rem;color:#444;font-style:italic">No participó</div></div><span class="pt" style="color:#333">—</span><span class="wl" style="color:#333">—</span></div>
-  <div class="row me"><span class="rk">10°</span><div style="flex:1"><div class="nm">19 Mar</div><div style="font-size:.68rem;color:#8b949e">🐧🔵🔴 Izzet</div></div><span class="pt r">0</span><span class="wl r">0-4-0</span></div>
-  <div class="row me"><span class="rk">12°</span><div style="flex:1"><div class="nm">26 Mar</div><div style="font-size:.68rem;color:#8b949e">🐧🔵🔴 Izzet</div></div><span class="pt">3</span><span class="wl">1-3-0</span></div>
-  <div class="row me"><span class="rk">8°</span><div style="flex:1"><div class="nm">1 Abr</div><div style="font-size:.68rem;color:#8b949e">🐧🔵⚫🔴 Grixis</div></div><span class="pt r">0</span><span class="wl r">0-3-0</span></div>
-  <div class="row me"><span class="rk">16°</span><div style="flex:1"><div class="nm">9 Abr</div><div style="font-size:.68rem;color:#8b949e">🐧🔵⚫🔴 Grixis</div></div><span class="pt r">0</span><span class="wl r">0-4-0</span></div>
-  <div class="row me"><span class="rk">12°</span><div style="flex:1"><div class="nm">23 Abr</div><div style="font-size:.68rem;color:#8b949e">🐧🔵🔴 Izzet</div></div><span class="pt">3</span><span class="wl">1-3-0</span></div>
-  <div class="row me"><span class="rk">10°</span><div style="flex:1"><div class="nm">7 May</div><div style="font-size:.68rem;color:#8b949e">🐧🔵🔴 Izzet</div></div><span class="pt r">1</span><span class="wl r">0-3-1</span></div>
-  <div class="row me"><span class="rk">3°</span><div style="flex:1"><div class="nm">14 May</div><div style="font-size:.68rem;color:#8b949e">🐂🔴⚪ Torito Boros</div></div><span class="pt g">7</span><span class="wl g">2-1-1</span></div>
-  <div class="row me"><span class="rk">—</span><div style="flex:1"><div class="nm">21 May</div><div style="font-size:.68rem;color:#444;font-style:italic">No participó</div></div><span class="pt" style="color:#333">—</span><span class="wl" style="color:#333">—</span></div>
+    <div id="scan-status" style="font-size:0.67rem; color:#f97316; margin-bottom:8px; min-height:16px;"></div>
 
+    <div class="field-group">
+      <label for="scan-input">Texto Escaneado / Verificación</label>
+      <textarea id="scan-input" placeholder="El texto leído aparecerá aquí..." class="input-ctrl" style="height:80px; resize:none;"></textarea>
+    </div>
+
+    <button onclick="processImageAndApply()" style="background:#f97316; color:#0d1117; border:none; width:100%; padding:10px; border-radius:8px; font-weight:700; font-size:0.8rem; cursor:pointer; margin-top:4px;">Leer y Aplicar</button>
+  </div>
+
+  <!-- RESET BUTTON FOR TESTING -->
+  <button onclick="resetAppData()" style="background:transparent; color:#ef4444; border:1px solid #ef4444; width:100%; padding:8px; border-radius:8px; font-weight:600; font-size:0.75rem; cursor:pointer; margin-top:10px;">🗑️ Resetear Datos (Modo Pruebas)</button>  
 </div>
 
-<!-- ===== ENERO ===== -->
-<div id="en" class="pg">
-  <div class="mh" onclick="tm('e1')"><span class="mt">📅 Ene 9</span><span class="ms">R4 · 10p · Christian: 7° · 2-2-0</span><span class="ch" id="ce1">▼</span></div>
-  <div class="mb" id="e1">
-    <div class="row"><span class="rk r1">1</span><span class="nm">Juan Lozada 💀</span><span class="pt">9</span><span class="wl g">3-1-0</span></div>
-    <div class="row"><span class="rk r2">2</span><span class="nm">Santiago Ramos</span><span class="pt">9</span><span class="wl g">3-1-0</span></div>
-    <div class="row"><span class="rk r3">3</span><span class="nm">Felipe Hurtado</span><span class="pt">9</span><span class="wl g">3-1-0</span></div>
-    <div class="row"><span class="rk">4</span><span class="nm">Germán Gabri...</span><span class="pt">7</span><span class="wl">2-1-1</span></div>
-    <div class="row"><span class="rk">5</span><span class="nm">Santiago Jimen...</span><span class="pt">6</span><span class="wl">2-2-0</span></div>
-    <div class="row"><span class="rk">6</span><span class="nm">Ivan Quiroga</span><span class="pt">6</span><span class="wl">2-2-0</span></div>
-    <div class="row me"><span class="rk">7</span><span class="nm">Christian Dav...</span><span class="pt">6</span><span class="wl">2-2-0</span></div>
-    <div class="row"><span class="rk">8</span><span class="nm">Yesid Soacha</span><span class="pt">4</span><span class="wl">1-2-1</span></div>
-    <div class="row"><span class="rk">9</span><span class="nm">Samuel Urueta</span><span class="pt">3</span><span class="wl">1-3-0</span></div>
-    <div class="row"><span class="rk">10</span><span class="nm">Ivan Javier sep...</span><span class="pt r">0</span><span class="wl r">0-4-0</span></div>
+    <!-- HISTÓRICO -->
+    <div id="hist" class="pg">
+      <p class="note" style="margin-bottom:8px">Acumulado de todas las temporadas · crece con cada torneo de 2026-2</p>
+      
+      <div class="cards">
+        <div class="card"><div class="cv">32</div><div class="cl">Torneos</div></div>
+        <div class="card"><div class="cv">127</div><div class="cl">Pts totales</div></div>
+        <div class="card"><div class="cv">3°</div><div class="cl">Mejor pos</div></div>
+        <div class="card"><div class="cv">36-96-5</div><div class="cl">W-L-D</div></div>
+      </div>
+
+      <div class="sl">📊 Por Mazo (histórico)</div>
+      <div id="historic-deck-stats"></div>
+
+      <div class="sl">🏆 Temporadas</div>
+      <div class="mh" onclick="tm('s1')">
+        <span class="mt">📅 2026-1</span>
+        <span class="ms">24 torneos · 87 pts · 12° final</span>
+        <span class="ch" id="cs1">▼</span>
+      </div>
+      <div class="mb" id="s1">
+        <p class="note" style="text-align:left; padding:8px 12px; background:#161b22; border-radius:9px; border:1px solid #30363d;">Cerrada Jun 18 2026. Mejor: 3° el 14 May con 🐂⚪🔴 Torito Boros. No clasificó Top 8.</p>
+      </div>
+
+      <div class="sl">📋 Historial completo</div>
+      <div id="historic-full-list"></div>
+    </div>
+
   </div>
 
-  <div class="mh" onclick="tm('e2')"><span class="mt">📅 Ene 16</span><span class="ms">R4 · 10p · Christian: 10° · 0-4-0</span><span class="ch" id="ce2">▼</span></div>
-  <div class="mb" id="e2">
-    <div class="row"><span class="rk r1">1</span><span class="nm">Santiago Ramos</span><span class="pt">9</span><span class="wl g">3-1-0</span></div>
-    <div class="row"><span class="rk r2">2</span><span class="nm">Esteban Zuleta</span><span class="pt">9</span><span class="wl g">3-1-0</span></div>
-    <div class="row"><span class="rk r3">3</span><span class="nm">Camilo Mora</span><span class="pt">9</span><span class="wl g">3-1-0</span></div>
-    <div class="row"><span class="rk">4</span><span class="nm">Ivan Quiroga</span><span class="pt">7</span><span class="wl">2-1-1</span></div>
-    <div class="row"><span class="rk">5</span><span class="nm">Yesid Soacha</span><span class="pt">7</span><span class="wl">2-1-1</span></div>
-    <div class="row"><span class="rk">6</span><span class="nm">Emy Lyo</span><span class="pt">6</span><span class="wl">2-2-0</span></div>
-    <div class="row"><span class="rk">7</span><span class="nm">Ricardo Moreno</span><span class="pt">5</span><span class="wl">1-1-2</span></div>
-    <div class="row"><span class="rk">8</span><span class="nm">Samuel Urueta</span><span class="pt">3</span><span class="wl">1-3-0</span></div>
-    <div class="row"><span class="rk">9</span><span class="nm">Felipe Parra</span><span class="pt">3</span><span class="wl">1-3-0</span></div>
-    <div class="row me"><span class="rk">10</span><span class="nm">Christian Dav...</span><span class="pt r">0</span><span class="wl r">0-4-0</span></div>
-  </div>
+  <!-- BOTTOM NAVIGATION -->
+  <nav>
+    <button class="nb on" onclick="sp('g',this)">📊 <span>General</span></button>
+    <button class="nb" onclick="sp('st',this)">📈 <span>Stats</span></button>
+    <button class="nb" onclick="sp('hist',this)">📜 <span>Histórico</span></button>
+    <button class="nb" onclick="sp('scanner',this)">📸 <span>Escáner</span></button>
+  </nav>
 
-  <div class="mh" onclick="tm('e3')"><span class="mt">📅 Ene 23</span><span class="ms">R4 · 14p · Christian: 14° · 0-4-0</span><span class="ch" id="ce3">▼</span></div>
-  <div class="mb" id="e3">
-    <div class="row"><span class="rk r1">1</span><span class="nm">Santiago Ramos</span><span class="pt">12</span><span class="wl g">4-0-0</span></div>
-    <div class="row"><span class="rk r2">2</span><span class="nm">Albert Loaiza</span><span class="pt">9</span><span class="wl g">3-1-0</span></div>
-    <div class="row"><span class="rk r3">3</span><span class="nm">Angel Rodríguez</span><span class="pt">7</span><span class="wl">2-1-1</span></div>
-    <div class="row"><span class="rk">4</span><span class="nm">Ivan Quiroga</span><span class="pt">7</span><span class="wl">2-1-1</span></div>
-    <div class="row"><span class="rk">5</span><span class="nm">Noah Herrera</span><span class="pt">7</span><span class="wl">2-1-1</span></div>
-    <div class="row"><span class="rk">6</span><span class="nm">Samuel Urueta</span><span class="pt">7</span><span class="wl">2-1-1</span></div>
-    <div class="row"><span class="rk">7</span><span class="nm">Sebastian Abello</span><span class="pt">6</span><span class="wl">2-2-0</span></div>
-    <div class="row"><span class="rk">8</span><span class="nm">Esteban Zuleta</span><span class="pt">6</span><span class="wl">2-2-0</span></div>
-    <div class="row"><span class="rk">9</span><span class="nm">Ricardo Moreno</span><span class="pt">5</span><span class="wl">1-1-2</span></div>
-    <div class="row"><span class="rk">10</span><span class="nm">Yesid Soacha</span><span class="pt">4</span><span class="wl">1-2-1</span></div>
-    <div class="row"><span class="rk">11</span><span class="nm">Rubén Darío M...</span><span class="pt">4</span><span class="wl">1-2-1</span></div>
-    <div class="row"><span class="rk">12</span><span class="nm">Ivan Sepulveda</span><span class="pt">3</span><span class="wl">1-3-0</span></div>
-    <div class="row"><span class="rk">13</span><span class="nm">Felipe Parra</span><span class="pt">3</span><span class="wl">1-3-0</span></div>
-    <div class="row me"><span class="rk">14</span><span class="nm">Christian Dav...</span><span class="pt r">0</span><span class="wl r">0-4-0</span></div>
-  </div>
+  <script>
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', () => {
+        navigator.serviceWorker.register('./sw.js')
+          .then(() => console.log('Service worker registered'))
+          .catch((error) => console.error('Service worker registration failed:', error));
+      });
+    }
+  </script>
 
-  <div class="mh" onclick="tm('e4')"><span class="mt">📅 Ene 30</span><span class="ms">R4 · 15p · Christian: 9° · 2-2-0</span><span class="ch" id="ce4">▼</span></div>
-  <div class="mb" id="e4">
-    <div class="row"><span class="rk r1">1</span><span class="nm">Santiago Ramos</span><span class="pt">12</span><span class="wl g">4-0-0</span></div>
-    <div class="row"><span class="rk r2">2</span><span class="nm">Angel Rodríguez</span><span class="pt">10</span><span class="wl g">3-0-1</span></div>
-    <div class="row"><span class="rk r3">3</span><span class="nm">Albert Loaiza</span><span class="pt">9</span><span class="wl g">3-1-0</span></div>
-    <div class="row"><span class="rk">4</span><span class="nm">Yesid Soacha</span><span class="pt">9</span><span class="wl g">3-1-0</span></div>
-    <div class="row"><span class="rk">5</span><span class="nm">Ivan Sepulveda</span><span class="pt">9</span><span class="wl g">3-1-0</span></div>
-    <div class="row"><span class="rk">6</span><span class="nm">Balalaika Laika</span><span class="pt">6</span><span class="wl">2-2-0</span></div>
-    <div class="row"><span class="rk">7</span><span class="nm">Ivan Quiroga</span><span class="pt">6</span><span class="wl">2-2-0</span></div>
-    <div class="row"><span class="rk">8</span><span class="nm">Camilo Mora</span><span class="pt">6</span><span class="wl">2-2-0</span></div>
-    <div class="row me"><span class="rk">9</span><span class="nm">Christian Dav...</span><span class="pt">6</span><span class="wl">2-2-0</span></div>
-    <div class="row"><span class="rk">10</span><span class="nm">Camilo Arango</span><span class="pt">6</span><span class="wl">2-2-0</span></div>
-    <div class="row"><span class="rk">11</span><span class="nm">Esteban Zuleta</span><span class="pt">6</span><span class="wl">2-2-0</span></div>
-    <div class="row"><span class="rk">12</span><span class="nm">Arturo Restrepo</span><span class="pt">3</span><span class="wl">1-3-0</span></div>
-    <div class="row"><span class="rk">13</span><span class="nm">Samuel Urueta</span><span class="pt">3</span><span class="wl">1-3-0</span></div>
-    <div class="row"><span class="rk">14</span><span class="nm">Sebastian Abello</span><span class="pt">3</span><span class="wl">1-3-0</span></div>
-    <div class="row"><span class="rk">15</span><span class="nm">Santiago Jimen...</span><span class="pt">1</span><span class="wl">0-3-1</span></div>
-  </div>
-</div>
+  <script>
+  const defaultPlayersData = [
+    { name: "Albert Loaiza", pts: 76 },
+    { name: "Andrés Higuera", pts: 71 },
+    { name: "Santiago Ramos", pts: 69 },
+    { name: "Fredy Castro", pts: 51 },
+    { name: "Angel Rodriguez", pts: 49 },
+    { name: "Yesid Soacha", pts: 49 },
+    { name: "Cristhian Machado", pts: 44 },
+    { name: "Camilo Mora", pts: 37 },
+    { name: "Christian Donado", pts: 37, isMe: true },
+    { name: "Samuel Urueta", pts: 36 },
+    { name: "Esteban Zuleta", pts: 29 },
+    { name: "Pablo Ramirez", pts: 28 },
+    { name: "Camilo Arango", pts: 28 },
+    { name: "Felipe Hurtado", pts: 27 },
+    { name: "Rubén Darío M...", pts: 26 },
+    { name: "Juan Lozada 💀", pts: 24 },
+    { name: "Ivan Sepulveda", pts: 19 },
+    { name: "Fernando Calvo", pts: 18 },
+    { name: "Germán Gabriel", pts: 12 },
+    { name: "Sebastian Guerrero", pts: 12 },
+    { name: "Alejandro R...", pts: 12 },
+    { name: "Henry Beltran", pts: 12 },
+    { name: "Ivan Quiroga", pts: 11 },
+    { name: "Roosevelt Blanco", pts: 11 },
+    { name: "Santiago Jimenez", pts: 10 },
+    { name: "Sebastian Abello", pts: 9 },
+    { name: "Noah Herrera", pts: 9 },
+    { name: "Sergio Andrés", pts: 9 },
+    { name: "Felipe Rangel", pts: 9 },
+    { name: "Mateo Diaz", pts: 9 },
+    { name: "Fabian Martinez", pts: 7 },
+    { name: "Alejandro Solano", pts: 6 },
+    { name: "Johan Gonzalez", pts: 6 },
+    { name: "Alejandro Anto", pts: 6 },
+    { name: "Rafaele Garcia", pts: 6 },
+    { name: "Santiago Gutierrez", pts: 6 },
+    { name: "Emy Lyo", pts: 4 },
+    { name: "Felipe Parra", pts: 4 },
+    { name: "Sebastiab Barr...", pts: 3 },
+    { name: "Juan Real", pts: 3 },
+    { name: "David De La Torre", pts: 3 },
+    { name: "Juan Bedoya", pts: 1 },
+    { name: "Andres Antolinez", pts: 1 }
+  ];
 
-<!-- ===== FEBRERO ===== -->
-<div id="fe" class="pg">
-  <div class="mh" onclick="tm('f1')"><span class="mt">📅 Feb 5</span><span class="ms">R3 · 8p · Christian: 3° · 2-1-0 🏆</span><span class="ch" id="cf1">▼</span></div>
-  <div class="mb" id="f1">
-    <div class="row"><span class="rk r1">1</span><span class="nm">Esteban Zuleta</span><span class="pt">9</span><span class="wl g">3-0-0</span></div>
-    <div class="row"><span class="rk r2">2</span><span class="nm">Ivan Quiroga</span><span class="pt">6</span><span class="wl g">2-1-0</span></div>
-    <div class="row me"><span class="rk r3">3</span><span class="nm">Christian Dav...</span><span class="pt g">6</span><span class="wl g">2-1-0</span></div>
-    <div class="row"><span class="rk">4</span><span class="nm">Santiago Ramos</span><span class="pt">5</span><span class="wl">1-0-2</span></div>
-    <div class="row"><span class="rk">5</span><span class="nm">Camilo Arango</span><span class="pt">4</span><span class="wl">1-1-1</span></div>
-    <div class="row"><span class="rk">6</span><span class="nm">Yesid Soacha</span><span class="pt">3</span><span class="wl">1-2-0</span></div>
-    <div class="row"><span class="rk">7</span><span class="nm">Arturo Restrepo</span><span class="pt">1</span><span class="wl">0-2-1</span></div>
-    <div class="row"><span class="rk">8</span><span class="nm">Juan Jose Restr...</span><span class="pt r">0</span><span class="wl r">0-3-0</span></div>
-  </div>
+  const defaultHistoricData = [
+    { date: "9 Ene", season: "2026-1", deck: "🧙⚫🔴 Magitos Rakdos", rank: "7°", pts: 6, wl: "2-2-0", type: "normal" },
+    { date: "16 Ene", season: "2026-1", deck: "🧙⚫🔴 Magitos Rakdos", rank: "10°", pts: 0, wl: "0-4-0", type: "bad" },
+    { date: "23 Ene", season: "2026-1", deck: "🧙⚫🔴 Magitos Rakdos", rank: "14°", pts: 0, wl: "0-4-0", type: "bad" },
+    { date: "30 Ene", season: "2026-1", deck: "🧙⚫🔴 Magitos Rakdos", rank: "9°", pts: 6, wl: "2-2-0", type: "normal" },
+    { date: "5 Feb", season: "2026-1", deck: "🐧🔵🔴 Pingüinos Izzet", rank: "3°", pts: 6, wl: "2-1-0", type: "good" },
+    { date: "12 Feb", season: "2026-1", deck: "🐧🔵🔴 Pingüinos Izzet", rank: "11°", pts: 3, wl: "1-3-0", type: "normal" },
+    { date: "19 Feb", season: "2026-1", deck: "🐧🔵🔴 Pingüinos Izzet", rank: "8°", pts: 6, wl: "2-2-0", type: "normal" },
+    { date: "26 Feb", season: "2026-1", deck: "🐧🔵🔴 Pingüinos Izzet", rank: "12°", pts: 3, wl: "1-3-0", type: "normal" },
+    { date: "5 Mar", season: "2026-1", deck: "🐧🔵🔴 Pingüinos Izzet", rank: "8°", pts: 6, wl: "2-2-0", type: "normal" },
+    { date: "12 Mar", season: "2026-1", deck: "No participó", rank: "—", pts: "—", wl: "—", type: "none" },
+    { date: "19 Mar", season: "2026-1", deck: "🐧🔵🔴 Pingüinos Izzet", rank: "10°", pts: 0, wl: "0-4-0", type: "bad" },
+    { date: "26 Mar", season: "2026-1", deck: "🐧🔵🔴 Pingüinos Izzet", rank: "12°", pts: 3, wl: "1-3-0", type: "normal" },
+    { date: "1 Abr", season: "2026-1", deck: "🔵⚫🔴 Grixis", rank: "8°", pts: 0, wl: "0-3-0", type: "bad" },
+    { date: "9 Abr", season: "2026-1", deck: "🔵⚫🔴 Grixis", rank: "16°", pts: 0, wl: "0-4-0", type: "bad" },
+    { date: "16 Abr", season: "2026-1", deck: "🐧🔵🔴 Pingüinos Izzet", rank: "14°", pts: 3, wl: "1-3-0", type: "normal" },
+    { date: "23 Abr", season: "2026-1", deck: "🐧🔵🔴 Pingüinos Izzet", rank: "12°", pts: 3, wl: "1-3-0", type: "normal" },
+    { date: "30 Abr", season: "2026-1", deck: "🐧🔵🔴 Pingüinos Izzet", rank: "19°", pts: 3, wl: "1-4-0", type: "normal" },
+    { date: "7 May", season: "2026-1", deck: "🐧🔵🔴 Pingüinos Izzet", rank: "10°", pts: 1, wl: "0-3-1", type: "bad" },
+    { date: "14 May", season: "2026-1", deck: "🐂⚪🔴 Torito Boros", rank: "3°", pts: 7, wl: "2-1-1", type: "good" },
+    { date: "21 May", season: "2026-1", deck: "No participó", rank: "—", pts: "—", wl: "—", type: "none" },
+    { date: "28 May", season: "2026-1", deck: "🐂⚪🔴 Torito Boros", rank: "16°", pts: 0, wl: "0-4-0", type: "bad" },
+    { date: "4 Jun", season: "2026-1", deck: "🐂⚪🔴 Torito Boros", rank: "17°", pts: 4, wl: "1-3-1", type: "normal" },
+    { date: "6 Jun ⚔️ Paupergedón", season: "2026-1", deck: "🐂⚪🔴 Torito Boros", rank: "20°", pts: 5, wl: "1-4-0", type: "bad" },
+    { date: "11 Jun", season: "2026-1", deck: "🐂⚪🔴 Torito Boros", rank: "13°", pts: 6, wl: "2-3-0", type: "normal" },
+    { date: "18 Jun", season: "2026-1", deck: "🐂⚪🔴 Torito Boros", rank: "12°", pts: 3, wl: "1-3-0", type: "normal" },
+    { date: "25 Jun", season: "2026-1", deck: "🐂⚪🔴 Torito Boros", rank: "15°", pts: 3, wl: "1-3-0", type: "extra", tagStyle: "background:#1c2128;color:#8b949e" },
+    { date: "2 Jul", season: "2026-2", deck: "🧙⚫🔴 Magitos Rakdos", rank: "11°", pts: 3, wl: "1-3-0", type: "normal" },
+    { date: "9 Jul", season: "2026-2", deck: "🐂⚪🔴 Torito Boros", rank: "17°", pts: 4, wl: "1-3-1", type: "normal" },
+    { date: "16 Jul", season: "2026-2", deck: "🐂⚪🔴 Torito Boros", rank: "8°", pts: 9, wl: "3-2-0", type: "good" },
+    { date: "23 Jul", season: "2026-2", deck: "🐂⚪🔴 Torito Boros", rank: "12°", pts: 3, wl: "1-3-0", type: "normal" },
+    { date: "31 Jul", season: "2026-2", deck: "🐂⚪🔴 Torito Boros", rank: "17°", pts: 3, wl: "1-2-0", type: "normal" },
+    { date: "6 Ago", season: "2026-2", deck: "🐂⚪🔴 Torito Boros", rank: "10°", pts: 9, wl: "3-2-0", type: "good" },
+    { date: "13 Ago", season: "2026-2", deck: "🐧🔵🔴 Pingüinos Izzet", rank: "13°", pts: 6, wl: "2-3-0", type: "normal" }
+  ];
 
-  <div class="mh" onclick="tm('f2')"><span class="mt">📅 Feb 12</span><span class="ms">R4 · 12p · Christian: 11° · 1-3-0</span><span class="ch" id="cf2">▼</span></div>
-  <div class="mb" id="f2">
-    <div class="row"><span class="rk r1">1</span><span class="nm">Albert Loaiza</span><span class="pt">10</span><span class="wl g">3-0-1</span></div>
-    <div class="row"><span class="rk r2">2</span><span class="nm">Yesid Soacha</span><span class="pt">10</span><span class="wl g">3-0-1</span></div>
-    <div class="row"><span class="rk r3">3</span><span class="nm">Juan Lozada 💀</span><span class="pt">9</span><span class="wl g">3-1-0</span></div>
-    <div class="row"><span class="rk">4</span><span class="nm">Sebastian Abello</span><span class="pt">9</span><span class="wl g">3-1-0</span></div>
-    <div class="row"><span class="rk">5</span><span class="nm">Ivan Quiroga</span><span class="pt">6</span><span class="wl">2-2-0</span></div>
-    <div class="row"><span class="rk">6</span><span class="nm">Camilo Arango</span><span class="pt">6</span><span class="wl">2-2-0</span></div>
-    <div class="row"><span class="rk">7</span><span class="nm">Balalaika Laika</span><span class="pt">6</span><span class="wl">2-2-0</span></div>
-    <div class="row"><span class="rk">8</span><span class="nm">Santiago Ramos</span><span class="pt">6</span><span class="wl">2-2-0</span></div>
-    <div class="row"><span class="rk">9</span><span class="nm">Samuel Urueta</span><span class="pt">3</span><span class="wl">1-3-0</span></div>
-    <div class="row"><span class="rk">10</span><span class="nm">Ivan Sepulveda</span><span class="pt">3</span><span class="wl">1-3-0</span></div>
-    <div class="row me"><span class="rk">11</span><span class="nm">Christian Dav...</span><span class="pt">3</span><span class="wl">1-3-0</span></div>
-    <div class="row"><span class="rk">12</span><span class="nm">Felipe Parra</span><span class="pt r">0</span><span class="wl r">0-4-0</span></div>
-  </div>
+  let playersData = JSON.parse(JSON.stringify(defaultPlayersData));
+  let fullHistoricData = JSON.parse(JSON.stringify(defaultHistoricData));
 
-  <div class="mh" onclick="tm('f3')"><span class="mt">📅 Feb 19</span><span class="ms">R4 · 14p · Christian: 8° · 2-2-0</span><span class="ch" id="cf3">▼</span></div>
-  <div class="mb" id="f3">
-    <div class="row"><span class="rk r1">1</span><span class="nm">Albert Loaiza</span><span class="pt">12</span><span class="wl g">4-0-0</span></div>
-    <div class="row"><span class="rk r2">2</span><span class="nm">Sebastian Abello</span><span class="pt">9</span><span class="wl g">3-1-0</span></div>
-    <div class="row"><span class="rk r3">3</span><span class="nm">Fredy Castro</span><span class="pt">9</span><span class="wl g">3-1-0</span></div>
-    <div class="row"><span class="rk">4</span><span class="nm">Samuel Urueta</span><span class="pt">9</span><span class="wl g">3-1-0</span></div>
-    <div class="row"><span class="rk">5</span><span class="nm">Felipe Parra</span><span class="pt">7</span><span class="wl">2-1-1</span></div>
-    <div class="row"><span class="rk">6</span><span class="nm">Angel Rodríguez</span><span class="pt">6</span><span class="wl">2-2-0</span></div>
-    <div class="row"><span class="rk">7</span><span class="nm">Santiago Ramos</span><span class="pt">6</span><span class="wl">2-2-0</span></div>
-    <div class="row me"><span class="rk">8</span><span class="nm">Christian Dav...</span><span class="pt">6</span><span class="wl">2-2-0</span></div>
-    <div class="row"><span class="rk">9</span><span class="nm">Roosevelt Bla...</span><span class="pt">4</span><span class="wl">1-2-1</span></div>
-    <div class="row"><span class="rk">10</span><span class="nm">Yesid Soacha</span><span class="pt">4</span><span class="wl">1-2-1</span></div>
-    <div class="row"><span class="rk">11</span><span class="nm">Santiago Jimen...</span><span class="pt">3</span><span class="wl">1-3-0</span></div>
-    <div class="row"><span class="rk">12</span><span class="nm">Ivan Sepulveda</span><span class="pt">3</span><span class="wl">1-2-0</span></div>
-    <div class="row"><span class="rk">13</span><span class="nm">Balalaika Laika</span><span class="pt">2</span><span class="wl">0-2-2</span></div>
-    <div class="row"><span class="rk">14</span><span class="nm">Ivan Quiroga</span><span class="pt">1</span><span class="wl">0-3-1</span></div>
-  </div>
+  function saveData() {
+    try {
+      localStorage.setItem('pauper_players', JSON.stringify(playersData));
+      localStorage.setItem('pauper_historic', JSON.stringify(fullHistoricData));
+      localStorage.setItem('lastUpdateTime', new Date().toISOString());
+    } catch (e) {
+      console.warn('No se pudo guardar en localStorage:', e);
+    }
+  }
 
-  <div class="mh" onclick="tm('f4')"><span class="mt">📅 Feb 26</span><span class="ms">R4 · 16p · Christian: 12° · 1-3-0</span><span class="ch" id="cf4">▼</span></div>
-  <div class="mb" id="f4">
-    <div class="row"><span class="rk r1">1</span><span class="nm">Albert Loaiza</span><span class="pt">12</span><span class="wl g">4-0-0</span></div>
-    <div class="row"><span class="rk r2">2</span><span class="nm">Ivan Sepulveda</span><span class="pt">10</span><span class="wl g">3-0-1</span></div>
-    <div class="row"><span class="rk r3">3</span><span class="nm">Santiago Ramos</span><span class="pt">9</span><span class="wl g">3-1-0</span></div>
-    <div class="row"><span class="rk">4</span><span class="nm">Ivan Quiroga</span><span class="pt">7</span><span class="wl">2-1-1</span></div>
-    <div class="row"><span class="rk">5</span><span class="nm">Yesid Soacha</span><span class="pt">7</span><span class="wl">2-1-1</span></div>
-    <div class="row"><span class="rk">6</span><span class="nm">Balalaika Laika</span><span class="pt">7</span><span class="wl">2-1-1</span></div>
-    <div class="row"><span class="rk">7</span><span class="nm">Miguel Bello</span><span class="pt">6</span><span class="wl">2-2-0</span></div>
-    <div class="row"><span class="rk">8</span><span class="nm">Esteban Zuleta</span><span class="pt">6</span><span class="wl">2-2-0</span></div>
-    <div class="row"><span class="rk">9</span><span class="nm">Camilo Mora</span><span class="pt">6</span><span class="wl">2-2-0</span></div>
-    <div class="row"><span class="rk">10</span><span class="nm">Samuel Urueta</span><span class="pt">6</span><span class="wl">2-2-0</span></div>
-    <div class="row"><span class="rk">11</span><span class="nm">Felipe Parra</span><span class="pt">3</span><span class="wl">1-3-0</span></div>
-    <div class="row me"><span class="rk">12</span><span class="nm">Christian Dav...</span><span class="pt">3</span><span class="wl">1-3-0</span></div>
-    <div class="row"><span class="rk">13</span><span class="nm">Juan Lozada 💀</span><span class="pt">3</span><span class="wl">1-2-0</span></div>
-    <div class="row"><span class="rk">14</span><span class="nm">Sebastian Abello</span><span class="pt">3</span><span class="wl">1-3-0</span></div>
-    <div class="row"><span class="rk">15</span><span class="nm">Roosevelt Bla...</span><span class="pt">3</span><span class="wl">1-3-0</span></div>
-    <div class="row"><span class="rk">16</span><span class="nm">Nubia Prada</span><span class="pt">3</span><span class="wl">1-3-0</span></div>
-  </div>
-</div>
+  function loadData() {
+    try {
+      const storedPlayers = localStorage.getItem('pauper_players');
+      const storedHistoric = localStorage.getItem('pauper_historic');
+      if (storedPlayers) {
+        playersData = JSON.parse(storedPlayers);
+      } else {
+        playersData = JSON.parse(JSON.stringify(defaultPlayersData));
+      }
+      if (storedHistoric) {
+        fullHistoricData = JSON.parse(storedHistoric);
+      } else {
+        fullHistoricData = JSON.parse(JSON.stringify(defaultHistoricData));
+      }
+    } catch (e) {
+      console.error('Error cargando datos de localStorage:', e);
+      playersData = JSON.parse(JSON.stringify(defaultPlayersData));
+      fullHistoricData = JSON.parse(JSON.stringify(defaultHistoricData));
+    }
+  }
 
-<!-- ===== MARZO ===== -->
-<div id="ma" class="pg">
-  <div class="mh" onclick="tm('m1')"><span class="mt">📅 Mar 5</span><span class="ms">R4 · 12p · Christian: 8° · 2-2-0</span><span class="ch" id="cm1">▼</span></div>
-  <div class="mb" id="m1">
-    <div class="row"><span class="rk r1">1</span><span class="nm">Ivan Sepulveda</span><span class="pt">10</span><span class="wl g">3-0-1</span></div>
-    <div class="row"><span class="rk r2">2</span><span class="nm">Albert Loaiza</span><span class="pt">9</span><span class="wl g">3-1-0</span></div>
-    <div class="row"><span class="rk r3">3</span><span class="nm">Diego Ardila</span><span class="pt">9</span><span class="wl g">3-1-0</span></div>
-    <div class="row"><span class="rk">4</span><span class="nm">Ivan Quiroga</span><span class="pt">7</span><span class="wl">2-1-1</span></div>
-    <div class="row"><span class="rk">5</span><span class="nm">Santiago Ramos</span><span class="pt">6</span><span class="wl">2-2-0</span></div>
-    <div class="row"><span class="rk">6</span><span class="nm">Balalaika Laika</span><span class="pt">6</span><span class="wl">2-2-0</span></div>
-    <div class="row"><span class="rk">7</span><span class="nm">Mateo Diaz</span><span class="pt">6</span><span class="wl">2-2-0</span></div>
-    <div class="row me"><span class="rk">8</span><span class="nm">Christian Dav...</span><span class="pt">6</span><span class="wl">2-2-0</span></div>
-    <div class="row"><span class="rk">9</span><span class="nm">Yesid Soacha</span><span class="pt">6</span><span class="wl">2-2-0</span></div>
-    <div class="row"><span class="rk">10</span><span class="nm">Samuel Urueta</span><span class="pt">3</span><span class="wl">1-3-0</span></div>
-    <div class="row"><span class="rk">11</span><span class="nm">Felipe Hurtado</span><span class="pt">3</span><span class="wl">1-3-0</span></div>
-    <div class="row"><span class="rk">12</span><span class="nm">Angel Rodríguez</span><span class="pt r">0</span><span class="wl r">0-4-0</span></div>
-  </div>
+  function getCurrentSeasonEntries() {
+    return fullHistoricData.filter(item => item.season === "2026-2");
+  }
 
-  <div class="mh" onclick="tm('m2')"><span class="mt">📅 Mar 12</span><span class="ms">R4 · 12p · Christian: no participó</span><span class="ch" id="cm2">▼</span></div>
-  <div class="mb" id="m2">
-    <div class="row"><span class="rk r1">1</span><span class="nm">Santiago Ramos</span><span class="pt">9</span><span class="wl g">3-1-0</span></div>
-    <div class="row"><span class="rk r2">2</span><span class="nm">Albert Loaiza</span><span class="pt">9</span><span class="wl g">3-1-0</span></div>
-    <div class="row"><span class="rk r3">3</span><span class="nm">Ivan Sepulveda</span><span class="pt">9</span><span class="wl g">3-1-0</span></div>
-    <div class="row"><span class="rk">4</span><span class="nm">Balalaika Laika</span><span class="pt">8</span><span class="wl">2-0-2</span></div>
-    <div class="row"><span class="rk">5</span><span class="nm">Sebastian Abello</span><span class="pt">6</span><span class="wl">2-2-0</span></div>
-    <div class="row"><span class="rk">6</span><span class="nm">Brayan Celis</span><span class="pt">6</span><span class="wl">2-2-0</span></div>
-    <div class="row"><span class="rk">7</span><span class="nm">Felipe Hurtado</span><span class="pt">6</span><span class="wl">2-2-0</span></div>
-    <div class="row"><span class="rk">8</span><span class="nm">Ivan Quiroga</span><span class="pt">5</span><span class="wl">1-1-2</span></div>
-    <div class="row"><span class="rk">9</span><span class="nm">Marcos Molina</span><span class="pt">4</span><span class="wl">1-2-1</span></div>
-    <div class="row"><span class="rk">10</span><span class="nm">Yesid Soacha</span><span class="pt">4</span><span class="wl">1-2-1</span></div>
-    <div class="row"><span class="rk">11</span><span class="nm">Samuel Urueta</span><span class="pt">3</span><span class="wl">1-3-0</span></div>
-    <div class="row"><span class="rk">12</span><span class="nm">Camilo Arango</span><span class="pt r">0</span><span class="wl r">0-4-0</span></div>
-  </div>
+  function renderCurrentSeasonStats() {
+    const entries = getCurrentSeasonEntries();
+    const validEntries = entries.filter(item => item.rank && item.rank !== "—");
+    const totalTournaments = validEntries.length;
+    const totalPoints = validEntries.reduce((sum, item) => sum + (Number(item.pts) || 0), 0);
+    const ranks = validEntries.map(item => Number(String(item.rank).replace(/[^\d]/g, '')) || 99).sort((a, b) => a - b);
+    const bestRank = ranks.length ? ranks[0] : "--";
+    const recordTotals = validEntries.reduce((acc, item) => {
+      const match = String(item.wl).match(/(\d+)-(\d+)-(\d+)/);
+      if (!match) return acc;
+      acc.w += Number(match[1]);
+      acc.l += Number(match[2]);
+      acc.d += Number(match[3]);
+      return acc;
+    }, { w: 0, l: 0, d: 0 });
 
-  <div class="mh" onclick="tm('m3')"><span class="mt">📅 Mar 19</span><span class="ms">R4 · 10p · Christian: 10° · 0-4-0</span><span class="ch" id="cm3">▼</span></div>
-  <div class="mb" id="m3">
-    <div class="row"><span class="rk r1">1</span><span class="nm">Santiago Jimen...</span><span class="pt">10</span><span class="wl g">3-0-1</span></div>
-    <div class="row"><span class="rk r2">2</span><span class="nm">Ivan Quiroga</span><span class="pt">9</span><span class="wl g">3-1-0</span></div>
-    <div class="row"><span class="rk r3">3</span><span class="nm">Albert Loaiza</span><span class="pt">7</span><span class="wl">2-1-1</span></div>
-    <div class="row"><span class="rk">4</span><span class="nm">Felipe Parra</span><span class="pt">7</span><span class="wl">2-1-1</span></div>
-    <div class="row"><span class="rk">5</span><span class="nm">Sebastian Abello</span><span class="pt">6</span><span class="wl">2-2-0</span></div>
-    <div class="row"><span class="rk">6</span><span class="nm">Ivan Sepulveda</span><span class="pt">6</span><span class="wl">2-2-0</span></div>
-    <div class="row"><span class="rk">7</span><span class="nm">Yesid Soacha</span><span class="pt">6</span><span class="wl">2-2-0</span></div>
-    <div class="row"><span class="rk">8</span><span class="nm">Angel Rodríguez</span><span class="pt">4</span><span class="wl">1-2-1</span></div>
-    <div class="row"><span class="rk">9</span><span class="nm">Esteban Zuleta</span><span class="pt">3</span><span class="wl">1-3-0</span></div>
-    <div class="row me"><span class="rk">10</span><span class="nm">Christian Dav...</span><span class="pt r">0</span><span class="wl r">0-4-0</span></div>
-  </div>
+    const statTourneys = document.getElementById("stat-tourneys");
+    const statPts = document.getElementById("stat-pts");
+    const statRank = document.getElementById("stat-rank");
+    const statBestRank = document.getElementById("stat-best-rank");
+    const statRecord = document.getElementById("stat-record");
+    const statRemaining = document.getElementById("stat-remaining");
 
-  <div class="mh" onclick="tm('m4')"><span class="mt">📅 Mar 26</span><span class="ms">R4 · 14p · Christian: 12° · 1-3-0</span><span class="ch" id="cm4">▼</span></div>
-  <div class="mb" id="m4">
-    <div class="row"><span class="rk r1">1</span><span class="nm">Andrés Higuera</span><span class="pt">10</span><span class="wl g">3-0-1</span></div>
-    <div class="row"><span class="rk r2">2</span><span class="nm">Albert Loaiza</span><span class="pt">10</span><span class="wl g">3-0-1</span></div>
-    <div class="row"><span class="rk r3">3</span><span class="nm">Samuel Urueta</span><span class="pt">9</span><span class="wl g">3-1-0</span></div>
-    <div class="row"><span class="rk">4</span><span class="nm">Esteban Zuleta</span><span class="pt">9</span><span class="wl g">3-1-0</span></div>
-    <div class="row"><span class="rk">5</span><span class="nm">Roosevelt Bla...</span><span class="pt">7</span><span class="wl">2-1-1</span></div>
-    <div class="row"><span class="rk">6</span><span class="nm">Ivan Sepulveda</span><span class="pt">7</span><span class="wl">2-1-1</span></div>
-    <div class="row"><span class="rk">7</span><span class="nm">Angel Rodríguez</span><span class="pt">6</span><span class="wl">2-2-0</span></div>
-    <div class="row"><span class="rk">8</span><span class="nm">Camilo Arango</span><span class="pt">6</span><span class="wl">2-2-0</span></div>
-    <div class="row"><span class="rk">9</span><span class="nm">Felipe Parra</span><span class="pt">6</span><span class="wl">2-2-0</span></div>
-    <div class="row"><span class="rk">10</span><span class="nm">Kbra Espacial</span><span class="pt">3</span><span class="wl">1-3-0</span></div>
-    <div class="row"><span class="rk">11</span><span class="nm">Alejandro Anto...</span><span class="pt">3</span><span class="wl">1-3-0</span></div>
-    <div class="row me"><span class="rk">12</span><span class="nm">Christian Dav...</span><span class="pt">3</span><span class="wl">1-3-0</span></div>
-    <div class="row"><span class="rk">13</span><span class="nm">Yesid Soacha</span><span class="pt">1</span><span class="wl">0-3-1</span></div>
-    <div class="row"><span class="rk">14</span><span class="nm">Sebastian Abello</span><span class="pt">1</span><span class="wl">0-3-1</span></div>
-  </div>
-</div>
+    if (statTourneys) statTourneys.textContent = totalTournaments;
+    if (statPts) statPts.textContent = totalPoints;
+    if (statRank) statRank.textContent = `${playersData.findIndex(p => p.isMe) + 1}°`;
+    if (statBestRank) statBestRank.textContent = `${bestRank}°`;
+    if (statRecord) statRecord.textContent = `${recordTotals.w}-${recordTotals.l}-${recordTotals.d}`;
+    if (statRemaining) statRemaining.textContent = Math.max(0, 15 - totalTournaments);
 
-<!-- ===== ABRIL ===== -->
-<div id="ab" class="pg">
-  <div class="mh" onclick="tm('a3')"><span class="mt">📅 Abr 1</span><span class="ms">R3 · 8p · Christian: 8° · 0-3-0</span><span class="ch" id="ca3">▼</span></div>
-  <div class="mb" id="a3">
-    <div class="row"><span class="rk r1">1</span><span class="nm">Andrés Higuera</span><span class="pt">9</span><span class="wl g">3-0-0</span></div>
-    <div class="row"><span class="rk r2">2</span><span class="nm">Germán Gabri...</span><span class="pt">6</span><span class="wl g">2-1-0</span></div>
-    <div class="row"><span class="rk r3">3</span><span class="nm">Camilo Arango</span><span class="pt">6</span><span class="wl g">2-1-0</span></div>
-    <div class="row"><span class="rk">4</span><span class="nm">Esteban Zuleta</span><span class="pt">6</span><span class="wl g">2-1-0</span></div>
-    <div class="row"><span class="rk">5</span><span class="nm">Sergio Buitrago</span><span class="pt">3</span><span class="wl">1-2-0</span></div>
-    <div class="row"><span class="rk">6</span><span class="nm">Ivan Sepulveda</span><span class="pt">3</span><span class="wl">1-2-0</span></div>
-    <div class="row"><span class="rk">7</span><span class="nm">Mateo Diaz</span><span class="pt">3</span><span class="wl">1-2-0</span></div>
-    <div class="row me"><span class="rk">8</span><span class="nm">Christian Dav...</span><span class="pt r">0</span><span class="wl r">0-3-0</span></div>
-  </div>
+    const deckMap = {};
+    entries.forEach(item => {
+      const deckName = item.deck;
+      if (!deckMap[deckName]) {
+        deckMap[deckName] = { count: 0, pts: 0, record: { w: 0, l: 0, d: 0 } };
+      }
+      deckMap[deckName].count += 1;
+      deckMap[deckName].pts += Number(item.pts) || 0;
+      const match = String(item.wl).match(/(\d+)-(\d+)-(\d+)/);
+      if (match) {
+        deckMap[deckName].record.w += Number(match[1]);
+        deckMap[deckName].record.l += Number(match[2]);
+        deckMap[deckName].record.d += Number(match[3]);
+      }
+    });
 
-  <div class="mh" onclick="tm('a2')"><span class="mt">📅 Abr 9</span><span class="ms">R4 · 16p · Christian: 16° · 0-4-0</span><span class="ch" id="ca2">▼</span></div>
-  <div class="mb" id="a2">
-    <div class="row"><span class="rk r1">1</span><span class="nm">Samuel Urueta</span><span class="pt">10</span><span class="wl g">3-0-1</span></div>
-    <div class="row"><span class="rk r2">2</span><span class="nm">Sebastian Abello</span><span class="pt">10</span><span class="wl g">3-0-1</span></div>
-    <div class="row"><span class="rk r3">3</span><span class="nm">Andrés Higuera</span><span class="pt">9</span><span class="wl g">3-1-0</span></div>
-    <div class="row"><span class="rk">4</span><span class="nm">Alejandro Anto...</span><span class="pt">9</span><span class="wl g">3-1-0</span></div>
-    <div class="row"><span class="rk">5</span><span class="nm">Ivan Sepulveda</span><span class="pt">9</span><span class="wl g">3-1-0</span></div>
-    <div class="row"><span class="rk">6</span><span class="nm">Cristhian Mac...</span><span class="pt">6</span><span class="wl">2-2-0</span></div>
-    <div class="row"><span class="rk">7</span><span class="nm">Yesid Soacha</span><span class="pt">6</span><span class="wl">2-2-0</span></div>
-    <div class="row"><span class="rk">8</span><span class="nm">Santiago Ramos</span><span class="pt">6</span><span class="wl">2-2-0</span></div>
-    <div class="row"><span class="rk">9</span><span class="nm">Camilo Arango</span><span class="pt">6</span><span class="wl">2-2-0</span></div>
-    <div class="row"><span class="rk">10</span><span class="nm">Felipe Hurtado</span><span class="pt">6</span><span class="wl">2-2-0</span></div>
-    <div class="row"><span class="rk">11</span><span class="nm">Esteban Zuleta</span><span class="pt">6</span><span class="wl">2-2-0</span></div>
-    <div class="row"><span class="rk">12</span><span class="nm">Roosevelt Bla...</span><span class="pt">3</span><span class="wl">1-3-0</span></div>
-    <div class="row"><span class="rk">13</span><span class="nm">Balalaika Laika</span><span class="pt">3</span><span class="wl">1-3-0</span></div>
-    <div class="row"><span class="rk">14</span><span class="nm">Ivan Quiroga</span><span class="pt">3</span><span class="wl">1-3-0</span></div>
-    <div class="row"><span class="rk">15</span><span class="nm">Albert Loaiza</span><span class="pt">3</span><span class="wl">1-3-0</span></div>
-    <div class="row me"><span class="rk">16</span><span class="nm">Christian Dav...</span><span class="pt r">0</span><span class="wl r">0-4-0</span></div>
-  </div>
+    const deckContainer = document.getElementById("current-season-decks");
+    if (deckContainer) {
+      const deckList = Object.entries(deckMap).map(([deck, info]) => {
+        const calculatedPoints = (info.record.w * 3) + (info.record.d * 1);
+        const ptRatio = info.count > 0 ? (calculatedPoints / info.count) : 0;
+        return { deck, info, ptRatio };
+      });
 
-  <div class="mh" onclick="tm('a1')"><span class="mt">📅 Abr 16</span><span class="ms">R4 · 16p · Christian: 14° · 1-3-0</span><span class="ch" id="ca1">▼</span></div>
-  <div class="mb" id="a1">
-    <div class="row"><span class="rk r1">1</span><span class="nm">Angel Rodríguez</span><span class="pt">10</span><span class="wl g">3-0-1</span></div>
-    <div class="row"><span class="rk r2">2</span><span class="nm">Albert Loaiza</span><span class="pt">10</span><span class="wl g">3-0-1</span></div>
-    <div class="row"><span class="rk r3">3</span><span class="nm">Esteban Zuleta</span><span class="pt">9</span><span class="wl g">3-1-0</span></div>
-    <div class="row"><span class="rk">4</span><span class="nm">Andrés Higuera</span><span class="pt">9</span><span class="wl g">3-1-0</span></div>
-    <div class="row"><span class="rk">5</span><span class="nm">Santiago Ramos</span><span class="pt">7</span><span class="wl">2-1-1</span></div>
-    <div class="row"><span class="rk">6</span><span class="nm">Camilo Arango</span><span class="pt">7</span><span class="wl">2-1-1</span></div>
-    <div class="row"><span class="rk">7</span><span class="nm">Sergio Buitrago</span><span class="pt">6</span><span class="wl">2-2-0</span></div>
-    <div class="row"><span class="rk">8</span><span class="nm">Henry Beltran</span><span class="pt">6</span><span class="wl">2-2-0</span></div>
-    <div class="row"><span class="rk">9</span><span class="nm">Cristhian Mac...</span><span class="pt">6</span><span class="wl">2-2-0</span></div>
-    <div class="row"><span class="rk">10</span><span class="nm">Yesid Soacha</span><span class="pt">6</span><span class="wl">2-2-0</span></div>
-    <div class="row"><span class="rk">11</span><span class="nm">Felipe Parra</span><span class="pt">6</span><span class="wl">2-2-0</span></div>
-    <div class="row"><span class="rk">12</span><span class="nm">José Alvarado</span><span class="pt">3</span><span class="wl">1-3-0</span></div>
-    <div class="row"><span class="rk">13</span><span class="nm">Emy Lyo</span><span class="pt">3</span><span class="wl">1-3-0</span></div>
-    <div class="row me"><span class="rk">14</span><span class="nm">Christian Dav...</span><span class="pt">3</span><span class="wl">1-3-0</span></div>
-    <div class="row"><span class="rk">15</span><span class="nm">Sebastian Abello</span><span class="pt">1</span><span class="wl">0-3-1</span></div>
-    <div class="row"><span class="rk">16</span><span class="nm">bob dol</span><span class="pt">1</span><span class="wl">0-3-1</span></div>
-  </div>
+      deckList.sort((a, b) => b.ptRatio - a.ptRatio);
 
-  <div class="mh" onclick="tm('a05')"><span class="mt">📅 Abr 23</span><span class="ms">R4 · 14p · Christian: 12° · 1-3-0 · 3pts</span><span class="ch" id="ca05">▼</span></div>
-  <div class="mb" id="a05">
-    <div class="row"><span class="rk r1">1</span><span class="nm">Albert Loaiza</span><span class="pt">12</span><span class="wl g">4-0-0</span></div>
-    <div class="row"><span class="rk r2">2</span><span class="nm">Felipe Parra</span><span class="pt">9</span><span class="wl g">3-1-0</span></div>
-    <div class="row"><span class="rk r3">3</span><span class="nm">Angel Rodríguez</span><span class="pt">9</span><span class="wl g">3-1-0</span></div>
-    <div class="row"><span class="rk">4</span><span class="nm">José Alvarado</span><span class="pt">9</span><span class="wl g">3-1-0</span></div>
-    <div class="row"><span class="rk">5</span><span class="nm">Emy Lyo</span><span class="pt">7</span><span class="wl">2-1-1</span></div>
-    <div class="row"><span class="rk">6</span><span class="nm">Yesid Soacha</span><span class="pt">7</span><span class="wl">2-1-1</span></div>
-    <div class="row"><span class="rk">7</span><span class="nm">Santiago Ramos</span><span class="pt">6</span><span class="wl">2-2-0</span></div>
-    <div class="row"><span class="rk">8</span><span class="nm">Andrés Higuera</span><span class="pt">6</span><span class="wl">2-2-0</span></div>
-    <div class="row"><span class="rk">9</span><span class="nm">Darth Lotus</span><span class="pt">6</span><span class="wl">2-2-0</span></div>
-    <div class="row"><span class="rk">10</span><span class="nm">Esteban Zuleta</span><span class="pt">3</span><span class="wl">1-3-0</span></div>
-    <div class="row"><span class="rk">11</span><span class="nm">Samuel Urueta</span><span class="pt">3</span><span class="wl">1-3-0</span></div>
-    <div class="row me"><span class="rk">12</span><span class="nm">Christian Do...</span><span class="pt">3</span><span class="wl">1-3-0</span></div>
-    <div class="row"><span class="rk">13</span><span class="nm">Cristhian Mac...</span><span class="pt">3</span><span class="wl">1-3-0</span></div>
-    <div class="row"><span class="rk">14</span><span class="nm">Monarca Pepo</span><span class="pt r">0</span><span class="wl r">0-4-0</span></div>
-  </div>
+      deckContainer.innerHTML = deckList.map(({ deck, info, ptRatio }, index) => {
+        const ppg = ptRatio.toFixed(1);
+        const rec = `${info.record.w}-${info.record.l}-${info.record.d}`;
+        const isBest = index === 0;
+        const isWorst = index === deckList.length - 1 && deckList.length > 1;
 
-  <div class="mh" onclick="tm('a0')"><span class="mt">📅 Abr 30</span><span class="ms">R5 · 19p · Christian: 19° · 1-4-0 · 3pts</span><span class="ch" id="ca0">▼</span></div>
-  <div class="mb" id="a0">
-    <div class="row"><span class="rk r1">1</span><span class="nm">Fredy Castro</span><span class="pt g">15</span><span class="wl g">5-0-0</span></div>
-    <div class="row"><span class="rk r2">2</span><span class="nm">Santiago Ramos</span><span class="pt">12</span><span class="wl g">4-1-0</span></div>
-    <div class="row"><span class="rk r3">3</span><span class="nm">Albert Loaiza</span><span class="pt">12</span><span class="wl g">4-1-0</span></div>
-    <div class="row"><span class="rk">4</span><span class="nm">Ivan Quiroga</span><span class="pt">10</span><span class="wl">3-1-1</span></div>
-    <div class="row"><span class="rk">5</span><span class="nm">Camilo Mora</span><span class="pt">9</span><span class="wl">3-2-0</span></div>
-    <div class="row"><span class="rk">6</span><span class="nm">Ivan Sepulveda</span><span class="pt">9</span><span class="wl">3-2-0</span></div>
-    <div class="row"><span class="rk">7</span><span class="nm">Sebastian Abello</span><span class="pt">9</span><span class="wl">3-2-0</span></div>
-    <div class="row"><span class="rk">8</span><span class="nm">Angel Rodríguez</span><span class="pt">9</span><span class="wl">3-2-0</span></div>
-    <div class="row"><span class="rk">9</span><span class="nm">Juan Lozada 💀</span><span class="pt">9</span><span class="wl">3-2-0</span></div>
-    <div class="row"><span class="rk">10</span><span class="nm">Yesid Soacha</span><span class="pt">7</span><span class="wl">2-1-2</span></div>
-    <div class="row"><span class="rk">11</span><span class="nm">Monarca Pepo</span><span class="pt">7</span><span class="wl">2-2-1</span></div>
-    <div class="row"><span class="rk">12</span><span class="nm">Cristhian Mac...</span><span class="pt">7</span><span class="wl">2-2-1</span></div>
-    <div class="row"><span class="rk">13</span><span class="nm">Cristhian Cami...</span><span class="pt">6</span><span class="wl">2-3-0</span></div>
-    <div class="row"><span class="rk">14</span><span class="nm">Felipe Parra</span><span class="pt">6</span><span class="wl">2-3-0</span></div>
-    <div class="row"><span class="rk">15</span><span class="nm">duvancillo .</span><span class="pt">6</span><span class="wl">2-3-0</span></div>
-    <div class="row"><span class="rk">16</span><span class="nm">Esteban Zuleta</span><span class="pt">4</span><span class="wl">1-3-1</span></div>
-    <div class="row"><span class="rk">17</span><span class="nm">Esteban Galin...</span><span class="pt">3</span><span class="wl">1-4-0</span></div>
-    <div class="row"><span class="rk">18</span><span class="nm">Balalaika Laika</span><span class="pt">3</span><span class="wl">1-4-0</span></div>
-    <div class="row me"><span class="rk">19</span><span class="nm">Christian Do...</span><span class="pt">3</span><span class="wl r">1-4-0</span></div>
-  </div>
-</div>
+        let nameColor = '#f0f6fc';
+        let ppgColor = '#58a6ff';
+        let badge = '';
 
-<!-- ===== MAYO ===== -->
-<div id="my" class="pg">
-  <div class="mh" onclick="tm('my0')"><span class="mt">📅 May 7</span><span class="ms">R4 · 10p · Christian: 10° · 0-3-1 · 1pt</span><span class="ch" id="cmy0">▼</span></div>
-  <div class="mb" id="my0">
-    <div class="row"><span class="rk r1">1</span><span class="nm">Albert Loaiza</span><span class="pt">10</span><span class="wl g">3-0-1</span></div>
-    <div class="row"><span class="rk r2">2</span><span class="nm">Santiago Ramos</span><span class="pt">9</span><span class="wl g">3-1-0</span></div>
-    <div class="row"><span class="rk r3">3</span><span class="nm">Camilo Mora</span><span class="pt">8</span><span class="wl">2-0-2</span></div>
-    <div class="row"><span class="rk">4</span><span class="nm">Angel Rodríguez</span><span class="pt">7</span><span class="wl">2-1-1</span></div>
-    <div class="row"><span class="rk">5</span><span class="nm">Sebastian Abello</span><span class="pt">6</span><span class="wl">2-2-0</span></div>
-    <div class="row"><span class="rk">6</span><span class="nm">Yesid Soacha</span><span class="pt">6</span><span class="wl">2-2-0</span></div>
-    <div class="row"><span class="rk">7</span><span class="nm">Monarca Pepo</span><span class="pt">4</span><span class="wl">1-2-1</span></div>
-    <div class="row"><span class="rk">8</span><span class="nm">Cristhian Mac...</span><span class="pt">3</span><span class="wl">1-3-0</span></div>
-    <div class="row"><span class="rk">9</span><span class="nm">Esteban Zuleta</span><span class="pt">2</span><span class="wl">0-2-2</span></div>
-    <div class="row me"><span class="rk">10</span><span class="nm">Christian Do...</span><span class="pt r">1</span><span class="wl r">0-3-1</span></div>
-  </div>
+        if (isBest) {
+          nameColor = '#f97316';
+          ppgColor = '#f97316';
+          badge = '<span style="font-size:0.55rem; background:#f97316; color:#0d1117; padding:1px 3px; border-radius:3px; margin-left:3px; font-weight:800; vertical-align:middle;">TOP</span>';
+        } else if (isWorst) {
+          nameColor = '#8b949e';
+          ppgColor = '#ef4444';
+          badge = '<span style="font-size:0.55rem; background:#ef4444; color:#fff; padding:1px 3px; border-radius:3px; margin-left:3px; font-weight:700; vertical-align:middle;">LOW</span>';
+        }
 
-  <div class="mh" onclick="tm('my1')"><span class="mt">📅 May 14</span><span class="ms">R4 · 12p · Christian: 3° · 2-1-1 · 7pts 🏆</span><span class="ch" id="cmy1">▼</span></div>
-  <div class="mb" id="my1">
-    <div class="row"><span class="rk r1">1</span><span class="nm">Santiago Ramos</span><span class="pt">12</span><span class="wl g">4-0-0</span></div>
-    <div class="row"><span class="rk r2">2</span><span class="nm">Angel Rodríguez</span><span class="pt">10</span><span class="wl g">3-0-1</span></div>
-    <div class="row me"><span class="rk r3">3</span><span class="nm">Christian Do...</span><span class="pt g">7</span><span class="wl g">2-1-1</span></div>
-    <div class="row"><span class="rk">4</span><span class="nm">Felipe Parra</span><span class="pt">7</span><span class="wl">2-1-1</span></div>
-    <div class="row"><span class="rk">5</span><span class="nm">Yesid Soacha</span><span class="pt">6</span><span class="wl">2-2-0</span></div>
-    <div class="row"><span class="rk">6</span><span class="nm">Albert Loaiza</span><span class="pt">6</span><span class="wl">2-2-0</span></div>
-    <div class="row"><span class="rk">7</span><span class="nm">Esteban Zuleta</span><span class="pt">6</span><span class="wl">2-2-0</span></div>
-    <div class="row"><span class="rk">8</span><span class="nm">Cristhian Mac...</span><span class="pt">6</span><span class="wl">2-2-0</span></div>
-    <div class="row"><span class="rk">9</span><span class="nm">Esteban Galin...</span><span class="pt">4</span><span class="wl">1-2-1</span></div>
-    <div class="row"><span class="rk">10</span><span class="nm">Ivan Sepulveda</span><span class="pt">3</span><span class="wl">1-3-0</span></div>
-    <div class="row"><span class="rk">11</span><span class="nm">Sebastian Abello</span><span class="pt">3</span><span class="wl">1-3-0</span></div>
-    <div class="row"><span class="rk">12</span><span class="nm">Fabian Martinez</span><span class="pt r">0</span><span class="wl r">0-4-0</span></div>
-  </div>
+        return `
+          <div class="row" style="display:flex; align-items:center; justify-content:space-between; gap:4px; padding:6px 8px; width:100%; box-sizing:border-box;">
+            <span class="nm" style="flex:1 1 auto; min-width:0; color:${nameColor}; font-weight:700; font-size:clamp(0.7rem, 3vw, 0.85rem); white-space:nowrap; overflow:hidden;">
+              ${deck} ${badge}
+            </span>
+            <span class="wl" style="flex:0 0 auto; font-size:clamp(0.68rem, 2.5vw, 0.72rem); color:#8b949e; white-space:nowrap;">
+              ${info.count}T · ${rec}
+            </span>
+            <span class="pt" style="flex:0 0 auto; min-width:48px; text-align:right; font-size:clamp(0.75rem, 3vw, 0.88rem); font-weight:800; color:${ppgColor}; white-space:nowrap;">
+              ${ppg} <small style="font-size:0.55rem; font-weight:normal;">p/T</small>
+            </span>
+          </div>
+        `;
+      }).join('');
+    }
 
-  <div class="mh" onclick="tm('my2')"><span class="mt">📅 May 21</span><span class="ms">R4 · 12p · Christian: no participó</span><span class="ch" id="cmy2">▼</span></div>
-  <div class="mb" id="my2">
-    <div class="row"><span class="rk r1">1</span><span class="nm">Juan Lozada 💀</span><span class="pt">10</span><span class="wl g">3-0-1</span></div>
-    <div class="row"><span class="rk r2">2</span><span class="nm">Yesid Soacha</span><span class="pt">10</span><span class="wl g">3-0-1</span></div>
-    <div class="row"><span class="rk r3">3</span><span class="nm">Sebastian Abello</span><span class="pt">9</span><span class="wl g">3-1-0</span></div>
-    <div class="row"><span class="rk">4</span><span class="nm">Esteban Zuleta</span><span class="pt">9</span><span class="wl g">3-1-0</span></div>
-    <div class="row"><span class="rk">5</span><span class="nm">Ivan Sepulveda</span><span class="pt">6</span><span class="wl">2-2-0</span></div>
-    <div class="row"><span class="rk">6</span><span class="nm">Albert Loaiza</span><span class="pt">6</span><span class="wl">2-2-0</span></div>
-    <div class="row"><span class="rk">7</span><span class="nm">Santiago Ramos</span><span class="pt">6</span><span class="wl">2-2-0</span></div>
-    <div class="row"><span class="rk">8</span><span class="nm">Emy Lyo</span><span class="pt">4</span><span class="wl">1-2-1</span></div>
-    <div class="row"><span class="rk">9</span><span class="nm">Angel Rodríguez</span><span class="pt">4</span><span class="wl">1-2-1</span></div>
-    <div class="row"><span class="rk">10</span><span class="nm">Roosevelt Bla...</span><span class="pt">3</span><span class="wl">1-3-0</span></div>
-    <div class="row"><span class="rk">11</span><span class="nm">Samuel Urueta</span><span class="pt">2</span><span class="wl">0-2-2</span></div>
-    <div class="row"><span class="rk">12</span><span class="nm">Cristhian Mac...</span><span class="pt r">0</span><span class="wl r">0-4-0</span></div>
-  </div>
-</div>
+    const tournamentList = document.getElementById("current-season-tournaments");
+    if (tournamentList) {
+      tournamentList.innerHTML = entries.map(item => `
+        <div class="row me">
+          <span class="rk">${item.rank}</span>
+          <div style="flex:1">
+            <div class="nm">${item.date}</div>
+            <div style="font-size:.68rem;color:#8b949e;">${item.deck}</div>
+          </div>
+          <span class="pt">${item.pts}</span>
+          <span class="wl">${item.wl}</span>
+        </div>
+      `).join('');
+    }
+  }
 
-<script>
-function sp(id,btn){
-  document.querySelectorAll('.pg').forEach(p=>p.classList.remove('on'));
-  document.querySelectorAll('.nb').forEach(b=>b.classList.remove('on'));
-  document.getElementById(id).classList.add('on');
-  btn.classList.add('on');
-}
-function tm(id){
-  const b=document.getElementById(id);
-  if(!b)return;
-  const c=document.getElementById('c'+id);
-  const o=b.classList.contains('op');
-  b.classList.toggle('op',!o);
-  if(c)c.style.transform=o?'':'rotate(180deg)';
-}
-</script>
+  function parseDate(dateStr) {
+    if (!dateStr || typeof dateStr !== 'string') return new Date();
+    const trimmed = dateStr.trim();
+    if (trimmed.toLowerCase() === 'hoy' || trimmed.toLowerCase() === 'today') {
+      return new Date();
+    }
+
+    // Check if ISO format YYYY-MM-DD
+    if (/^\d{4}-\d{2}-\d{2}$/.test(trimmed)) {
+      const [y, m, d] = trimmed.split('-').map(Number);
+      return new Date(y, m - 1, d);
+    }
+
+    const months = {
+      'ene': 0, 'feb': 1, 'mar': 2, 'abr': 3, 'may': 4, 'jun': 5,
+      'jul': 6, 'ago': 7, 'sep': 8, 'oct': 9, 'nov': 10, 'dic': 11
+    };
+
+    // Regex to match "13 Ago", "13 ago.", "13 de ago", "13 Ago ⚔️ Paupergedón"
+    const match = trimmed.match(/(\d{1,2})\s*(?:de\s*)?([a-záéíóúñ]{3})/i);
+    if (match) {
+      const day = parseInt(match[1], 10);
+      const monthKey = match[2].toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").substring(0, 3);
+      const month = months[monthKey] !== undefined ? months[monthKey] : 7;
+      return new Date(2026, month, day);
+    }
+
+    const parsed = new Date(trimmed);
+    return isNaN(parsed.getTime()) ? new Date() : parsed;
+  }
+
+  function getLastUpdateDate() {
+    const stored = localStorage.getItem('lastUpdateTime');
+    if (!stored) return null;
+    const date = new Date(stored);
+    return isNaN(date.getTime()) ? null : date.toLocaleDateString('es-ES', { year: 'numeric', month: 'short', day: 'numeric' });
+  }
+
+  function getRemainingDates() {
+    const currentSeasonEntries = fullHistoricData.filter(item => item.season === "2026-2");
+    if (currentSeasonEntries.length === 0) return 15;
+    
+    const lastEntry = currentSeasonEntries[currentSeasonEntries.length - 1];
+    const lastDate = parseDate(lastEntry.date);
+    if (isNaN(lastDate.getTime())) return 15;
+    
+    // Find next Thursday after last tournament (safely bounded)
+    let nextThursday = new Date(lastDate.getFullYear(), lastDate.getMonth(), lastDate.getDate());
+    nextThursday.setDate(nextThursday.getDate() + 1);
+    
+    let safetyCounter = 0;
+    while (nextThursday.getDay() !== 4 && safetyCounter < 7) { // Thursday is day 4 (0=Sun, 4=Thu)
+      nextThursday.setDate(nextThursday.getDate() + 1);
+      safetyCounter++;
+    }
+    
+    // Count Thursdays until Nov 29, 2026
+    const endDate = new Date(2026, 10, 29); // November is month 10 (0-indexed)
+    let count = 0;
+    let maxThursdays = 52;
+    while (nextThursday <= endDate && count < maxThursdays) {
+      count++;
+      nextThursday.setDate(nextThursday.getDate() + 7);
+    }
+    
+    return Math.max(0, count);
+  }
+
+  function renderLeaderboard() {
+    playersData.sort((a, b) => b.pts - a.pts);
+    const container = document.getElementById("general-list");
+    const lastUpdate = getLastUpdateDate();
+    const remainingDates = getRemainingDates();
+    const lastUpdateText = lastUpdate ? `<p class="note" style="font-size:0.75rem; color:#8b949e; margin-bottom:8px;">Última actualización: ${lastUpdate}</p>` : '';
+    let html = `${lastUpdateText}<p class="note">Puntos acumulados · Top 10 → Nov 29 · ${remainingDates} fechas restantes</p>`;
+
+    playersData.forEach((p, index) => {
+      const rank = index + 1;
+      let rankClass = "rk";
+      if (rank === 1) rankClass += " r1";
+      else if (rank === 2) rankClass += " r2";
+      else if (rank === 3) rankClass += " r3";
+
+      html += `
+        <div class="row ${p.isMe ? 'me' : ''}">
+          <span class="${rankClass}">${rank}</span>
+          <span class="nm">${p.name}</span>
+          <span class="pt">${p.pts}</span>
+        </div>
+      `;
+
+      if (rank === 10) {
+        html += `<div class="cutline">— top 10 · clasificados —</div>`;
+      }
+    });
+
+    if (container) container.innerHTML = html;
+    updateStatsWidget();
+  }
+
+  function updateStatsWidget() {
+    const myData = playersData.find(p => p.isMe);
+    const myRank = playersData.findIndex(p => p.isMe) + 1;
+
+    if (myData) {
+      const statPts = document.getElementById("stat-pts");
+      const statRank = document.getElementById("stat-rank");
+      if (statPts) statPts.textContent = myData.pts;
+      if (statRank) statRank.textContent = `${myRank}°`;
+    }
+    renderCurrentSeasonStats();
+  }
+
+  function renderHistoricDeckStats() {
+    const deckMap = {};
+    fullHistoricData.forEach(item => {
+      if (!item.rank || item.rank === "—" || item.deck.includes("Grixis")) return;
+      
+      const deckName = item.deck;
+      if (!deckMap[deckName]) {
+        deckMap[deckName] = { count: 0, record: { w: 0, l: 0, d: 0 } };
+      }
+      deckMap[deckName].count += 1;
+      
+      const match = String(item.wl).match(/(\d+)-(\d+)-(\d+)/);
+      if (match) {
+        deckMap[deckName].record.w += Number(match[1]);
+        deckMap[deckName].record.l += Number(match[2]);
+        deckMap[deckName].record.d += Number(match[3]);
+      }
+    });
+
+    const deckList = Object.entries(deckMap).map(([deck, info]) => {
+      const exactPoints = (info.record.w * 3) + (info.record.d * 1);
+      const ptRatio = info.count > 0 ? (exactPoints / info.count) : 0;
+      return { deck, info, ptRatio };
+    });
+
+    deckList.sort((a, b) => b.ptRatio - a.ptRatio);
+
+    const container = document.getElementById("historic-deck-stats");
+    if (!container) return;
+
+    container.innerHTML = deckList.map(({ deck, info, ptRatio }) => {
+      const rec = `${info.record.w}-${info.record.l}-${info.record.d}`;
+      const ppg = ptRatio.toFixed(1);
+      const highlight = deck.includes("Torito") ? 'style="color:#f97316; font-weight:700;"' : '';
+      return `
+        <div class="row">
+          <span class="nm" ${highlight}>${deck}</span>
+          <span class="wl">${info.count}T · ${rec}</span>
+          <span class="pt" style="min-width:52px;text-align:right${deck.includes("Torito") ? ";color:#f97316" : ""}">${ppg} p/T</span>
+        </div>
+      `;
+    }).join('');
+  }
+
+  function renderFullHistoric() {
+    const container = document.getElementById("historic-full-list");
+    if (!container) return;
+
+    let html = '';
+    fullHistoricData.forEach(item => {
+      let ptStyle = "";
+      let wlStyle = "";
+      let deckColor = "color:#8b949e";
+      let tagStyle = item.tagStyle || "background:#21262d;color:#8b949e";
+
+      if (item.type === "good") {
+        ptStyle = "color:#3fb950; font-weight:700;";
+        wlStyle = "color:#3fb950;";
+      } else if (item.type === "bad") {
+        ptStyle = "color:#f85149; font-weight:700;";
+        wlStyle = "color:#f85149;";
+      } else if (item.type === "none") {
+        deckColor = "color:#444;font-style:italic";
+      }
+
+      html += `
+        <div class="row" style="background:#161b22;">
+          <span class="rk">${item.rank}</span>
+          <div style="flex:1">
+            <div class="nm" style="color:#e6edf3;">${item.date} <span class="season-tag" style="${tagStyle}">${item.season}</span></div>
+            <div style="font-size:0.68rem; ${deckColor}">${item.deck}</div>
+          </div>
+          <span class="pt" style="${ptStyle}">${item.pts}</span>
+          <span class="wl" style="${wlStyle}">${item.wl}</span>
+        </div>
+      `;
+    });
+
+    container.innerHTML = html;
+  }
+
+  function sp(id, btn) {
+    document.querySelectorAll('.pg').forEach(p => p.classList.remove('on'));
+    document.querySelectorAll('.nb').forEach(b => b.classList.remove('on'));
+    document.getElementById(id).classList.add('on');
+    btn.classList.add('on');
+  }
+
+  function tm(id) {
+    const el = document.getElementById(id);
+    const arrow = document.getElementById('c' + id);
+    if (el.style.display === "none" || !el.style.display) {
+      el.style.display = "block";
+      if (arrow) arrow.style.transform = "rotate(180deg)";
+    } else {
+      el.style.display = "none";
+      if (arrow) arrow.style.transform = "rotate(0deg)";
+    }
+  }
+
+  // Preprocess & downscale image using canvas to prevent high-res WebAssembly memory crashes
+  function preprocessImageForOCR(file) {
+    return new Promise((resolve, reject) => {
+      const img = new Image();
+      const url = URL.createObjectURL(file);
+      
+      img.onload = () => {
+        URL.revokeObjectURL(url);
+        try {
+          const maxDim = 1200; // Optimal size for OCR accuracy & low memory consumption
+          let { width, height } = img;
+          
+          if (width > maxDim || height > maxDim) {
+            if (width > height) {
+              height = Math.round((height * maxDim) / width);
+              width = maxDim;
+            } else {
+              width = Math.round((width * maxDim) / height);
+              height = maxDim;
+            }
+          }
+
+          const canvas = document.createElement('canvas');
+          canvas.width = width;
+          canvas.height = height;
+          const ctx = canvas.getContext('2d');
+          
+          // Draw and enhance contrast for OCR
+          ctx.drawImage(img, 0, 0, width, height);
+          
+          canvas.toBlob((blob) => {
+            if (blob) {
+              resolve(blob);
+            } else {
+              resolve(file); // Fallback to raw file
+            }
+          }, 'image/jpeg', 0.85);
+        } catch (err) {
+          console.warn('Preprocessing canvas error, using raw file:', err);
+          resolve(file);
+        }
+      };
+
+      img.onerror = () => {
+        URL.revokeObjectURL(url);
+        resolve(file);
+      };
+
+      img.src = url;
+    });
+  }
+
+  async function processImageAndApply() {
+    const fileInput = document.getElementById("screenshot-file");
+    const statusEl = document.getElementById("scan-status");
+    const manualInput = document.getElementById("scan-input");
+    const dateInput = document.getElementById("scan-date");
+    const deckInput = document.getElementById("scan-deck");
+    const isRetoMode = document.getElementById("reto-mode")?.checked;
+    const isContinuation = document.getElementById("same-day-continuation")?.checked;
+
+    if (fileInput && fileInput.files && fileInput.files[0]) {
+      if (statusEl) statusEl.textContent = "Preparando imagen y motor OCR...";
+      let worker = null;
+      try {
+        const processedImageBlob = await preprocessImageForOCR(fileInput.files[0]);
+        if (statusEl) statusEl.textContent = "Cargando motor de IA...";
+        
+        worker = await Tesseract.createWorker('eng', 1, {
+          logger: m => {
+            if (m.status === 'recognizing text' && statusEl) {
+              const pct = Math.round((m.progress || 0) * 100);
+              statusEl.textContent = `Leyendo imagen... ${pct}%`;
+            }
+          }
+        });
+        
+        const ret = await worker.recognize(processedImageBlob);
+        if (manualInput) manualInput.value = ret.data.text;
+        if (statusEl) statusEl.textContent = "¡Lectura completa! Procesando datos...";
+      } catch (err) {
+        if (statusEl) statusEl.textContent = "Error leyendo imagen. Revisa la entrada manual.";
+        console.error("Error en Tesseract:", err);
+      } finally {
+        if (worker) {
+          await worker.terminate().catch(() => {});
+        }
+      }
+    }
+
+    const text = manualInput ? manualInput.value : "";
+    const lines = text.split("\n");
+    let updatedCount = 0;
+    let myPointsEarned = 0;
+    let myWLD = "";
+    const updatedPlayersSet = new Set(); // Prevent duplicate updates in single scan
+
+    lines.forEach(line => {
+      const cleanedLine = line.trim().replace(/[^\w\sáéíóúÁÉÍÓÚñÑ.:\-]/gi, '');
+      if (!cleanedLine) return;
+
+      // Regex to match Name, Points, and optional W-L-D pattern (e.g. "1. Christian Donado 9 3-2-0" or "Christian Donado 9")
+      const match = cleanedLine.match(/(.+?)\s+(\d{1,3})\s+(\d{1,2}-\d{1,2}-\d{1,2})/);
+      const simpleMatch = cleanedLine.match(/(.+?)(?:\s*[:\-]?\s*)(\d{1,3})$/);
+
+      if (match) {
+        let rawName = match[1].trim().replace(/^[\d.#\-—–\s]+/, '').toLowerCase(); // Clean leading position numbers (e.g. "1. ")
+        const ptsToAdd = parseInt(match[2], 10);
+        const wldString = match[3];
+
+        const player = playersData.find(p => {
+          const dbName = p.name.toLowerCase();
+          return dbName.includes(rawName) || (rawName.length >= 4 && dbName.includes(rawName.substring(0, 5))) || (dbName.length >= 4 && rawName.includes(dbName.substring(0, 5)));
+        });
+
+        if (player && !updatedPlayersSet.has(player.name) && !isNaN(ptsToAdd) && ptsToAdd < 50) {
+          player.pts += ptsToAdd;
+          updatedPlayersSet.add(player.name);
+          updatedCount++;
+          if (player.isMe) {
+            myPointsEarned = ptsToAdd;
+            myWLD = wldString;
+          }
+        }
+      } else if (simpleMatch) {
+        let rawName = simpleMatch[1].trim().replace(/^[\d.#\-—–\s]+/, '').toLowerCase();
+        const ptsToAdd = parseInt(simpleMatch[2], 10);
+
+        const player = playersData.find(p => {
+          const dbName = p.name.toLowerCase();
+          return dbName.includes(rawName) || (rawName.length >= 4 && dbName.includes(rawName.substring(0, 5))) || (dbName.length >= 4 && rawName.includes(dbName.substring(0, 5)));
+        });
+
+        if (player && !updatedPlayersSet.has(player.name) && !isNaN(ptsToAdd) && ptsToAdd < 50) {
+          player.pts += ptsToAdd;
+          updatedPlayersSet.add(player.name);
+          updatedCount++;
+          if (player.isMe) {
+            myPointsEarned = ptsToAdd;
+          }
+        }
+      }
+    });
+
+    if (updatedCount > 0) {
+      if (!isRetoMode && !isContinuation) {
+        let formattedDate = "";
+        const monthsAbbr = ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic'];
+        
+        if (dateInput && dateInput.value) {
+          const parts = dateInput.value.split("-");
+          const d = new Date(Number(parts[0]), Number(parts[1]) - 1, Number(parts[2]));
+          formattedDate = `${d.getDate()} ${monthsAbbr[d.getMonth()]}`;
+        } else {
+          const today = new Date();
+          formattedDate = `${today.getDate()} ${monthsAbbr[today.getMonth()]}`;
+        }
+
+        const selectedDeck = deckInput ? deckInput.value : "🐂⚪🔴 Torito Boros 🏆";
+        const currentSeason = "2026-2";
+        const myNewRank = playersData.findIndex(p => p.isMe) + 1;
+
+        if (!myWLD) {
+          if (myPointsEarned >= 15) myWLD = "5-0-0";
+          else if (myPointsEarned === 12) myWLD = "4-1-0";
+          else if (myPointsEarned === 9) myWLD = "3-2-0";
+          else if (myPointsEarned === 6) myWLD = "2-3-0";
+          else if (myPointsEarned === 3) myWLD = "1-4-0";
+          else myWLD = "0-5-0";
+        }
+
+        fullHistoricData.push({
+          date: formattedDate,
+          season: currentSeason,
+          deck: selectedDeck,
+          rank: `${myNewRank}°`,
+          pts: myPointsEarned,
+          wl: myWLD,
+          type: myPointsEarned >= 9 ? "good" : (myPointsEarned <= 3 ? "bad" : "normal")
+        });
+      }
+
+      saveData();
+      renderLeaderboard();
+      renderFullHistoric();
+      renderHistoricDeckStats();
+      renderCurrentSeasonStats();
+
+      if (fileInput) fileInput.value = "";
+      if (manualInput) manualInput.value = "";
+      if (statusEl) statusEl.textContent = "";
+
+      const msg = isRetoMode 
+        ? `🎯 ¡Puntos de RETO sumados exitosamente a ${updatedCount} jugadores!` 
+        : `¡Escaneo exitoso! Se actualizaron ${updatedCount} jugadores ${isContinuation ? '(Parte 2: Sin duplicar historial)' : ''}.`;
+
+      alert(msg);
+      sp('g', document.querySelector('nav .nb'));
+    } else {
+      alert("No se pudieron detectar puntajes automáticamente. Revisa el texto e intenta de nuevo.");
+      if (statusEl) statusEl.textContent = "";
+    }
+  }
+
+  function resetAppData() {
+    const confirmReset = confirm("¿Estás seguro de que quieres borrar todos los datos guardados y volver al estado inicial?");
+    
+    if (confirmReset) {
+      localStorage.removeItem('pauper_players');
+      localStorage.removeItem('pauper_historic');
+      localStorage.removeItem('lastUpdateTime');
+
+      playersData = JSON.parse(JSON.stringify(defaultPlayersData));
+      fullHistoricData = JSON.parse(JSON.stringify(defaultHistoricData));
+
+      saveData();
+      renderLeaderboard();
+      renderFullHistoric();
+      renderHistoricDeckStats();
+      renderCurrentSeasonStats();
+
+      alert("¡Datos reseteados correctamente!");
+    }
+  }
+
+  window.onload = () => {
+    loadData();
+    if (!localStorage.getItem('lastUpdateTime')) {
+      localStorage.setItem('lastUpdateTime', new Date().toISOString());
+    }
+    renderLeaderboard();
+    renderFullHistoric();
+    renderHistoricDeckStats();
+    renderCurrentSeasonStats();
+  };
+  </script>
 </body>
 </html>

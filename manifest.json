@@ -1,0 +1,55 @@
+{
+  "id": "pauper-league-tracker",
+  "name": "Pauper League Tracker",
+  "short_name": "Pauper",
+  "description": "Tabla de clasificación, estadísticas y escáner de torneos de Pauper",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#0d1117",
+  "theme_color": "#0d1117",
+  "orientation": "portrait",
+  "categories": ["games", "sports", "utilities"],
+  "icons": [
+    {
+      "src": "./icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "./icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "maskable"
+    },
+    {
+      "src": "./icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "./icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "Tabla General",
+      "short_name": "General",
+      "description": "Ver la tabla de posiciones acumulada",
+      "url": "./#g",
+      "icons": [{ "src": "./icon-192.png", "sizes": "192x192" }]
+    },
+    {
+      "name": "Registrar Fecha",
+      "short_name": "Escanear",
+      "description": "Escanear captura o ingresar resultados",
+      "url": "./#scanner",
+      "icons": [{ "src": "./icon-192.png", "sizes": "192x192" }]
+    }
+  ]
+}
