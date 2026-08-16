@@ -1271,201 +1271,185 @@
       const fileInput = document.getElementById("screenshot-file");
       const statusEl = document.getElementById("scan-status");
       const rankInput = document.getElementById("scan-rank");
-      const isRetoMode = document.getElementById("reto-mode")?.checked;
-      const isContinuation = document.getElementById("same-day-continuation")?.checked;
+
+      // Controles seguros por si no existen en el HTML
+      const retoEl = document.getElementById("reto-mode");
+      const isRetoMode = retoEl ? retoEl.checked : false;
+      const contEl = document.getElementById("same-day-continuation");
+      const isContinuation = contEl ? contEl.checked : false;
 
       const text = manualInput ? manualInput.value : "";
       if (!text.trim()) {
-        alert("Por favor sube una captura de pantalla o escribe el texto de los resultados.");
+        if (statusEl) {
+          statusEl.style.color = "#f85149";
+          statusEl.textContent = "⚠️ Sube una captura de pantalla o escribe el texto.";
+        }
         return;
       }
 
-      const lines = text.split("\n");
-      let updatedCount = 0;
-      let myPointsEarned = 0;
-      let myWLD = "";
-      let detectedMyRank = "";
-      const updatedPlayersSet = new Set();
+      try {
+        const lines = text.split("\n");
+        let updatedCount = 0;
+        let myPointsEarned = 0;
+        let myWLD = "";
+        let detectedMyRank = "";
+        const updatedPlayersSet = new Set();
 
-      lines.forEach(line => {
-        const trimmedLine = line.trim();
-        if (!trimmedLine) return;
+        lines.forEach(line => {
+          const trimmedLine = line.trim();
+          if (!trimmedLine) return;
 
-        // Normalize line: replace vertical pipes/dividers from screenshot with spaces
-        const lineToParse = trimmedLine.replace(/[|│｜!]/g, ' ');
+          const lineToParse = trimmedLine.replace(/[|│｜!]/g, ' ');
+          const rankMatch = lineToParse.match(/^#?(\d{1,2})[\.\s°º\-:]+/);
+          const lineRank = rankMatch ? `${rankMatch[1]}°` : "";
 
-        // Extract leading position/rank if present (e.g. "1.", "1 ", "12", "12°", "#12")
-        const rankMatch = lineToParse.match(/^#?(\d{1,2})[\.\s°º\-:]+/);
-        const lineRank = rankMatch ? `${rankMatch[1]}°` : "";
+          const wldRegex = /(\d{1,2})\s*[-–—:/]\s*(\d{1,2})\s*[-–—:/]\s*([0-9Oo])\b/;
+          const wldMatch = lineToParse.match(wldRegex);
 
-        // Match W-L-D pattern (e.g. "1-3-0", "3-0-1", "2-1-1", "1 - 3 - 0", "1-3-O")
-        // Accommodates OCR 'O'/'o' for 0 and various dash/separator characters
-        const wldRegex = /(\d{1,2})\s*[-–—:/]\s*(\d{1,2})\s*[-–—:/]\s*([0-9Oo])\b/;
-        const wldMatch = lineToParse.match(wldRegex);
+          let rawName = "";
+          let ptsToAdd = NaN;
+          let wldString = "";
+          let pointsFromWLD = null;
 
-        let rawName = "";
-        let ptsToAdd = NaN;
-        let wldString = "";
-        let pointsFromWLD = null;
+          if (wldMatch) {
+            const w = parseInt(wldMatch[1], 10);
+            const l = parseInt(wldMatch[2], 10);
+            const dStr = wldMatch[3].replace(/[Oo]/g, '0');
+            const d = parseInt(dStr, 10);
+            wldString = `${w}-${l}-${d}`;
+            pointsFromWLD = (w * 3) + (d * 1);
 
-        if (wldMatch) {
-          const w = parseInt(wldMatch[1], 10);
-          const l = parseInt(wldMatch[2], 10);
-          const dStr = wldMatch[3].replace(/[Oo]/g, '0');
-          const d = parseInt(dStr, 10);
-          wldString = `${w}-${l}-${d}`;
-          pointsFromWLD = (w * 3) + (d * 1);
+            const textBeforeWLD = lineToParse.substring(0, wldMatch.index).trim();
+            const ptsMatch = textBeforeWLD.match(/(\d{1,3})\s*[\s.:\|\-—–_]*$/);
 
-          const textBeforeWLD = lineToParse.substring(0, wldMatch.index).trim();
-          // Look for points immediately before W-L-D (ignoring trailing dots, colons, pipes, spaces)
-          const ptsMatch = textBeforeWLD.match(/(\d{1,3})\s*[\s.:\|\-—–_]*$/);
+            if (ptsMatch) {
+              ptsToAdd = parseInt(ptsMatch[1], 10);
+              const namePart = textBeforeWLD.substring(0, ptsMatch.index).trim();
+              rawName = cleanPlayerName(namePart);
+            } else {
+              ptsToAdd = 0;
+              rawName = cleanPlayerName(textBeforeWLD);
+            }
 
-          if (ptsMatch) {
-            ptsToAdd = parseInt(ptsMatch[1], 10);
-            const namePart = textBeforeWLD.substring(0, ptsMatch.index).trim();
-            rawName = cleanPlayerName(namePart);
+            // REGLA ABSOLUTA: Si el WLD genera puntos, sobrescribe lecturas en 0
+            if (pointsFromWLD > 0) {
+              ptsToAdd = pointsFromWLD;
+            }
           } else {
-            ptsToAdd = 0;
-            rawName = cleanPlayerName(textBeforeWLD);
+            const simpleMatch = lineToParse.match(/^(.+?)(?:\s*[:\-]?\s*)(\d{1,3})\s*$/);
+            if (simpleMatch) {
+              rawName = cleanPlayerName(simpleMatch[1]);
+              ptsToAdd = parseInt(simpleMatch[2], 10);
+            }
           }
 
-          // ABSOLUTE RULE: If W-L-D generated points (like 1-3-0 = 3 pts), 
-          // it should ALWAYS override a 0 point misread on mobile.
-          if (pointsFromWLD > 0) {
-            ptsToAdd = pointsFromWLD;
-          }// Cross-check: If OCR misread points as 0 but W-L-D indicates wins or draws (e.g. 1-3-0 = 3 pts),
-          // trust the MTG rule: (Wins * 3) + (Draws * 1)
-          if ((ptsToAdd === 0 || isNaN(ptsToAdd)) && pointsFromWLD > 0) {
-            ptsToAdd = pointsFromWLD;
+          if (!rawName || isNaN(ptsToAdd) || ptsToAdd > 50) return;
+
+          const lowerName = rawName.toLowerCase();
+          let player = findMatchingPlayer(rawName);
+
+          if (!player) {
+            const isChristian = (lowerName.includes("christian") || lowerName.includes("cristian") || lowerName.startsWith("chris")) &&
+              (lowerName.includes("do") || lowerName.includes("donado") || (!lowerName.includes("machado") && !lowerName.includes("mac")));
+            player = { name: rawName, pts: 0, isMe: isChristian };
+            playersData.push(player);
           }
+
+          if (!updatedPlayersSet.has(player.name)) {
+            player.pts += ptsToAdd;
+            updatedPlayersSet.add(player.name);
+            updatedCount++;
+            if (player.isMe) {
+              myPointsEarned = ptsToAdd;
+              if (wldString) myWLD = wldString;
+              if (lineRank) detectedMyRank = lineRank;
+            }
+          }
+        });
+
+        if (updatedCount > 0) {
+          if (!isRetoMode && !isContinuation) {
+            const formattedDate = getFormattedDateInput();
+            const selectedDeck = getSelectedDeck();
+            const currentSeason = "2026-2";
+
+            let finalRank = rankInput ? rankInput.value.trim() : "";
+            if (!finalRank) {
+              finalRank = detectedMyRank || `${playersData.findIndex(p => p.isMe) + 1}°`;
+            }
+            if (!finalRank.endsWith("°") && !isNaN(parseInt(finalRank, 10))) {
+              finalRank = `${parseInt(finalRank, 10)}°`;
+            }
+
+            if (!myWLD) {
+              if (myPointsEarned >= 15) myWLD = "5-0-0";
+              else if (myPointsEarned >= 12) myWLD = "4-0-0";
+              else if (myPointsEarned >= 10) myWLD = "3-0-1";
+              else if (myPointsEarned >= 9) myWLD = "3-1-0";
+              else if (myPointsEarned >= 7) myWLD = "2-1-1";
+              else if (myPointsEarned >= 6) myWLD = "2-2-0";
+              else if (myPointsEarned >= 4) myWLD = "1-2-1";
+              else if (myPointsEarned >= 3) myWLD = "1-3-0";
+              else if (myPointsEarned >= 1) myWLD = "0-3-1";
+              else myWLD = "0-4-0";
+            }
+
+            fullHistoricData.push({
+              date: formattedDate,
+              season: currentSeason,
+              deck: selectedDeck,
+              rank: finalRank,
+              pts: myPointsEarned,
+              wl: myWLD,
+              type: myPointsEarned >= 9 ? "good" : (myPointsEarned <= 3 ? "bad" : "normal")
+            });
+          }
+
+          saveData();
+          renderLeaderboard();
+          renderFullHistoric();
+          renderHistoricDeckStats();
+          renderCurrentSeasonStats();
+
+          // Limpiar campos visuales
+          if (fileInput) fileInput.value = "";
+          if (manualInput) manualInput.value = "";
+          if (rankInput) rankInput.value = "";
+
+          // En lugar de alert(), usamos el texto de estado
+          const msg = isRetoMode
+            ? `🎯 ¡RETO sumado a ${updatedCount} jugadores!`
+            : `✅ ¡Actualizados ${updatedCount} jugadores! Tú sumas ${myPointsEarned} pts.`;
+
+          if (statusEl) {
+            statusEl.style.color = "#3fb950"; // Verde de éxito
+            statusEl.textContent = msg;
+          }
+
+          // Redirigir a General automáticamente tras 1.5 segundos para que leas el mensaje
+          setTimeout(() => {
+            if (statusEl) {
+              statusEl.style.color = "#f97316"; // Volver a naranja original
+              statusEl.textContent = "";
+            }
+            sp('g', document.querySelector('nav .nb'));
+          }, 1500);
+
         } else {
-          // Simple line format without WLD (e.g. "Christian Donado 3" or "Christian Donado: 3")
-          const simpleMatch = lineToParse.match(/^(.+?)(?:\s*[:\-]?\s*)(\d{1,3})\s*$/);
-          if (simpleMatch) {
-            rawName = cleanPlayerName(simpleMatch[1]);
-            ptsToAdd = parseInt(simpleMatch[2], 10);
+          if (statusEl) {
+            statusEl.style.color = "#f85149"; // Rojo de error
+            statusEl.textContent = "⚠️ No se detectaron puntajes válidos en el texto.";
           }
         }
 
-        if (!rawName || isNaN(ptsToAdd) || ptsToAdd > 50) return;
-
-        const lowerName = rawName.toLowerCase();
-        let player = findMatchingPlayer(rawName);
-        const textBeforeWLD = lineToParse.substring(0, wldMatch.index).trim();
-        // Look for points immediately before W-L-D (ignoring trailing dots, colons, pipes, spaces)
-        const ptsMatch = textBeforeWLD.match(/(\d{1,3})\s*[\s.:\|\-—–_]*$/);
-
-        if (ptsMatch) {
-          ptsToAdd = parseInt(ptsMatch[1], 10);
-          const namePart = textBeforeWLD.substring(0, ptsMatch.index).trim();
-          rawName = cleanPlayerName(namePart);
-        } else {
-          ptsToAdd = 0;
-          rawName = cleanPlayerName(textBeforeWLD);
+      } catch (err) {
+        // SI ALGO FALLA, lo veremos directamente en pantalla en lugar de congelarse
+        if (statusEl) {
+          statusEl.style.color = "#f85149";
+          statusEl.textContent = "❌ Error en código: " + err.message;
         }
-
-        // ABSOLUTE RULE: If W-L-D generated points (like 1-3-0 = 3 pts), 
-        // it should ALWAYS override a 0 point misread on mobile.
-        if (pointsFromWLD > 0) {
-          ptsToAdd = pointsFromWLD;
-        }
-        if (!player) {
-          // Auto-add new player if not in database
-          const isChristian = (lowerName.includes("christian") || lowerName.includes("cristian") || lowerName.startsWith("chris")) &&
-            (lowerName.includes("do") || lowerName.includes("donado") || (!lowerName.includes("machado") && !lowerName.includes("mac")));
-          player = { name: rawName, pts: 0, isMe: isChristian };
-          playersData.push(player);
-        }
-
-        if (!updatedPlayersSet.has(player.name)) {
-          player.pts += ptsToAdd;
-          updatedPlayersSet.add(player.name);
-          updatedCount++;
-          if (player.isMe) {
-            myPointsEarned = ptsToAdd;
-            if (wldString) myWLD = wldString;
-            if (lineRank) detectedMyRank = lineRank;
-          }
-        }
-      });
-
-      if (updatedCount > 0) {
-        if (!isRetoMode && !isContinuation) {
-          const formattedDate = getFormattedDateInput();
-          const selectedDeck = getSelectedDeck();
-          const currentSeason = "2026-2";
-
-          // Determine tournament rank for Christian
-          let finalRank = rankInput?.value?.trim();
-          if (!finalRank) {
-            finalRank = detectedMyRank || `${playersData.findIndex(p => p.isMe) + 1}°`;
-          }
-          if (!finalRank.endsWith("°") && !isNaN(parseInt(finalRank, 10))) {
-            finalRank = `${parseInt(finalRank, 10)}°`;
-          }
-
-          // Realistic fallback matching standard Pauper tournament rules if W-L-D was not present in text
-          if (!myWLD) {
-            if (myPointsEarned >= 15) myWLD = "5-0-0";
-            else if (myPointsEarned >= 12) myWLD = "4-0-0";
-            else if (myPointsEarned >= 10) myWLD = "3-0-1";
-            else if (myPointsEarned >= 9) myWLD = "3-1-0";
-            else if (myPointsEarned >= 7) myWLD = "2-1-1";
-            else if (myPointsEarned >= 6) myWLD = "2-2-0";
-            else if (myPointsEarned >= 4) myWLD = "1-2-1";
-            else if (myPointsEarned >= 3) myWLD = "1-3-0";
-            else if (myPointsEarned >= 1) myWLD = "0-3-1";
-            else myWLD = "0-4-0";
-          }
-
-          fullHistoricData.push({
-            date: formattedDate,
-            season: currentSeason,
-            deck: selectedDeck,
-            rank: finalRank,
-            pts: myPointsEarned,
-            wl: myWLD,
-            type: myPointsEarned >= 9 ? "good" : (myPointsEarned <= 3 ? "bad" : "normal")
-          });
-        }
-
-        saveData();
-        renderLeaderboard();
-        renderFullHistoric();
-        renderHistoricDeckStats();
-        renderCurrentSeasonStats();
-
-        if (fileInput) fileInput.value = "";
-        if (manualInput) manualInput.value = "";
-        if (rankInput) rankInput.value = "";
-        if (statusEl) statusEl.textContent = "";
-
-        const msg = isRetoMode
-          ? `🎯 ¡Puntos de RETO sumados exitosamente a ${updatedCount} jugadores!`
-          : `✅ ¡Fecha registrada con éxito!\n• Jugadores actualizados: ${updatedCount}\n• Christian: ${myPointsEarned} pts (${myWLD || 'W-L-D'})${isContinuation ? ' (Continuación de fecha)' : ''}`;
-
-        alert(msg);
-        sp('g', document.querySelector('nav .nb'));
-      } else {
-        alert("No se pudieron detectar puntajes en el texto. Asegúrate de que las líneas contengan el nombre del jugador y sus puntos.");
-        if (statusEl) statusEl.textContent = "";
+        console.error("Error crítico en applyParsedTextData:", err);
       }
-    }
-
-    function exportBackupJSON() {
-      const backupObj = {
-        version: DATA_VERSION,
-        exportDate: new Date().toISOString(),
-        playersData: playersData,
-        fullHistoricData: fullHistoricData
-      };
-      const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(backupObj, null, 2));
-      const dlAnchor = document.createElement('a');
-      dlAnchor.setAttribute("href", dataStr);
-      dlAnchor.setAttribute("download", `pauper_league_backup_${new Date().toISOString().slice(0, 10)}.json`);
-      document.body.appendChild(dlAnchor);
-      dlAnchor.click();
-      dlAnchor.remove();
     }
 
     function importBackupJSON(event) {
