@@ -712,6 +712,10 @@
 
     function renderCurrentSeasonStats() {
       const entries = getCurrentSeasonEntries();
+
+      // Ordenar cronológicamente (el más antiguo primero, el más reciente al final)
+      entries.sort((a, b) => parseDate(a.date) - parseDate(b.date));
+
       const validEntries = entries.filter(item => item.rank && item.rank !== "—");
       const totalTournaments = validEntries.length;
       const totalPoints = validEntries.reduce((sum, item) => sum + (Number(item.pts) || 0), 0);
@@ -1003,6 +1007,10 @@
 
     function renderFullHistoric() {
       // Dynamic calculation for historic cards across all seasons
+      // Ordenar el histórico completo cronológicamente (el más reciente al final)
+      fullHistoricData.sort((a, b) => parseDate(a.date) - parseDate(b.date));
+
+      // Dynamic calculation for historic cards across all seasons
       const validEntries = fullHistoricData.filter(item => item.rank && item.rank !== "—");
       const totalHistoricTourneys = validEntries.length;
       const totalHistoricPts = validEntries.reduce((sum, item) => sum + (Number(item.pts) || 0), 0);
@@ -1179,6 +1187,11 @@
           const ret = await worker.recognize(processedImageBlob);
           if (manualInput) manualInput.value = ret.data.text;
           if (statusEl) statusEl.textContent = "✅ ¡Lectura completa! Aplicando fecha...";
+          // Dar un respiro al hilo principal en móvil antes de procesar líneas pesadas
+          setTimeout(() => {
+            applyParsedTextData();
+          }, 50);
+          return; // Salimos para que applyParsedTextData maneje el resto tras el timeout
         } catch (err) {
           if (statusEl) statusEl.textContent = "⚠️ Error leyendo imagen. Puedes editar el texto manualmente.";
           console.error("Error en Tesseract:", err);
