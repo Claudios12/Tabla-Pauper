@@ -1187,11 +1187,16 @@
           const ret = await worker.recognize(processedImageBlob);
           if (manualInput) manualInput.value = ret.data.text;
           if (statusEl) statusEl.textContent = "✅ ¡Lectura completa! Aplicando fecha...";
+
+          // Terminar el worker de inmediato de forma segura antes de liberar el hilo
+          await worker.terminate();
+          worker = null;
+
           // Dar un respiro al hilo principal en móvil antes de procesar líneas pesadas
           setTimeout(() => {
             applyParsedTextData();
           }, 50);
-          return; // Salimos para que applyParsedTextData maneje el resto tras el timeout
+          return;
         } catch (err) {
           if (statusEl) statusEl.textContent = "⚠️ Error leyendo imagen. Puedes editar el texto manualmente.";
           console.error("Error en Tesseract:", err);
