@@ -1195,7 +1195,7 @@
           // Dar un respiro al hilo principal en móvil antes de procesar líneas pesadas
           setTimeout(() => {
             applyParsedTextData();
-          }, 50);
+          }, 300);
           return;
         } catch (err) {
           if (statusEl) statusEl.textContent = "⚠️ Error leyendo imagen. Puedes editar el texto manualmente.";
