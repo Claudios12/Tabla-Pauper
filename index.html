@@ -888,7 +888,7 @@
 
       const lastEntry = currentSeasonEntries[currentSeasonEntries.length - 1];
       const lastDate = parseDate(lastEntry.date);
-      if (isNaN(lastDate.getTime())) return 15;
+      if (isNaN(lastDate.getTime())) return "--";
 
       let nextThursday = new Date(lastDate.getFullYear(), lastDate.getMonth(), lastDate.getDate());
       nextThursday.setDate(nextThursday.getDate() + 1);
