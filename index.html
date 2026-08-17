@@ -243,6 +243,7 @@
       border-radius: 6px;
     }
 
+    /* Forms and Input Controls */
     .field-group {
       display: flex;
       flex-direction: column;
@@ -373,7 +374,7 @@
 
   <header>
     <h1>📜 Pauper League</h1>
-    <span id="header-season-label" style="font-size: 0.72rem; color: #8b949e;">Temporada</span>
+    <span style="font-size: 0.72rem; color: #8b949e;">Temporada 2026-2</span>
   </header>
 
   <div class="container">
@@ -407,16 +408,16 @@
           <div class="cl">W-L-D</div>
         </div>
         <div class="card">
-          <div class="cv" id="stat-remaining">15</div>
-          <div class="cl">Fechas rest</div>
+          <div class="cv" id="stat-remaining">--</div>
+          <div class="cl">Fechas restantes</div>
         </div>
       </div>
-      <p class="note" id="stats-season-note">Solo liga actual. Para acumulado histórico revisa 📜 Histórico.</p>
+      <p class="note">Solo liga 2026-2. Para acumulado histórico revisa 📜 Histórico.</p>
 
-      <div class="sl" id="label-current-decks">📊 Por Mazo</div>
+      <div class="sl">📊 Por Mazo (2026-2)</div>
       <div id="current-season-decks"></div>
 
-      <div class="sl" id="label-current-tourneys">📋 Torneos jugados</div>
+      <div class="sl">📋 Torneos jugados (2026-2)</div>
       <div id="current-season-tournaments"></div>
     </div>
 
@@ -433,11 +434,14 @@
           <input type="date" id="scan-date" class="input-ctrl">
         </div>
 
-        <!-- DECK PICKER (Dinámico y sin Grixis) -->
+        <!-- DECK PICKER -->
         <div class="field-group">
-          <label for="scan-deck">⚔️ Mazo Jugado</label>
+          <label for="scan-deck">⚔️ Mazo Jugado (Christian)</label>
           <select id="scan-deck" class="input-ctrl" onchange="toggleCustomDeckInput()">
-            <!-- Se llena dinámicamente con JS excluyendo Grixis -->
+            <option value="🐂⚪🔴 Torito Boros ">🐂⚪🔴 Torito Boros </option>
+            <option value="🐧🔵🔴 Pingüinos Izzet">🐧🔵🔴 Pingüinos Izzet</option>
+            <option value="🧙⚫🔴 Magitos Rakdos">🧙⚫🔴 Magitos Rakdos</option>
+            <option value="other">➕ Otro mazo (escribir)...</option>
           </select>
         </div>
 
@@ -446,11 +450,13 @@
           <input type="text" id="scan-custom-deck" placeholder="Ej: 🟢⚪ Bogles" class="input-ctrl">
         </div>
 
+
         <!-- SCREENSHOT FILE INPUT -->
         <div class="field-group">
           <label for="screenshot-file">🖼️ Captura de pantalla (SS)</label>
           <input type="file" id="screenshot-file" accept="image/*" class="input-ctrl">
         </div>
+
 
         <div class="field-group"
           style="flex-direction:row; align-items:center; justify-content:space-between; margin:10px 0 12px 0;">
@@ -489,13 +495,14 @@
       </div>
 
       <!-- RESET BUTTON -->
-      <button onclick="resetAppData()" class="btn btn-danger" id="btn-reset-season"
-        style="width:100%; margin-top:14px; padding:8px;">🗑️ Reiniciar Temporada a Cero</button>
+      <button onclick="resetAppData()" class="btn btn-danger" style="width:100%; margin-top:14px; padding:8px;">🗑️
+        Reiniciar Temporada 2026-2 a Cero</button>
     </div>
 
     <!-- HISTÓRICO -->
     <div id="hist" class="pg">
-      <p class="note" style="margin-bottom:8px">Acumulado de todas las temporadas · se actualiza automáticamente</p>
+      <p class="note" style="margin-bottom:8px">Acumulado de todas las temporadas · se actualiza automáticamente con
+        cada torneo de 2026-2</p>
 
       <div class="cards">
         <div class="card">
@@ -520,8 +527,15 @@
       <div id="historic-deck-stats"></div>
 
       <div class="sl">🏆 Temporadas</div>
-      <div id="historic-seasons-container">
-        <!-- Se genera dinámicamente con JS -->
+      <div class="mh" onclick="tm('s1')">
+        <span class="mt">📅 2026-1</span>
+        <span class="ms">24 torneos · 87 pts · 12° final</span>
+        <span class="ch" id="cs1">▼</span>
+      </div>
+      <div class="mb" id="s1">
+        <p class="note"
+          style="text-align:left; padding:8px 12px; background:#161b22; border-radius:9px; border:1px solid #30363d;">
+          Cerrada Jun 18 2026. Mejor: 3° el 14 May con 🐂⚪🔴 Torito Boros. No clasificó Top 8.</p>
       </div>
 
       <div class="sl">📋 Historial completo</div>
@@ -549,16 +563,9 @@
   </script>
 
   <script>
-    const CONFIG = {
-      CURRENT_SEASON: '2026-2',
-      DATA_VERSION: '2026-2-dynamic-v2',
-      DEFAULT_DECKS: [
-        "🐂⚪🔴 Torito Boros",
-        "🐧🔵🔴 Pingüinos Izzet",
-        "🧙⚫🔴 Magitos Rakdos"
-      ]
-    };
+    const DATA_VERSION = '2026-2-clean-v1';
 
+    // Base player roster for Season 2026-2 starting at ZERO points
     const defaultPlayersData = [
       { name: "Christian Donado", pts: 0, isMe: true },
       { name: "Albert Loaiza", pts: 0 },
@@ -605,6 +612,7 @@
       { name: "Andres Antolinez", pts: 0 }
     ];
 
+    // Season 2026-1 baseline tournaments (Season 2026-2 will be populated by uploaded screenshots)
     const defaultHistoricData = [
       { date: "9 Ene", season: "2026-1", deck: "🧙⚫🔴 Magitos Rakdos", rank: "7°", pts: 6, wl: "2-2-0", type: "normal" },
       { date: "16 Ene", season: "2026-1", deck: "🧙⚫🔴 Magitos Rakdos", rank: "10°", pts: 0, wl: "0-4-0", type: "bad" },
@@ -641,7 +649,7 @@
       try {
         localStorage.setItem('pauper_players', JSON.stringify(playersData));
         localStorage.setItem('pauper_historic', JSON.stringify(fullHistoricData));
-        localStorage.setItem('pauper_data_version', CONFIG.DATA_VERSION);
+        localStorage.setItem('pauper_data_version', DATA_VERSION);
         localStorage.setItem('lastUpdateTime', new Date().toISOString());
       } catch (e) {
         console.warn('No se pudo guardar en localStorage:', e);
@@ -651,7 +659,8 @@
     function loadData() {
       try {
         const storedVersion = localStorage.getItem('pauper_data_version');
-        if (storedVersion !== CONFIG.DATA_VERSION) {
+        if (storedVersion !== DATA_VERSION) {
+          // Upgrade / Clean initial state for Season 2026-2
           playersData = JSON.parse(JSON.stringify(defaultPlayersData));
           fullHistoricData = JSON.parse(JSON.stringify(defaultHistoricData));
           saveData();
@@ -662,6 +671,7 @@
         const storedHistoric = localStorage.getItem('pauper_historic');
         if (storedPlayers) {
           playersData = JSON.parse(storedPlayers);
+          // Ensure isMe is set for Christian Donado
           playersData.forEach(p => {
             if (!p.isMe && p.name && p.name.toLowerCase().includes("christian") && p.name.toLowerCase().includes("donado")) {
               p.isMe = true;
@@ -682,48 +692,6 @@
       }
     }
 
-    function updateDynamicUIElements() {
-      const headerLabel = document.getElementById("header-season-label");
-      if (headerLabel) headerLabel.textContent = `Temporada ${CONFIG.CURRENT_SEASON}`;
-
-      const statsNote = document.getElementById("stats-season-note");
-      if (statsNote) statsNote.textContent = `Solo liga ${CONFIG.CURRENT_SEASON}. Para acumulado histórico revisa 📜 Histórico.`;
-
-      const lblDecks = document.getElementById("label-current-decks");
-      if (lblDecks) lblDecks.textContent = `📊 Por Mazo (${CONFIG.CURRENT_SEASON})`;
-
-      const lblTourneys = document.getElementById("label-current-tourneys");
-      if (lblTourneys) lblTourneys.textContent = `📋 Torneos jugados (${CONFIG.CURRENT_SEASON})`;
-
-      const btnReset = document.getElementById("btn-reset-season");
-      if (btnReset) btnReset.textContent = `🗑️ Reiniciar Temporada ${CONFIG.CURRENT_SEASON} a Cero`;
-
-      populateDeckSelect();
-    }
-
-    function populateDeckSelect() {
-      const select = document.getElementById("scan-deck");
-      if (!select) return;
-
-      const deckSet = new Set(CONFIG.DEFAULT_DECKS);
-      fullHistoricData.forEach(item => {
-        if (item.deck && item.deck !== "No participó") {
-          deckSet.add(item.deck);
-        }
-      });
-
-      let optionsHTML = '';
-      deckSet.forEach(deck => {
-        // Excluir cualquier variante de Grixis del selector desplegable
-        if (!deck.toLowerCase().includes("grixis")) {
-          optionsHTML += `<option value="${deck}">${deck}</option>`;
-        }
-      });
-      optionsHTML += `<option value="other">➕ Otro mazo (escribir)...</option>`;
-
-      select.innerHTML = optionsHTML;
-    }
-
     function toggleCustomDeckInput() {
       const select = document.getElementById("scan-deck");
       const customGroup = document.getElementById("custom-deck-group");
@@ -733,11 +701,13 @@
     }
 
     function getCurrentSeasonEntries() {
-      return fullHistoricData.filter(item => item.season === CONFIG.CURRENT_SEASON);
+      return fullHistoricData.filter(item => item.season === "2026-2");
     }
 
     function renderCurrentSeasonStats() {
       const entries = getCurrentSeasonEntries();
+
+      // Ordenar cronológicamente (el más antiguo primero, el más reciente al final)
       entries.sort((a, b) => parseDate(a.date) - parseDate(b.date));
 
       const validEntries = entries.filter(item => item.rank && item.rank !== "—");
@@ -768,7 +738,7 @@
       if (statRank) statRank.textContent = `${myRank}°`;
       if (statBestRank) statBestRank.textContent = bestRank !== "--" ? `${bestRank}°` : "--";
       if (statRecord) statRecord.textContent = `${recordTotals.w}-${recordTotals.l}-${recordTotals.d}`;
-      if (statRemaining) statRemaining.textContent = Math.max(0, 15 - totalTournaments);
+      if (statRemaining) statRemaining.textContent = getRemainingDates();
 
       const deckMap = {};
       entries.forEach(item => {
@@ -797,7 +767,7 @@
         deckList.sort((a, b) => b.ptRatio - a.ptRatio);
 
         if (deckList.length === 0) {
-          deckContainer.innerHTML = `<p class="note" style="text-align:left;">No hay torneos registrados aún en ${CONFIG.CURRENT_SEASON}.</p>`;
+          deckContainer.innerHTML = `<p class="note" style="text-align:left;">No hay torneos registrados aún en 2026-2.</p>`;
         } else {
           deckContainer.innerHTML = deckList.map(({ deck, info, ptRatio }, index) => {
             const ppg = ptRatio.toFixed(1);
@@ -873,7 +843,6 @@
         renderFullHistoric();
         renderHistoricDeckStats();
         renderCurrentSeasonStats();
-        populateDeckSelect();
       }
     }
 
@@ -914,12 +883,12 @@
     }
 
     function getRemainingDates() {
-      const currentSeasonEntries = getCurrentSeasonEntries();
-      if (currentSeasonEntries.length === 0) return 15;
+      const currentSeasonEntries = fullHistoricData.filter(item => item.season === "2026-2");
+      if (currentSeasonEntries.length === 0) return "--";
 
       const lastEntry = currentSeasonEntries[currentSeasonEntries.length - 1];
       const lastDate = parseDate(lastEntry.date);
-      if (isNaN(lastDate.getTime())) return 15;
+      if (isNaN(lastDate.getTime())) return "--";
 
       let nextThursday = new Date(lastDate.getFullYear(), lastDate.getMonth(), lastDate.getDate());
       nextThursday.setDate(nextThursday.getDate() + 1);
@@ -930,7 +899,7 @@
         safetyCounter++;
       }
 
-      const endDate = new Date(2026, 10, 29);
+      const endDate = new Date(2026, 10, 29); // Nov 29, 2026
       let count = 0;
       let maxThursdays = 52;
       while (nextThursday <= endDate && count < maxThursdays) {
@@ -947,7 +916,7 @@
       const lastUpdate = getLastUpdateDate();
       const remainingDates = getRemainingDates();
       const lastUpdateText = lastUpdate ? `<p class="note" style="font-size:0.75rem; color:#8b949e; margin-bottom:8px;">Última actualización: ${lastUpdate}</p>` : '';
-      let html = `${lastUpdateText}<p class="note">Puntos acumulados · Top 10 · ${remainingDates} fechas restantes</p>`;
+      let html = `${lastUpdateText}<p class="note">Puntos acumulados · Top 10 → Nov 29 · ${remainingDates} fechas restantes</p>`;
 
       playersData.forEach((p, index) => {
         const rank = index + 1;
@@ -989,7 +958,7 @@
     function renderHistoricDeckStats() {
       const deckMap = {};
       fullHistoricData.forEach(item => {
-        if (!item.rank || item.rank === "—" || (item.deck && item.deck.toLowerCase().includes("grixis"))) return;
+        if (!item.rank || item.rank === "—" || (item.deck && item.deck.includes("Grixis"))) return;
 
         const deckName = item.deck;
         if (!deckMap[deckName]) {
@@ -1012,7 +981,6 @@
       });
 
       deckList.sort((a, b) => b.ptRatio - a.ptRatio);
-      const bestDeckName = deckList.length > 0 ? deckList[0].deck : "";
 
       const container = document.getElementById("historic-deck-stats");
       if (!container) return;
@@ -1020,24 +988,23 @@
       container.innerHTML = deckList.map(({ deck, info, ptRatio }) => {
         const rec = `${info.record.w}-${info.record.l}-${info.record.d}`;
         const ppg = ptRatio.toFixed(1);
-
-        const isBest = (deck === bestDeckName);
-        const highlight = isBest ? 'style="color:#f97316; font-weight:700;"' : '';
-        const ptColorStyle = isBest ? ';color:#f97316' : '';
-
+        const highlight = deck.includes("Torito") ? 'style="color:#f97316; font-weight:700;"' : '';
         return `
         <div class="row">
           <span class="nm" ${highlight}>${deck}</span>
           <span class="wl">${info.count}T · ${rec}</span>
-          <span class="pt" style="min-width:52px;text-align:right${ptColorStyle}">${ppg} p/T</span>
+          <span class="pt" style="min-width:52px;text-align:right${deck.includes("Torito") ? ";color:#f97316" : ""}">${ppg} p/T</span>
         </div>
       `;
       }).join('');
     }
 
     function renderFullHistoric() {
+      // Dynamic calculation for historic cards across all seasons
+      // Ordenar el histórico completo cronológicamente (el más reciente al final)
       fullHistoricData.sort((a, b) => parseDate(a.date) - parseDate(b.date));
 
+      // Dynamic calculation for historic cards across all seasons
       const validEntries = fullHistoricData.filter(item => item.rank && item.rank !== "—");
       const totalHistoricTourneys = validEntries.length;
       const totalHistoricPts = validEntries.reduce((sum, item) => sum + (Number(item.pts) || 0), 0);
@@ -1061,8 +1028,6 @@
       if (histPtsEl) histPtsEl.textContent = totalHistoricPts;
       if (histBestRankEl) histBestRankEl.textContent = bestHistoricRank !== "--" ? `${bestHistoricRank}°` : "--";
       if (histRecordEl) histRecordEl.textContent = `${totalRecord.w}-${totalRecord.l}-${totalRecord.d}`;
-
-      renderDynamicSeasonsAccordion();
 
       const container = document.getElementById("historic-full-list");
       if (!container) return;
@@ -1100,43 +1065,6 @@
       container.innerHTML = html;
     }
 
-    function renderDynamicSeasonsAccordion() {
-      const container = document.getElementById("historic-seasons-container");
-      if (!container) return;
-
-      const seasonGroups = {};
-      fullHistoricData.forEach(item => {
-        if (item.season && item.season !== CONFIG.CURRENT_SEASON) {
-          if (!seasonGroups[item.season]) seasonGroups[item.season] = [];
-          seasonGroups[item.season].push(item);
-        }
-      });
-
-      let seasonsHTML = '';
-      Object.keys(seasonGroups).forEach((seasonKey, idx) => {
-        const sItems = seasonGroups[seasonKey];
-        const validS = sItems.filter(i => i.rank && i.rank !== "—");
-        const tCount = validS.length;
-        const tPts = validS.reduce((acc, curr) => acc + (Number(curr.pts) || 0), 0);
-
-        const accordionId = `season_acc_${idx}`;
-
-        seasonsHTML += `
-        <div class="mh" onclick="tm('${accordionId}')">
-          <span class="mt">📅 ${seasonKey}</span>
-          <span class="ms">${tCount} torneos · ${tPts} pts</span>
-          <span class="ch" id="c${accordionId}">▼</span>
-        </div>
-        <div class="mb" id="${accordionId}">
-          <p class="note" style="text-align:left; padding:8px 12px; background:#161b22; border-radius:9px; border:1px solid #30363d;">
-            Temporada archivada. Total de torneos jugados: ${tCount}, acumulando ${tPts} puntos totales.
-          </p>
-        </div>`;
-      });
-
-      container.innerHTML = seasonsHTML || '<p class="note">No hay temporadas anteriores archivadas.</p>';
-    }
-
     function sp(id, btn) {
       document.querySelectorAll('.pg').forEach(p => p.classList.remove('on'));
       document.querySelectorAll('.nb').forEach(b => b.classList.remove('on'));
@@ -1147,7 +1075,6 @@
     function tm(id) {
       const el = document.getElementById(id);
       const arrow = document.getElementById('c' + id);
-      if (!el) return;
       if (el.style.display === "none" || !el.style.display) {
         el.style.display = "block";
         if (arrow) arrow.style.transform = "rotate(180deg)";
@@ -1157,6 +1084,7 @@
       }
     }
 
+    // Preprocess image using canvas for OCR
     function preprocessImageForOCR(file) {
       return new Promise((resolve) => {
         const img = new Image();
@@ -1165,7 +1093,7 @@
         img.onload = () => {
           URL.revokeObjectURL(url);
           try {
-            const maxDim = 1600;
+            const maxDim = 1600; // Optimal size for OCR accuracy & low memory consumption
             let { width, height } = img;
 
             if (width > maxDim || height > maxDim) {
@@ -1186,9 +1114,14 @@
             ctx.drawImage(img, 0, 0, width, height);
 
             canvas.toBlob((blob) => {
-              resolve(blob || file);
-            }, 'image/png');
+              if (blob) {
+                resolve(blob);
+              } else {
+                resolve(file);
+              }
+            }, 'image/png'); // PNG avoids lossy compression artifacts around numbers and text
           } catch (err) {
+            console.warn('Preprocessing canvas error, using raw file:', err);
             resolve(file);
           }
         };
@@ -1204,7 +1137,7 @@
 
     function getSelectedDeck() {
       const deckSelect = document.getElementById("scan-deck");
-      if (!deckSelect) return CONFIG.DEFAULT_DECKS[0];
+      if (!deckSelect) return "🐂⚪🔴 Torito Boros";
       if (deckSelect.value === "other") {
         const customVal = document.getElementById("scan-custom-deck")?.value?.trim();
         return customVal || "Otro Mazo";
@@ -1249,15 +1182,18 @@
           if (manualInput) manualInput.value = ret.data.text;
           if (statusEl) statusEl.textContent = "✅ ¡Lectura completa! Aplicando fecha...";
 
+          // Terminar el worker de inmediato de forma segura antes de liberar el hilo
           await worker.terminate();
           worker = null;
 
+          // Dar un respiro al hilo principal en móvil antes de procesar líneas pesadas
           setTimeout(() => {
             applyParsedTextData();
           }, 300);
           return;
         } catch (err) {
           if (statusEl) statusEl.textContent = "⚠️ Error leyendo imagen. Puedes editar el texto manualmente.";
+          console.error("Error en Tesseract:", err);
         } finally {
           if (worker) {
             await worker.terminate().catch(() => { });
@@ -1275,8 +1211,8 @@
     function cleanPlayerName(str) {
       if (!str) return '';
       return str.trim()
-        .replace(/^[\d.#\-—–\sº°|]+/, '')
-        .replace(/[\.\s:\|\-—–_…]+$/, '')
+        .replace(/^[\d.#\-—–\sº°|]+/, '') // Remove leading numbers/rank/pipes
+        .replace(/[\.\s:\|\-—–_…]+$/, '') // Remove trailing dots/ellipses/punctuation/pipes
         .replace(/\s{2,}/g, ' ')
         .trim();
     }
@@ -1286,6 +1222,7 @@
       const cleanName = cleanPlayerName(rawName);
       const lowerName = cleanName.toLowerCase();
 
+      // Priority check for Christian Donado (isMe)
       const isChristianQuery = (lowerName.includes("christian") || lowerName.includes("cristian") || lowerName.startsWith("chris")) &&
         (lowerName.includes("do") || lowerName.includes("donado") || (!lowerName.includes("machado") && !lowerName.includes("mac")));
 
@@ -1294,9 +1231,11 @@
         if (me) return me;
       }
 
+      // Direct exact match
       let matched = playersData.find(p => p.name.toLowerCase() === lowerName);
       if (matched) return matched;
 
+      // Token/prefix match (handles truncated names like "Cristhian Mac..." -> "Cristhian Machado", "Santiago Gutie..." -> "Santiago Gutierrez")
       const cleanQueryTokens = lowerName.split(/\s+/).filter(t => t.length >= 2);
 
       matched = playersData.find(p => {
@@ -1312,6 +1251,9 @@
           if (allTokensMatch) return true;
         }
 
+        if (lowerName.length >= 4 && dbLower.includes(lowerName.substring(0, 5))) return true;
+        if (dbLower.length >= 4 && lowerName.includes(dbLower.substring(0, 5))) return true;
+
         return false;
       });
 
@@ -1324,6 +1266,9 @@
       const statusEl = document.getElementById("scan-status");
       const rankInput = document.getElementById("scan-rank");
 
+      // Controles seguros por si no existen en el HTML
+      const retoEl = document.getElementById("reto-mode");
+      const isRetoMode = retoEl ? retoEl.checked : false;
       const contEl = document.getElementById("same-day-continuation");
       const isContinuation = contEl ? contEl.checked : false;
 
@@ -1380,6 +1325,7 @@
               rawName = cleanPlayerName(textBeforeWLD);
             }
 
+            // REGLA ABSOLUTA: Si el WLD genera puntos, sobrescribe lecturas en 0
             if (pointsFromWLD > 0) {
               ptsToAdd = pointsFromWLD;
             }
@@ -1393,10 +1339,10 @@
 
           if (!rawName || isNaN(ptsToAdd) || ptsToAdd > 50) return;
 
+          const lowerName = rawName.toLowerCase();
           let player = findMatchingPlayer(rawName);
 
           if (!player) {
-            const lowerName = rawName.toLowerCase();
             const isChristian = (lowerName.includes("christian") || lowerName.includes("cristian") || lowerName.startsWith("chris")) &&
               (lowerName.includes("do") || lowerName.includes("donado") || (!lowerName.includes("machado") && !lowerName.includes("mac")));
             player = { name: rawName, pts: 0, isMe: isChristian };
@@ -1416,9 +1362,10 @@
         });
 
         if (updatedCount > 0) {
-          if (!isContinuation) {
+          if (!isRetoMode && !isContinuation) {
             const formattedDate = getFormattedDateInput();
             const selectedDeck = getSelectedDeck();
+            const currentSeason = "2026-2";
 
             let finalRank = rankInput ? rankInput.value.trim() : "";
             if (!finalRank) {
@@ -1443,7 +1390,7 @@
 
             fullHistoricData.push({
               date: formattedDate,
-              season: CONFIG.CURRENT_SEASON,
+              season: currentSeason,
               deck: selectedDeck,
               rank: finalRank,
               pts: myPointsEarned,
@@ -1457,21 +1404,26 @@
           renderFullHistoric();
           renderHistoricDeckStats();
           renderCurrentSeasonStats();
-          populateDeckSelect();
 
+          // Limpiar campos visuales
           if (fileInput) fileInput.value = "";
           if (manualInput) manualInput.value = "";
           if (rankInput) rankInput.value = "";
 
-          const msg = `✅ ¡Actualizados ${updatedCount} jugadores! Tú sumas ${myPointsEarned} pts.`;
+          // En lugar de alert(), usamos el texto de estado
+          const msg = isRetoMode
+            ? `🎯 ¡RETO sumado a ${updatedCount} jugadores!`
+            : `✅ ¡Actualizados ${updatedCount} jugadores! Tú sumas ${myPointsEarned} pts.`;
+
           if (statusEl) {
-            statusEl.style.color = "#3fb950";
+            statusEl.style.color = "#3fb950"; // Verde de éxito
             statusEl.textContent = msg;
           }
 
+          // Redirigir a General automáticamente tras 1.5 segundos para que leas el mensaje
           setTimeout(() => {
             if (statusEl) {
-              statusEl.style.color = "#f97316";
+              statusEl.style.color = "#f97316"; // Volver a naranja original
               statusEl.textContent = "";
             }
             sp('g', document.querySelector('nav .nb'));
@@ -1479,16 +1431,18 @@
 
         } else {
           if (statusEl) {
-            statusEl.style.color = "#f85149";
+            statusEl.style.color = "#f85149"; // Rojo de error
             statusEl.textContent = "⚠️ No se detectaron puntajes válidos en el texto.";
           }
         }
 
       } catch (err) {
+        // SI ALGO FALLA, lo veremos directamente en pantalla en lugar de congelarse
         if (statusEl) {
           statusEl.style.color = "#f85149";
           statusEl.textContent = "❌ Error en código: " + err.message;
         }
+        console.error("Error crítico en applyParsedTextData:", err);
       }
     }
 
@@ -1508,7 +1462,6 @@
             renderFullHistoric();
             renderHistoricDeckStats();
             renderCurrentSeasonStats();
-            populateDeckSelect();
             alert("✅ ¡Copia de seguridad restaurada correctamente!");
           } else {
             alert("El archivo JSON no tiene el formato correcto.");
@@ -1521,18 +1474,8 @@
       event.target.value = "";
     }
 
-    function exportBackupJSON() {
-      const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify({ playersData, fullHistoricData }, null, 2));
-      const downloadAnchor = document.createElement('a');
-      downloadAnchor.setAttribute("href", dataStr);
-      downloadAnchor.setAttribute("download", `pauper_backup_${CONFIG.CURRENT_SEASON}_${new Date().toISOString().slice(0, 10)}.json`);
-      document.body.appendChild(downloadAnchor);
-      downloadAnchor.click();
-      downloadAnchor.remove();
-    }
-
     function resetAppData() {
-      const confirmReset = confirm(`⚠️ ¿Estás seguro de que deseas reiniciar la temporada ${CONFIG.CURRENT_SEASON} desde CERO?\n\nEsto pondrá todos los puntajes de esta temporada en 0 y vaciará sus registros.`);
+      const confirmReset = confirm("⚠️ ¿Estás seguro de que deseas reiniciar la temporada 2026-2 desde CERO?\n\nEsto pondrá todos los puntajes de la temporada 2026-2 en 0 y vaciará los torneos de 2026-2 para que puedas subirlos uno por uno desde tus capturas.");
 
       if (confirmReset) {
         playersData = JSON.parse(JSON.stringify(defaultPlayersData));
@@ -1543,13 +1486,13 @@
         renderFullHistoric();
         renderHistoricDeckStats();
         renderCurrentSeasonStats();
-        populateDeckSelect();
 
-        alert(`✨ ¡Temporada ${CONFIG.CURRENT_SEASON} reiniciada a cero!`);
+        alert("✨ ¡Temporada 2026-2 reiniciada a cero! Ya puedes comenzar a subir tus capturas una a una.");
       }
     }
 
     window.onload = () => {
+      // Set date input to today by default
       const dateInput = document.getElementById("scan-date");
       if (dateInput) {
         const today = new Date();
@@ -1563,8 +1506,6 @@
       if (!localStorage.getItem('lastUpdateTime')) {
         localStorage.setItem('lastUpdateTime', new Date().toISOString());
       }
-
-      updateDynamicUIElements();
       renderLeaderboard();
       renderFullHistoric();
       renderHistoricDeckStats();
