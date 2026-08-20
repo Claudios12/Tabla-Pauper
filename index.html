@@ -235,6 +235,11 @@
       margin-bottom: 12px;
     }
 
+    .g {
+      color: #3fb950 !important;
+      font-weight: 700;
+    }
+
     .season-tag {
       font-size: 0.6rem;
       color: #8b949e;
@@ -984,16 +989,23 @@
 
       const container = document.getElementById("historic-deck-stats");
       if (!container) return;
-
-      container.innerHTML = deckList.map(({ deck, info, ptRatio }) => {
+container.innerHTML = deckList.map(({ deck, info, ptRatio }, index) => {
         const rec = `${info.record.w}-${info.record.l}-${info.record.d}`;
         const ppg = ptRatio.toFixed(1);
-        const highlight = deck.includes("Torito") ? 'style="color:#f97316; font-weight:700;"' : '';
+        
+        // 1. Dynamic Check: If it is the first item in the sorted array, it is the top deck
+        const isTopDeck = index === 0;
+
+        // 2. Assign classes and trophy dynamically
+        const nameClass = isTopDeck ? "nm g" : "nm";
+        const ptClass = isTopDeck ? "pt g" : "pt";
+        const trophy = isTopDeck ? " 🏆" : "";
+
         return `
         <div class="row">
-          <span class="nm" ${highlight}>${deck}</span>
+          <span class="${nameClass}">${deck}${trophy}</span>
           <span class="wl">${info.count}T · ${rec}</span>
-          <span class="pt" style="min-width:52px;text-align:right${deck.includes("Torito") ? ";color:#f97316" : ""}">${ppg} p/T</span>
+          <span class="${ptClass}" style="min-width:52px;text-align:right;">${ppg} p/T</span>
         </div>
       `;
       }).join('');
