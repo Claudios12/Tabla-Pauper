@@ -1278,9 +1278,9 @@ container.innerHTML = deckList.map(({ deck, info, ptRatio }, index) => {
       const statusEl = document.getElementById("scan-status");
       const rankInput = document.getElementById("scan-rank");
 
+      const contCheckbox = document.getElementById("same-day-continuation");
+          if (contCheckbox) contCheckbox.checked = false;
       // Controles seguros por si no existen en el HTML
-      const retoEl = document.getElementById("reto-mode");
-      const isRetoMode = retoEl ? retoEl.checked : false;
       const contEl = document.getElementById("same-day-continuation");
       const isContinuation = contEl ? contEl.checked : false;
 
@@ -1374,7 +1374,7 @@ container.innerHTML = deckList.map(({ deck, info, ptRatio }, index) => {
         });
 
         if (updatedCount > 0) {
-          if (!isRetoMode && !isContinuation) {
+          if (!isContinuation) {
             const formattedDate = getFormattedDateInput();
             const selectedDeck = getSelectedDeck();
             const currentSeason = "2026-2";
@@ -1422,14 +1422,9 @@ container.innerHTML = deckList.map(({ deck, info, ptRatio }, index) => {
           if (manualInput) manualInput.value = "";
           if (rankInput) rankInput.value = "";
 
-          // En lugar de alert(), usamos el texto de estado
-          const msg = isRetoMode
-            ? `🎯 ¡RETO sumado a ${updatedCount} jugadores!`
-            : `✅ ¡Actualizados ${updatedCount} jugadores! Tú sumas ${myPointsEarned} pts.`;
-
           if (statusEl) {
             statusEl.style.color = "#3fb950"; // Verde de éxito
-            statusEl.textContent = msg;
+            statusEl.textContent = `✅ Puntajes aplicados correctamente. ${myPointsEarned} puntos añadidos a tu total.`;
           }
 
           // Redirigir a General automáticamente tras 1.5 segundos para que leas el mensaje
