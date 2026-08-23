@@ -379,8 +379,18 @@
 
   <header>
     <h1>📜 Pauper League</h1>
-    <span style="font-size: 0.72rem; color: #8b949e;">Temporada 2026-2</span>
+    <div style="display: flex; align-items: center; gap: 12px;">
+      <label style="font-size: 0.72rem; color: #8b949e; display: flex; align-items: center; gap: 4px; cursor: pointer;" title="Activar para hacer pruebas sin afectar tu historial real">
+        <input type="checkbox" id="test-mode-toggle" onchange="UI.toggleTestMode()" style="accent-color: #f97316;">
+        Pruebas
+      </label>
+      <span class="season-label" style="font-size: 0.72rem; color: #8b949e;">Temporada 2026-2</span>
+    </div>
   </header>
+  
+  <div id="test-mode-banner" style="display: none; background: #b3261e; color: white; text-align: center; font-size: 0.75rem; font-weight: bold; padding: 6px; position: sticky; top: 48px; z-index: 9;">
+    ⚠️ MODO DE PRUEBA ACTIVO
+  </div>
 
   <div class="container">
 
@@ -442,8 +452,8 @@
         <!-- DECK PICKER -->
         <div class="field-group">
           <label for="scan-deck">⚔️ Mazo Jugado (Christian)</label>
-          <select id="scan-deck" class="input-ctrl" onchange="toggleCustomDeckInput()">
-            <option value="🐂⚪🔴 Torito Boros ">🐂⚪🔴 Torito Boros </option>
+          <select id="scan-deck" class="input-ctrl" onchange="UI.toggleCustomDeckInput()">
+            <option value="🐂⚪🔴 Torito Boros">🐂⚪🔴 Torito Boros</option>
             <option value="🐧🔵🔴 Pingüinos Izzet">🐧🔵🔴 Pingüinos Izzet</option>
             <option value="🧙⚫🔴 Magitos Rakdos">🧙⚫🔴 Magitos Rakdos</option>
             <option value="other">➕ Otro mazo (escribir)...</option>
@@ -483,24 +493,28 @@
             style="height:90px; resize:vertical; font-size:0.78rem;"></textarea>
         </div>
 
-        <button onclick="processImageAndApply()" class="btn btn-primary" style="margin-top:6px;">🚀 Leer Imagen y
+        <button onclick="Scanner.processImageAndApply()" class="btn btn-primary" style="margin-top:6px;">🚀 Leer Imagen
+          y
           Aplicar Fecha</button>
-        <button onclick="applyManualTextOnly()" class="btn btn-secondary"
-          style="width:100%; margin-top:8px; font-size:0.75rem;">✍️ Solo Aplicar Texto Escrito/Editado</button>
+        <button
+          onclick="Scanner.applyParsedText({isContinuation: document.getElementById('same-day-continuation')?.checked})"
+          class="btn btn-secondary" style="width:100%; margin-top:8px; font-size:0.75rem;">✍️ Solo Aplicar Texto
+          Escrito/Editado</button>
       </div>
 
       <!-- BACKUP & EXPORT/IMPORT BUTTONS -->
       <div class="sl">💾 Copia de Seguridad</div>
       <div class="btn-row">
-        <button onclick="exportBackupJSON()" class="btn btn-secondary">📥 Exportar JSON</button>
+        <button onclick="Backup.exportJSON()" class="btn btn-secondary">📥 Exportar JSON</button>
         <button onclick="document.getElementById('import-file-input').click()" class="btn btn-secondary">📤 Importar
           JSON</button>
         <input type="file" id="import-file-input" accept=".json" style="display:none;"
-          onchange="importBackupJSON(event)">
+          onchange="Backup.importJSON(event)">
       </div>
 
       <!-- RESET BUTTON -->
-      <button onclick="resetAppData()" class="btn btn-danger" style="width:100%; margin-top:14px; padding:8px;">🗑️
+      <button onclick="State.resetCurrentSeason()" class="btn btn-danger"
+        style="width:100%; margin-top:14px; padding:8px;">🗑️
         Reiniciar Temporada 2026-2 a Cero</button>
     </div>
 
@@ -532,7 +546,7 @@
       <div id="historic-deck-stats"></div>
 
       <div class="sl">🏆 Temporadas</div>
-      <div class="mh" onclick="tm('s1')">
+      <div class="mh" onclick="UI.toggleAccordion('s1')">
         <span class="mt">📅 2026-1</span>
         <span class="ms">24 torneos · 87 pts · 12° final</span>
         <span class="ch" id="cs1">▼</span>
@@ -551,10 +565,10 @@
 
   <!-- BOTTOM NAVIGATION -->
   <nav>
-    <button class="nb on" onclick="sp('g',this)">📊 <span>General</span></button>
-    <button class="nb" onclick="sp('st',this)">📈 <span>Stats</span></button>
-    <button class="nb" onclick="sp('hist',this)">📜 <span>Histórico</span></button>
-    <button class="nb" onclick="sp('scanner',this)">📸 <span>Escáner</span></button>
+    <button class="nb on" onclick="UI.switchPage('g',this)">📊 <span>General</span></button>
+    <button class="nb" onclick="UI.switchPage('st',this)">📈 <span>Stats</span></button>
+    <button class="nb" onclick="UI.switchPage('hist',this)">📜 <span>Histórico</span></button>
+    <button class="nb" onclick="UI.switchPage('scanner',this)">📸 <span>Escáner</span></button>
   </nav>
 
   <script>
@@ -568,9 +582,40 @@
   </script>
 
   <script>
-    const DATA_VERSION = '2026-2-clean-v1';
+    // ═══════════ SECTION: CONFIG ═══════════
+    const CONFIG = {
+      isTestMode: false,
+      CURRENT_SEASON: '2026-2',
+      DATA_VERSION: '2026-2-dynamic-v2',
+      END_DATE: new Date(2026, 10, 29), // Nov 29, 2026
+      TOURNAMENT_DAY: 4,                // Thursday
+      MY_ALIASES: ["christian", "cristian", "chris", "donado"],
+      DEFAULT_DECKS: [
+        "🐂⚪🔴 Torito Boros",
+        "🐧🔵🔴 Pingüinos Izzet",
+        "🧙⚫🔴 Magitos Rakdos"
+      ],
+      EXCLUDED_DECKS: ["grixis", "mazo de prueba"],
+      POINTS_PER_WIN: 3,
+      POINTS_PER_DRAW: 1,
+      POINTS_PER_LOSS: 0,
+      WLD_FALLBACK: {
+        15: "5-0-0", 12: "4-0-0", 10: "3-0-1",
+        9: "3-1-0", 7: "2-1-1", 6: "2-2-0",
+        4: "1-2-1", 3: "1-3-0", 1: "0-3-1", 0: "0-4-0"
+      },
+      MAX_IMAGE_DIM: 1600,
+      TOP_CUTOFF: 10,
+      GOOD_THRESHOLD: 9,
+      BAD_THRESHOLD: 3,
+      MONTHS_ABBR: ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic'],
+      MONTHS_MAP: {
+        'ene': 0, 'feb': 1, 'mar': 2, 'abr': 3, 'may': 4, 'jun': 5,
+        'jul': 6, 'ago': 7, 'sep': 8, 'oct': 9, 'nov': 10, 'dic': 11
+      }
+    };
 
-    // Base player roster for Season 2026-2 starting at ZERO points
+    // Base default data (kept outside State for immutability as source)
     const defaultPlayersData = [
       { name: "Christian Donado", pts: 0, isMe: true },
       { name: "Albert Loaiza", pts: 0 },
@@ -617,7 +662,6 @@
       { name: "Andres Antolinez", pts: 0 }
     ];
 
-    // Season 2026-1 baseline tournaments (Season 2026-2 will be populated by uploaded screenshots)
     const defaultHistoricData = [
       { date: "9 Ene", season: "2026-1", deck: "🧙⚫🔴 Magitos Rakdos", rank: "7°", pts: 6, wl: "2-2-0", type: "normal" },
       { date: "16 Ene", season: "2026-1", deck: "🧙⚫🔴 Magitos Rakdos", rank: "10°", pts: 0, wl: "0-4-0", type: "bad" },
@@ -647,859 +691,843 @@
       { date: "25 Jun", season: "2026-1", deck: "🐂⚪🔴 Torito Boros", rank: "15°", pts: 3, wl: "1-3-0", type: "extra", tagStyle: "background:#1c2128;color:#8b949e" }
     ];
 
-    let playersData = JSON.parse(JSON.stringify(defaultPlayersData));
-    let fullHistoricData = JSON.parse(JSON.stringify(defaultHistoricData));
+    // ═══════════ SECTION: STATE MANAGEMENT ═══════════
+    const State = {
 
-    function saveData() {
-      try {
-        localStorage.setItem('pauper_players', JSON.stringify(playersData));
-        localStorage.setItem('pauper_historic', JSON.stringify(fullHistoricData));
-        localStorage.setItem('pauper_data_version', DATA_VERSION);
-        localStorage.setItem('lastUpdateTime', new Date().toISOString());
-      } catch (e) {
-        console.warn('No se pudo guardar en localStorage:', e);
+      players: [],
+      historic: [],
+
+      resetToDefaults() {
+        this.players = JSON.parse(JSON.stringify(defaultPlayersData)).map(p => ({ name: p.name, isMe: p.isMe }));
+        this.historic = JSON.parse(JSON.stringify(defaultHistoricData));
+      },
+
+      save() {
+        try {
+          const playersKey = CONFIG.isTestMode ? 'pauper_test_players' : 'pauper_players';
+          const historicKey = CONFIG.isTestMode ? 'pauper_test_historic' : 'pauper_historic';
+          localStorage.setItem(playersKey, JSON.stringify(this.players));
+          localStorage.setItem(historicKey, JSON.stringify(this.historic));
+          localStorage.setItem('pauper_data_version', CONFIG.DATA_VERSION);
+          localStorage.setItem('lastUpdateTime', new Date().toISOString());
+        } catch (e) {
+          console.warn('No se pudo guardar en localStorage:', e);
+        }
+      },
+
+      load() {
+        try {
+          const storedVersion = localStorage.getItem('pauper_data_version');
+          if (storedVersion !== CONFIG.DATA_VERSION) {
+            this.resetToDefaults();
+            this.save();
+            return;
+          }
+          const playersKey = CONFIG.isTestMode ? 'pauper_test_players' : 'pauper_players';
+          const historicKey = CONFIG.isTestMode ? 'pauper_test_historic' : 'pauper_historic';
+          const storedPlayers = localStorage.getItem(playersKey);
+          const storedHistoric = localStorage.getItem(historicKey);
+          if (storedPlayers) {
+            this.players = JSON.parse(storedPlayers);
+            this.players.forEach(p => {
+              if (!p.isMe && p.name && Utils.isMyName(p.name)) {
+                p.isMe = true;
+              }
+            });
+          } else {
+            this.players = JSON.parse(JSON.stringify(defaultPlayersData)).map(p => ({ name: p.name, isMe: p.isMe }));
+          }
+          if (storedHistoric) {
+            this.historic = JSON.parse(storedHistoric);
+          } else {
+            this.historic = JSON.parse(JSON.stringify(defaultHistoricData));
+          }
+        } catch (e) {
+          console.error('Error cargando datos de localStorage:', e);
+          this.resetToDefaults();
+        }
+      },
+
+      getCurrentSeasonEntries() {
+        return this.historic.filter(item => item.season === CONFIG.CURRENT_SEASON);
+      },
+
+      resetCurrentSeason() {
+        const confirmReset = confirm(`⚠️ ¿Estás seguro de que deseas reiniciar la temporada ${CONFIG.CURRENT_SEASON} desde CERO?\n\nEsto vaciará los torneos de ${CONFIG.CURRENT_SEASON} para que puedas subirlos uno por uno desde tus capturas.`);
+        if (confirmReset) {
+          this.historic = this.historic.filter(item => item.season !== CONFIG.CURRENT_SEASON);
+          this.save();
+          UI.refreshAll();
+          alert(`✨ ¡Temporada ${CONFIG.CURRENT_SEASON} reiniciada a cero! Ya puedes comenzar a subir tus capturas una a una.`);
+        }
+      },
+
+      deleteSeasonTournament(globalIdx) {
+        const target = this.historic[globalIdx];
+        if (!target) return;
+        const confirmDel = confirm(`¿Deseas eliminar la fecha "${target.date} - ${target.deck}" del historial?`);
+        if (!confirmDel) return;
+        this.historic.splice(globalIdx, 1);
+        this.save();
+        UI.refreshAll();
+      },
+      
+      mergePlayers(badName) {
+        const goodName = prompt(`Fusionar jugador:\n\nVas a mover todos los puntos de "${badName}" hacia otro jugador (y "${badName}" será eliminado).\n\nEscribe el nombre EXACTO del jugador destino:`);
+        if (!goodName || goodName.trim() === "") return;
+        
+        const cleanGoodName = goodName.trim();
+        const cleanBadName = badName.trim();
+        
+        this.players = this.players.filter(p => p.name.toLowerCase() !== cleanBadName.toLowerCase());
+        
+        if (!this.players.find(p => p.name.toLowerCase() === cleanGoodName.toLowerCase())) {
+           this.players.push({ name: cleanGoodName, isMe: Utils.isMyName(cleanGoodName) });
+        }
+        
+        let mergedCount = 0;
+        this.historic.forEach(entry => {
+           if (entry.playerResults) {
+               const badEntry = entry.playerResults.find(pr => pr.name.toLowerCase() === cleanBadName.toLowerCase());
+               if (badEntry) {
+                   const goodEntry = entry.playerResults.find(pr => pr.name.toLowerCase() === cleanGoodName.toLowerCase());
+                   if (goodEntry) {
+                       goodEntry.pts += badEntry.pts; 
+                   } else {
+                       badEntry.name = cleanGoodName; 
+                   }
+                   entry.playerResults = entry.playerResults.filter(pr => pr.name.toLowerCase() !== cleanBadName.toLowerCase() || pr.name.toLowerCase() === cleanGoodName.toLowerCase());
+                   mergedCount++;
+               }
+           }
+        });
+        
+        this.save();
+        UI.refreshAll();
+        alert(`✅ Fusión completada. Se actualizaron ${mergedCount} torneos históricos.`);
       }
-    }
+    };
 
-    function loadData() {
-      try {
-        const storedVersion = localStorage.getItem('pauper_data_version');
-        if (storedVersion !== DATA_VERSION) {
-          // Upgrade / Clean initial state for Season 2026-2
-          playersData = JSON.parse(JSON.stringify(defaultPlayersData));
-          fullHistoricData = JSON.parse(JSON.stringify(defaultHistoricData));
-          saveData();
+    // ═══════════ SECTION: UTILS ═══════════
+    const Utils = {
+      parseDate(dateStr) {
+        if (!dateStr || typeof dateStr !== 'string') return new Date();
+        const trimmed = dateStr.trim();
+        if (trimmed.toLowerCase() === 'hoy' || trimmed.toLowerCase() === 'today') return new Date();
+
+        if (/^\d{4}-\d{2}-\d{2}$/.test(trimmed)) {
+          const [y, m, d] = trimmed.split('-').map(Number);
+          return new Date(y, m - 1, d);
+        }
+
+        const match = trimmed.match(/(\d{1,2})\s*(?:de\s*)?([a-záéíóúñ]{3})/i);
+        if (match) {
+          const day = parseInt(match[1], 10);
+          const monthKey = match[2].toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").substring(0, 3);
+          const month = CONFIG.MONTHS_MAP[monthKey] !== undefined ? CONFIG.MONTHS_MAP[monthKey] : 7;
+          
+          let year = new Date().getFullYear();
+          const seasonYearMatch = CONFIG.CURRENT_SEASON.match(/^(\d{4})/);
+          if (seasonYearMatch) {
+             year = parseInt(seasonYearMatch[1], 10);
+          }
+          return new Date(year, month, day);
+        }
+
+        const parsed = new Date(trimmed);
+        return isNaN(parsed.getTime()) ? new Date() : parsed;
+      },
+
+      parseWLD(wld) {
+        if (!wld) return null;
+        const match = String(wld).match(/(\d+)-(\d+)-(\d+)/);
+        if (!match) return null;
+        return { w: Number(match[1]), l: Number(match[2]), d: Number(match[3]) };
+      },
+
+      aggregateRecord(entries) {
+        return entries.reduce((acc, item) => {
+          const wld = this.parseWLD(item.wl);
+          if (wld) {
+            acc.w += wld.w;
+            acc.l += wld.l;
+            acc.d += wld.d;
+          }
+          return acc;
+        }, { w: 0, l: 0, d: 0 });
+      },
+
+      calculatePoints({ w, d }) {
+        return (w * CONFIG.POINTS_PER_WIN) + (d * CONFIG.POINTS_PER_DRAW);
+      },
+
+      inferWLDFromPoints(points) {
+        if (CONFIG.WLD_FALLBACK[points]) return CONFIG.WLD_FALLBACK[points];
+        if (points >= 15) return "5-0-0";
+        if (points >= 12) return "4-0-0";
+        if (points >= 10) return "3-0-1";
+        if (points >= 9)  return "3-1-0";
+        if (points >= 7)  return "2-1-1";
+        if (points >= 6)  return "2-2-0";
+        if (points >= 4)  return "1-2-1";
+        if (points >= 3)  return "1-3-0";
+        if (points >= 1)  return "0-3-1";
+        return "0-4-0";
+      },
+
+      cleanPlayerName(raw) {
+        if (!raw) return '';
+        return raw.trim()
+          .replace(/^[\d.#\-—–\sº°|]+/, '')
+          .replace(/[\.\s:\|\-—–_…]+$/, '')
+          .replace(/\s{2,}/g, ' ')
+          .trim();
+      },
+
+      findMatchingPlayer(rawName, playersList) {
+        if (!rawName) return null;
+        const cleanName = this.cleanPlayerName(rawName);
+        const lowerName = cleanName.toLowerCase();
+
+        if (this.isMyName(lowerName)) {
+          const me = playersList.find(p => p.isMe);
+          if (me) return me;
+        }
+
+        let matched = playersList.find(p => p.name.toLowerCase() === lowerName);
+        if (matched) return matched;
+
+        const cleanQueryTokens = lowerName.split(/\s+/).filter(t => t.length >= 2);
+        matched = playersList.find(p => {
+          const dbLower = p.name.toLowerCase();
+          if (dbLower.includes(lowerName) || lowerName.includes(dbLower)) return true;
+
+          const dbTokens = dbLower.split(/\s+/).filter(t => t.length >= 2);
+          if (cleanQueryTokens.length > 0 && dbTokens.length >= cleanQueryTokens.length) {
+            const allTokensMatch = cleanQueryTokens.every((token, idx) => {
+              const dbToken = dbTokens[idx] || "";
+              return dbToken.startsWith(token) || token.startsWith(dbToken);
+            });
+            if (allTokensMatch) return true;
+          }
+
+          if (lowerName.length >= 4 && dbLower.includes(lowerName.substring(0, 5))) return true;
+          if (dbLower.length >= 4 && lowerName.includes(dbLower.substring(0, 5))) return true;
+          return false;
+        });
+
+        return matched;
+      },
+
+      isMyName(name) {
+        const lowerName = name.toLowerCase();
+        return (lowerName.includes("christian") || lowerName.includes("cristian") || lowerName.startsWith("chris")) &&
+               (lowerName.includes("do") || lowerName.includes("donado") || (!lowerName.includes("machado") && !lowerName.includes("mac")));
+      },
+
+      getRemainingDates(baseDate = new Date()) {
+        const currentSeasonEntries = State.getCurrentSeasonEntries();
+        let lastDate = baseDate;
+        if (currentSeasonEntries.length > 0) {
+          const lastEntry = currentSeasonEntries[currentSeasonEntries.length - 1];
+          const d = this.parseDate(lastEntry.date);
+          if (!isNaN(d.getTime())) lastDate = d;
+        }
+
+        let nextThursday = new Date(lastDate.getFullYear(), lastDate.getMonth(), lastDate.getDate());
+        nextThursday.setDate(nextThursday.getDate() + 1);
+
+        let safetyCounter = 0;
+        while (nextThursday.getDay() !== CONFIG.TOURNAMENT_DAY && safetyCounter < 7) {
+          nextThursday.setDate(nextThursday.getDate() + 1);
+          safetyCounter++;
+        }
+
+        let count = 0;
+        let maxThursdays = 52;
+        while (nextThursday <= CONFIG.END_DATE && count < maxThursdays) {
+          count++;
+          nextThursday.setDate(nextThursday.getDate() + 7);
+        }
+
+        return Math.max(0, count);
+      }
+    };
+
+    // ═══════════ SECTION: OCR / SCANNER ═══════════
+    const Scanner = {
+      parseLine(line) {
+        const trimmedLine = line.trim();
+        if (!trimmedLine) return null;
+        
+        const lineToParse = trimmedLine.replace(/[|│｜!]/g, ' ');
+        const rankMatch = lineToParse.match(/^#?(\d{1,2})[\.\s°º\-:]+/);
+        const rank = rankMatch ? `${rankMatch[1]}°` : "";
+
+        const wldRegex = /(\d{1,2})\s*[-–—:/]\s*(\d{1,2})\s*[-–—:/]\s*([0-9Oo])\b/;
+        const wldMatch = lineToParse.match(wldRegex);
+
+        let rawName = "";
+        let ptsToAdd = NaN;
+        let wldString = "";
+        let pointsFromWLD = null;
+
+        if (wldMatch) {
+          const w = parseInt(wldMatch[1], 10);
+          const l = parseInt(wldMatch[2], 10);
+          const dStr = wldMatch[3].replace(/[Oo]/g, '0');
+          const d = parseInt(dStr, 10);
+          wldString = `${w}-${l}-${d}`;
+          pointsFromWLD = Utils.calculatePoints({w, d});
+
+          const textBeforeWLD = lineToParse.substring(0, wldMatch.index).trim();
+          const ptsMatch = textBeforeWLD.match(/(\d{1,3})\s*[\s.:\|\-—–_]*$/);
+
+          if (ptsMatch) {
+            ptsToAdd = parseInt(ptsMatch[1], 10);
+            rawName = Utils.cleanPlayerName(textBeforeWLD.substring(0, ptsMatch.index).trim());
+          } else {
+            ptsToAdd = 0;
+            rawName = Utils.cleanPlayerName(textBeforeWLD);
+          }
+          if (pointsFromWLD > 0) {
+            ptsToAdd = pointsFromWLD;
+          }
+        } else {
+          const simpleMatch = lineToParse.match(/^(.+?)(?:\s*[:\-]?\s*)(\d{1,3})\s*$/);
+          if (simpleMatch) {
+            rawName = Utils.cleanPlayerName(simpleMatch[1]);
+            ptsToAdd = parseInt(simpleMatch[2], 10);
+          }
+        }
+
+        if (!rawName || isNaN(ptsToAdd) || ptsToAdd > 50) return null;
+        return { rawName, pts: ptsToAdd, wld: wldString, rank };
+      },
+
+      applyParsedText({ isContinuation } = {}) {
+        const manualInput = document.getElementById("scan-input");
+        const fileInput = document.getElementById("screenshot-file");
+        const rankInput = document.getElementById("scan-rank");
+        const text = manualInput ? manualInput.value : "";
+        
+        if (!text.trim()) {
+          UI.setStatus("⚠️ Sube una captura de pantalla o escribe el texto.", "#f85149");
           return;
         }
 
-        const storedPlayers = localStorage.getItem('pauper_players');
-        const storedHistoric = localStorage.getItem('pauper_historic');
-        if (storedPlayers) {
-          playersData = JSON.parse(storedPlayers);
-          // Ensure isMe is set for Christian Donado
-          playersData.forEach(p => {
-            if (!p.isMe && p.name && p.name.toLowerCase().includes("christian") && p.name.toLowerCase().includes("donado")) {
-              p.isMe = true;
+        try {
+          const lines = text.split("\n");
+          let updatedCount = 0;
+          let myPointsEarned = 0;
+          let myWLD = "";
+          let detectedMyRank = "";
+          const updatedPlayersSet = new Set();
+          const playerResults = [];
+
+          lines.forEach(line => {
+            const parsed = this.parseLine(line);
+            if (!parsed) return;
+            
+            let player = Utils.findMatchingPlayer(parsed.rawName, State.players);
+            if (!player) {
+              const isMe = Utils.isMyName(parsed.rawName);
+              player = { name: parsed.rawName, isMe };
+              State.players.push(player);
+            }
+
+            if (!updatedPlayersSet.has(player.name)) {
+              playerResults.push({ name: player.name, pts: parsed.pts });
+              updatedPlayersSet.add(player.name);
+              updatedCount++;
+              if (player.isMe) {
+                myPointsEarned = parsed.pts;
+                if (parsed.wld) myWLD = parsed.wld;
+                if (parsed.rank) detectedMyRank = parsed.rank;
+              }
             }
           });
+
+          if (updatedCount > 0) {
+            if (!isContinuation) {
+              const formattedDate = this.getFormattedDate();
+              const selectedDeck = this.getSelectedDeck();
+              if (selectedDeck === "Otro Mazo") {
+                 UI.setStatus("⚠️ Escribe el nombre del mazo personalizado antes de guardar.", "#f85149");
+                 return;
+              }
+              
+              let finalRank = rankInput ? rankInput.value.trim() : "";
+              if (!finalRank) {
+                finalRank = detectedMyRank || `${State.players.findIndex(p => p.isMe) + 1}°`;
+              }
+              if (!finalRank.endsWith("°") && !isNaN(parseInt(finalRank, 10))) {
+                finalRank = `${parseInt(finalRank, 10)}°`;
+              }
+              if (!myWLD) {
+                myWLD = Utils.inferWLDFromPoints(myPointsEarned);
+              }
+
+              State.historic.push({
+                date: formattedDate,
+                season: CONFIG.CURRENT_SEASON,
+                deck: selectedDeck,
+                rank: finalRank,
+                pts: myPointsEarned,
+                wl: myWLD,
+                type: myPointsEarned >= CONFIG.GOOD_THRESHOLD ? "good" : (myPointsEarned <= CONFIG.BAD_THRESHOLD ? "bad" : "normal"),
+                playerResults: playerResults
+              });
+            } else {
+              const entries = State.getCurrentSeasonEntries();
+              if (entries.length > 0) {
+                const lastEntry = entries[entries.length - 1];
+                if (!lastEntry.playerResults) lastEntry.playerResults = [];
+                
+                playerResults.forEach(pr => {
+                    const existing = lastEntry.playerResults.find(e => e.name === pr.name);
+                    if (existing) existing.pts += pr.pts;
+                    else lastEntry.playerResults.push(pr);
+                });
+                
+                if (myPointsEarned > 0) {
+                   lastEntry.pts = (lastEntry.pts || 0) + myPointsEarned;
+                }
+              }
+            }
+
+            State.save();
+            UI.refreshAll();
+
+            if (fileInput) fileInput.value = "";
+            if (manualInput) manualInput.value = "";
+            if (rankInput) rankInput.value = "";
+            if (document.getElementById("same-day-continuation")) document.getElementById("same-day-continuation").checked = false;
+
+            UI.setStatus(`✅ Puntajes aplicados correctamente. ${myPointsEarned} puntos añadidos.`, "#3fb950");
+            setTimeout(() => {
+              UI.setStatus("");
+              UI.switchPage('g', document.querySelector('nav .nb'));
+            }, 1500);
+
+          } else {
+            UI.setStatus("⚠️ No se detectaron puntajes válidos en el texto.", "#f85149");
+          }
+        } catch (err) {
+          UI.setStatus(`❌ Error en código: ${err.message}`, "#f85149");
+          console.error("Error crítico en applyParsedText:", err);
+        }
+      },
+
+      async processImageAndApply() {
+        const fileInput = document.getElementById("screenshot-file");
+        const manualInput = document.getElementById("scan-input");
+
+        if (fileInput && fileInput.files && fileInput.files[0]) {
+          UI.setStatus("⚙️ Preparando imagen y motor OCR...", "#f97316");
+          let worker = null;
+          try {
+            const processedImageBlob = await this.preprocessImage(fileInput.files[0]);
+            UI.setStatus("⏳ Cargando motor de reconocimiento...", "#f97316");
+            worker = await Tesseract.createWorker('eng+spa', 1, {
+              logger: m => {
+                if (m.status === 'recognizing text') {
+                  const pct = Math.round((m.progress || 0) * 100);
+                  UI.setStatus(`🔍 Leyendo imagen... ${pct}%`, "#f97316");
+                }
+              }
+            });
+            const ret = await worker.recognize(processedImageBlob);
+            if (manualInput) manualInput.value = ret.data.text;
+            UI.setStatus("✅ ¡Lectura completa! Aplicando fecha...", "#3fb950");
+            
+            await worker.terminate();
+            worker = null;
+            
+            const contCheckbox = document.getElementById("same-day-continuation");
+            setTimeout(() => {
+              this.applyParsedText({ isContinuation: contCheckbox ? contCheckbox.checked : false });
+            }, 300);
+            return;
+          } catch (err) {
+            UI.setStatus("⚠️ Error leyendo imagen. Puedes editar el texto manualmente.", "#f85149");
+            console.error("Error en Tesseract:", err);
+          } finally {
+            if (worker) {
+              await worker.terminate().catch(() => {});
+            }
+          }
         } else {
-          playersData = JSON.parse(JSON.stringify(defaultPlayersData));
+           const contCheckbox = document.getElementById("same-day-continuation");
+           this.applyParsedText({ isContinuation: contCheckbox ? contCheckbox.checked : false });
         }
-        if (storedHistoric) {
-          fullHistoricData = JSON.parse(storedHistoric);
-        } else {
-          fullHistoricData = JSON.parse(JSON.stringify(defaultHistoricData));
+      },
+
+      preprocessImage(file) {
+        return new Promise((resolve) => {
+          const img = new Image();
+          const url = URL.createObjectURL(file);
+          img.onload = () => {
+            URL.revokeObjectURL(url);
+            try {
+              let { width, height } = img;
+              if (width > CONFIG.MAX_IMAGE_DIM || height > CONFIG.MAX_IMAGE_DIM) {
+                if (width > height) {
+                  height = Math.round((height * CONFIG.MAX_IMAGE_DIM) / width);
+                  width = CONFIG.MAX_IMAGE_DIM;
+                } else {
+                  width = Math.round((width * CONFIG.MAX_IMAGE_DIM) / height);
+                  height = CONFIG.MAX_IMAGE_DIM;
+                }
+              }
+              const canvas = document.createElement('canvas');
+              canvas.width = width;
+              canvas.height = height;
+              const ctx = canvas.getContext('2d');
+              ctx.drawImage(img, 0, 0, width, height);
+              canvas.toBlob((blob) => {
+                resolve(blob || file);
+              }, 'image/png');
+            } catch (err) {
+              console.warn('Preprocessing error:', err);
+              resolve(file);
+            }
+          };
+          img.onerror = () => {
+            URL.revokeObjectURL(url);
+            resolve(file);
+          };
+          img.src = url;
+        });
+      },
+
+      getSelectedDeck() {
+        const deckSelect = document.getElementById("scan-deck");
+        if (!deckSelect) return CONFIG.DEFAULT_DECKS[0];
+        if (deckSelect.value === "other") {
+          const customVal = document.getElementById("scan-custom-deck")?.value?.trim();
+          return customVal || "Otro Mazo";
         }
-      } catch (e) {
-        console.error('Error cargando datos de localStorage:', e);
-        playersData = JSON.parse(JSON.stringify(defaultPlayersData));
-        fullHistoricData = JSON.parse(JSON.stringify(defaultHistoricData));
+        return deckSelect.value.trim();
+      },
+
+      getFormattedDate() {
+        const dateInput = document.getElementById("scan-date");
+        if (dateInput && dateInput.value) {
+          const parts = dateInput.value.split("-");
+          const d = new Date(Number(parts[0]), Number(parts[1]) - 1, Number(parts[2]));
+          return `${d.getDate()} ${CONFIG.MONTHS_ABBR[d.getMonth()]}`;
+        }
+        const today = new Date();
+        return `${today.getDate()} ${CONFIG.MONTHS_ABBR[today.getMonth()]}`;
       }
-    }
+    };
 
-    function toggleCustomDeckInput() {
-      const select = document.getElementById("scan-deck");
-      const customGroup = document.getElementById("custom-deck-group");
-      if (select && customGroup) {
-        customGroup.style.display = select.value === "other" ? "block" : "none";
-      }
-    }
+    // ═══════════ SECTION: UI ═══════════
+    const UI = {
+      refreshAll() {
+        this.renderLeaderboard();
+        this.renderCurrentSeasonStats();
+        this.renderFullHistoric();
+        this.renderHistoricDeckStats();
+      },
 
-    function getCurrentSeasonEntries() {
-      return fullHistoricData.filter(item => item.season === "2026-2");
-    }
+      renderLeaderboard() {
+        const computedPlayers = State.players.map(p => ({ name: p.name, isMe: p.isMe, pts: 0 }));
+        
+        State.historic.forEach(entry => {
+           if (entry.season === CONFIG.CURRENT_SEASON) {
+               if (entry.playerResults) {
+                   entry.playerResults.forEach(pr => {
+                       let p = computedPlayers.find(cp => cp.name === pr.name);
+                       if (!p) {
+                           p = { name: pr.name, isMe: Utils.isMyName(pr.name), pts: 0 };
+                           computedPlayers.push(p);
+                       }
+                       p.pts += (Number(pr.pts) || 0);
+                   });
+               } else {
+                   const me = computedPlayers.find(cp => cp.isMe);
+                   if (me && entry.pts) me.pts += (Number(entry.pts) || 0);
+               }
+           }
+        });
+        
+        computedPlayers.sort((a, b) => b.pts - a.pts);
+        
+        const container = document.getElementById("general-list");
+        const stored = localStorage.getItem('lastUpdateTime');
+        const lastUpdateText = stored ? `<p class="note" style="font-size:0.75rem; color:#8b949e; margin-bottom:8px;">Última actualización: ${new Date(stored).toLocaleDateString('es-ES', { year: 'numeric', month: 'short', day: 'numeric' })}</p>` : '';
+        const remainingDates = Utils.getRemainingDates();
+        
+        let html = `${lastUpdateText}<p class="note">Puntos acumulados · Top ${CONFIG.TOP_CUTOFF} → Nov 29 · ${remainingDates} fechas restantes</p>`;
+        computedPlayers.forEach((p, index) => {
+          const rank = index + 1;
+          let rankClass = "rk" + (rank <= 3 ? ` r${rank}` : "");
+          html += `
+          <div class="row ${p.isMe ? 'me' : ''}">
+            <span class="${rankClass}">${rank}</span>
+            <span class="nm">${p.name}</span>
+            <span class="pt">${p.pts}</span>
+            ${!p.isMe ? `<button class="btn-icon-del" style="opacity:0.6; font-size:0.8rem" onclick="State.mergePlayers('${p.name.replace(/'/g, "\\'")}')" title="Fusionar con otro jugador">⚙️</button>` : ""}
+          </div>`;
+          if (rank === CONFIG.TOP_CUTOFF) html += `<div class="cutline">— top ${CONFIG.TOP_CUTOFF} · clasificados —</div>`;
+        });
+        if (container) container.innerHTML = html;
 
-    function renderCurrentSeasonStats() {
-      const entries = getCurrentSeasonEntries();
-
-      // Ordenar cronológicamente (el más antiguo primero, el más reciente al final)
-      entries.sort((a, b) => parseDate(a.date) - parseDate(b.date));
-
-      const validEntries = entries.filter(item => item.rank && item.rank !== "—");
-      const totalTournaments = validEntries.length;
-      const totalPoints = validEntries.reduce((sum, item) => sum + (Number(item.pts) || 0), 0);
-      const ranks = validEntries.map(item => Number(String(item.rank).replace(/[^\d]/g, '')) || 99).sort((a, b) => a - b);
-      const bestRank = ranks.length ? ranks[0] : "--";
-      const recordTotals = validEntries.reduce((acc, item) => {
-        const match = String(item.wl).match(/(\d+)-(\d+)-(\d+)/);
-        if (!match) return acc;
-        acc.w += Number(match[1]);
-        acc.l += Number(match[2]);
-        acc.d += Number(match[3]);
-        return acc;
-      }, { w: 0, l: 0, d: 0 });
-
-      const statTourneys = document.getElementById("stat-tourneys");
-      const statPts = document.getElementById("stat-pts");
-      const statRank = document.getElementById("stat-rank");
-      const statBestRank = document.getElementById("stat-best-rank");
-      const statRecord = document.getElementById("stat-record");
-      const statRemaining = document.getElementById("stat-remaining");
-
-      const myRank = playersData.findIndex(p => p.isMe) + 1;
-
-      if (statTourneys) statTourneys.textContent = totalTournaments;
-      if (statPts) statPts.textContent = totalPoints;
-      if (statRank) statRank.textContent = `${myRank}°`;
-      if (statBestRank) statBestRank.textContent = bestRank !== "--" ? `${bestRank}°` : "--";
-      if (statRecord) statRecord.textContent = `${recordTotals.w}-${recordTotals.l}-${recordTotals.d}`;
-      if (statRemaining) statRemaining.textContent = getRemainingDates();
-
-      const deckMap = {};
-      entries.forEach(item => {
-        const deckName = item.deck;
-        if (!deckMap[deckName]) {
-          deckMap[deckName] = { count: 0, pts: 0, record: { w: 0, l: 0, d: 0 } };
+        const myData = computedPlayers.find(p => p.isMe);
+        if (myData) {
+          const myRank = computedPlayers.findIndex(p => p.isMe) + 1;
+          if (document.getElementById("stat-pts")) document.getElementById("stat-pts").textContent = myData.pts;
+          if (document.getElementById("stat-rank")) document.getElementById("stat-rank").textContent = `${myRank}°`;
         }
-        deckMap[deckName].count += 1;
-        deckMap[deckName].pts += Number(item.pts) || 0;
-        const match = String(item.wl).match(/(\d+)-(\d+)-(\d+)/);
-        if (match) {
-          deckMap[deckName].record.w += Number(match[1]);
-          deckMap[deckName].record.l += Number(match[2]);
-          deckMap[deckName].record.d += Number(match[3]);
-        }
-      });
+      },
 
-      const deckContainer = document.getElementById("current-season-decks");
-      if (deckContainer) {
-        const deckList = Object.entries(deckMap).map(([deck, info]) => {
-          const calculatedPoints = (info.record.w * 3) + (info.record.d * 1);
-          const ptRatio = info.count > 0 ? (calculatedPoints / info.count) : 0;
-          return { deck, info, ptRatio };
+      buildDeckStatsHTML(entries, isHistoric) {
+        const deckMap = {};
+        entries.forEach(item => {
+          const safeDeck = item.deck ? item.deck.trim() : "Desconocido";
+          if (item.rank === "—" || CONFIG.EXCLUDED_DECKS.some(d => safeDeck.toLowerCase().includes(d))) return;
+          if (!deckMap[safeDeck]) deckMap[safeDeck] = { count: 0, pts: 0, record: { w: 0, l: 0, d: 0 } };
+          deckMap[safeDeck].count += 1;
+          deckMap[safeDeck].pts += Number(item.pts) || 0;
+          const wld = Utils.parseWLD(item.wl);
+          if (wld) {
+            deckMap[safeDeck].record.w += wld.w;
+            deckMap[safeDeck].record.l += wld.l;
+            deckMap[safeDeck].record.d += wld.d;
+          }
         });
 
-        deckList.sort((a, b) => b.ptRatio - a.ptRatio);
+        const deckList = Object.entries(deckMap).map(([deck, info]) => {
+          const exactPoints = Utils.calculatePoints(info.record);
+          const ptRatio = info.count > 0 ? (exactPoints / info.count) : 0;
+          return { deck, info, ptRatio };
+        }).sort((a, b) => b.ptRatio - a.ptRatio);
 
-        if (deckList.length === 0) {
-          deckContainer.innerHTML = `<p class="note" style="text-align:left;">No hay torneos registrados aún en 2026-2.</p>`;
-        } else {
-          deckContainer.innerHTML = deckList.map(({ deck, info, ptRatio }, index) => {
-            const ppg = ptRatio.toFixed(1);
-            const rec = `${info.record.w}-${info.record.l}-${info.record.d}`;
-            const isBest = index === 0;
+        if (deckList.length === 0) return `<p class="note" style="text-align:left;">No hay torneos registrados aún.</p>`;
+
+        return deckList.map(({ deck, info, ptRatio }, index) => {
+          const rec = `${info.record.w}-${info.record.l}-${info.record.d}`;
+          const ppg = ptRatio.toFixed(1);
+          const isTopDeck = index === 0;
+
+          if (isHistoric) {
+            const nameClass = isTopDeck ? "nm g" : "nm";
+            const ptClass = isTopDeck ? "pt g" : "pt";
+            const trophy = isTopDeck ? " 🏆" : "";
+            return `
+              <div class="row">
+                <span class="${nameClass}">${deck}${trophy}</span>
+                <span class="wl">${info.count}T · ${rec}</span>
+                <span class="${ptClass}" style="min-width:52px;text-align:right;">${ppg} p/T</span>
+              </div>`;
+          } else {
             const isWorst = index === deckList.length - 1 && deckList.length > 1;
-
-            let nameColor = '#f0f6fc';
-            let ppgColor = '#58a6ff';
-            let badge = '';
-
-            if (isBest) {
-              nameColor = '#f97316';
-              ppgColor = '#f97316';
-              badge = '<span style="font-size:0.55rem; background:#f97316; color:#0d1117; padding:1px 3px; border-radius:3px; margin-left:3px; font-weight:800; vertical-align:middle;">TOP</span>';
-            } else if (isWorst) {
-              nameColor = '#8b949e';
-              ppgColor = '#ef4444';
-              badge = '<span style="font-size:0.55rem; background:#ef4444; color:#fff; padding:1px 3px; border-radius:3px; margin-left:3px; font-weight:700; vertical-align:middle;">LOW</span>';
-            }
+            let nameColor = isTopDeck ? '#f97316' : (isWorst ? '#8b949e' : '#f0f6fc');
+            let ppgColor = isTopDeck ? '#f97316' : (isWorst ? '#ef4444' : '#58a6ff');
+            let badge = isTopDeck ? '<span style="font-size:0.55rem; background:#f97316; color:#0d1117; padding:1px 3px; border-radius:3px; margin-left:3px; font-weight:800; vertical-align:middle;">TOP</span>' : (isWorst ? '<span style="font-size:0.55rem; background:#ef4444; color:#fff; padding:1px 3px; border-radius:3px; margin-left:3px; font-weight:700; vertical-align:middle;">LOW</span>' : '');
 
             return `
-            <div class="row" style="display:flex; align-items:center; justify-content:space-between; gap:4px; padding:6px 8px; width:100%; box-sizing:border-box;">
-              <span class="nm" style="flex:1 1 auto; min-width:0; color:${nameColor}; font-weight:700; font-size:clamp(0.7rem, 3vw, 0.85rem); white-space:nowrap; overflow:hidden;">
-                ${deck} ${badge}
-              </span>
-              <span class="wl" style="flex:0 0 auto; font-size:clamp(0.68rem, 2.5vw, 0.72rem); color:#8b949e; white-space:nowrap;">
-                ${info.count}T · ${rec}
-              </span>
-              <span class="pt" style="flex:0 0 auto; min-width:48px; text-align:right; font-size:clamp(0.75rem, 3vw, 0.88rem); font-weight:800; color:${ppgColor}; white-space:nowrap;">
-                ${ppg} <small style="font-size:0.55rem; font-weight:normal;">p/T</small>
-              </span>
-            </div>
-          `;
+              <div class="row" style="display:flex; align-items:center; justify-content:space-between; gap:4px; padding:6px 8px; width:100%; box-sizing:border-box;">
+                <span class="nm" style="flex:1 1 auto; min-width:0; color:${nameColor}; font-weight:700; font-size:clamp(0.7rem, 3vw, 0.85rem); white-space:nowrap; overflow:hidden;">
+                  ${deck} ${badge}
+                </span>
+                <span class="wl" style="flex:0 0 auto; font-size:clamp(0.68rem, 2.5vw, 0.72rem); color:#8b949e; white-space:nowrap;">
+                  ${info.count}T · ${rec}
+                </span>
+                <span class="pt" style="flex:0 0 auto; min-width:48px; text-align:right; font-size:clamp(0.75rem, 3vw, 0.88rem); font-weight:800; color:${ppgColor}; white-space:nowrap;">
+                  ${ppg} <small style="font-size:0.55rem; font-weight:normal;">p/T</small>
+                </span>
+              </div>`;
+          }
+        }).join('');
+      },
+
+      renderCurrentSeasonStats() {
+        const entries = State.getCurrentSeasonEntries().sort((a, b) => Utils.parseDate(a.date) - Utils.parseDate(b.date));
+        const validEntries = entries.filter(item => item.rank && item.rank !== "—");
+        
+        if (document.getElementById("stat-tourneys")) document.getElementById("stat-tourneys").textContent = validEntries.length;
+        const ranks = validEntries.map(item => Number(String(item.rank).replace(/[^\d]/g, '')) || 99).sort((a, b) => a - b);
+        if (document.getElementById("stat-best-rank")) document.getElementById("stat-best-rank").textContent = ranks.length ? `${ranks[0]}°` : "--";
+        
+        const recordTotals = Utils.aggregateRecord(validEntries);
+        if (document.getElementById("stat-record")) document.getElementById("stat-record").textContent = `${recordTotals.w}-${recordTotals.l}-${recordTotals.d}`;
+        if (document.getElementById("stat-remaining")) document.getElementById("stat-remaining").textContent = Utils.getRemainingDates();
+
+        const deckContainer = document.getElementById("current-season-decks");
+        if (deckContainer) deckContainer.innerHTML = this.buildDeckStatsHTML(entries, false);
+
+        const tournamentList = document.getElementById("current-season-tournaments");
+        if (tournamentList) {
+          if (entries.length === 0) {
+            tournamentList.innerHTML = `<p class="note" style="text-align:left;">Sube una captura en la pestaña 📸 Escáner para registrar el primer torneo de la temporada.</p>`;
+          } else {
+            tournamentList.innerHTML = entries.map((item) => {
+              const globalIdx = State.historic.indexOf(item);
+              return `
+              <div class="row me">
+                <span class="rk">${item.rank}</span>
+                <div style="flex:1; min-width:0;">
+                  <div class="nm">${item.date}</div>
+                  <div style="font-size:.68rem;color:#8b949e; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${item.deck}</div>
+                </div>
+                <span class="pt">${item.pts}</span>
+                <span class="wl">${item.wl}</span>
+                <button class="btn-icon-del" onclick="State.deleteSeasonTournament(${globalIdx})" title="Eliminar este torneo">🗑️</button>
+              </div>`;
+            }).join('');
+          }
+        }
+      },
+
+      renderFullHistoric() {
+        State.historic.sort((a, b) => Utils.parseDate(a.date) - Utils.parseDate(b.date));
+        const validEntries = State.historic.filter(item => item.rank && item.rank !== "—");
+        
+        if (document.getElementById("hist-tourneys")) document.getElementById("hist-tourneys").textContent = validEntries.length;
+        if (document.getElementById("hist-pts")) document.getElementById("hist-pts").textContent = validEntries.reduce((sum, item) => sum + (Number(item.pts) || 0), 0);
+        
+        const ranks = validEntries.map(item => Number(String(item.rank).replace(/[^\d]/g, '')) || 99).sort((a, b) => a - b);
+        if (document.getElementById("hist-best-rank")) document.getElementById("hist-best-rank").textContent = ranks.length ? `${ranks[0]}°` : "--";
+        
+        const recordTotals = Utils.aggregateRecord(validEntries);
+        if (document.getElementById("hist-record")) document.getElementById("hist-record").textContent = `${recordTotals.w}-${recordTotals.l}-${recordTotals.d}`;
+
+        const container = document.getElementById("historic-full-list");
+        if (container) {
+          container.innerHTML = State.historic.map(item => {
+            let ptStyle = "", wlStyle = "", deckColor = "color:#8b949e", tagStyle = item.tagStyle || "background:#21262d;color:#8b949e";
+            if (item.type === "good") { ptStyle = wlStyle = "color:#3fb950; font-weight:700;"; }
+            else if (item.type === "bad") { ptStyle = wlStyle = "color:#f85149; font-weight:700;"; }
+            else if (item.type === "none") { deckColor = "color:#444;font-style:italic"; }
+
+            return `
+            <div class="row" style="background:#161b22;">
+              <span class="rk">${item.rank}</span>
+              <div style="flex:1">
+                <div class="nm" style="color:#e6edf3;">${item.date} <span class="season-tag" style="${tagStyle}">${item.season}</span></div>
+                <div style="font-size:0.68rem; ${deckColor}">${item.deck}</div>
+              </div>
+              <span class="pt" style="${ptStyle}">${item.pts}</span>
+              <span class="wl" style="${wlStyle}">${item.wl}</span>
+            </div>`;
           }).join('');
         }
-      }
+      },
 
-      const tournamentList = document.getElementById("current-season-tournaments");
-      if (tournamentList) {
-        if (entries.length === 0) {
-          tournamentList.innerHTML = `<p class="note" style="text-align:left;">Sube una captura en la pestaña 📸 Escáner para registrar el primer torneo de la temporada.</p>`;
-        } else {
-          tournamentList.innerHTML = entries.map((item, idx) => `
-          <div class="row me">
-            <span class="rk">${item.rank}</span>
-            <div style="flex:1; min-width:0;">
-              <div class="nm">${item.date}</div>
-              <div style="font-size:.68rem;color:#8b949e; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${item.deck}</div>
-            </div>
-            <span class="pt">${item.pts}</span>
-            <span class="wl">${item.wl}</span>
-            <button class="btn-icon-del" onclick="deleteSeasonTournament(${idx})" title="Eliminar este torneo">🗑️</button>
-          </div>
-        `).join('');
+      renderHistoricDeckStats() {
+        const container = document.getElementById("historic-deck-stats");
+        if (container) container.innerHTML = this.buildDeckStatsHTML(State.historic, true);
+      },
+
+      setStatus(message, color = '#f97316') {
+        const statusEl = document.getElementById("scan-status");
+        if (statusEl) {
+          statusEl.style.color = color;
+          statusEl.textContent = message;
         }
-      }
-    }
+      },
 
-    function deleteSeasonTournament(seasonIdx) {
-      const seasonEntries = getCurrentSeasonEntries();
-      const target = seasonEntries[seasonIdx];
-      if (!target) return;
-
-      const confirmDel = confirm(`¿Deseas eliminar la fecha "${target.date} - ${target.deck}" del historial?`);
-      if (!confirmDel) return;
-
-      const globalIdx = fullHistoricData.findIndex(item => item === target);
-      if (globalIdx !== -1) {
-        fullHistoricData.splice(globalIdx, 1);
-        saveData();
-        renderLeaderboard();
-        renderFullHistoric();
-        renderHistoricDeckStats();
-        renderCurrentSeasonStats();
-      }
-    }
-
-    function parseDate(dateStr) {
-      if (!dateStr || typeof dateStr !== 'string') return new Date();
-      const trimmed = dateStr.trim();
-      if (trimmed.toLowerCase() === 'hoy' || trimmed.toLowerCase() === 'today') {
-        return new Date();
-      }
-
-      if (/^\d{4}-\d{2}-\d{2}$/.test(trimmed)) {
-        const [y, m, d] = trimmed.split('-').map(Number);
-        return new Date(y, m - 1, d);
-      }
-
-      const months = {
-        'ene': 0, 'feb': 1, 'mar': 2, 'abr': 3, 'may': 4, 'jun': 5,
-        'jul': 6, 'ago': 7, 'sep': 8, 'oct': 9, 'nov': 10, 'dic': 11
-      };
-
-      const match = trimmed.match(/(\d{1,2})\s*(?:de\s*)?([a-záéíóúñ]{3})/i);
-      if (match) {
-        const day = parseInt(match[1], 10);
-        const monthKey = match[2].toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").substring(0, 3);
-        const month = months[monthKey] !== undefined ? months[monthKey] : 7;
-        return new Date(2026, month, day);
-      }
-
-      const parsed = new Date(trimmed);
-      return isNaN(parsed.getTime()) ? new Date() : parsed;
-    }
-
-    function getLastUpdateDate() {
-      const stored = localStorage.getItem('lastUpdateTime');
-      if (!stored) return null;
-      const date = new Date(stored);
-      return isNaN(date.getTime()) ? null : date.toLocaleDateString('es-ES', { year: 'numeric', month: 'short', day: 'numeric' });
-    }
-
-    function getRemainingDates() {
-      const currentSeasonEntries = fullHistoricData.filter(item => item.season === "2026-2");
-      if (currentSeasonEntries.length === 0) return "--";
-
-      const lastEntry = currentSeasonEntries[currentSeasonEntries.length - 1];
-      const lastDate = parseDate(lastEntry.date);
-      if (isNaN(lastDate.getTime())) return "--";
-
-      let nextThursday = new Date(lastDate.getFullYear(), lastDate.getMonth(), lastDate.getDate());
-      nextThursday.setDate(nextThursday.getDate() + 1);
-
-      let safetyCounter = 0;
-      while (nextThursday.getDay() !== 4 && safetyCounter < 7) {
-        nextThursday.setDate(nextThursday.getDate() + 1);
-        safetyCounter++;
-      }
-
-      const endDate = new Date(2026, 10, 29); // Nov 29, 2026
-      let count = 0;
-      let maxThursdays = 52;
-      while (nextThursday <= endDate && count < maxThursdays) {
-        count++;
-        nextThursday.setDate(nextThursday.getDate() + 7);
-      }
-
-      return Math.max(0, count);
-    }
-
-    function renderLeaderboard() {
-      playersData.sort((a, b) => b.pts - a.pts);
-      const container = document.getElementById("general-list");
-      const lastUpdate = getLastUpdateDate();
-      const remainingDates = getRemainingDates();
-      const lastUpdateText = lastUpdate ? `<p class="note" style="font-size:0.75rem; color:#8b949e; margin-bottom:8px;">Última actualización: ${lastUpdate}</p>` : '';
-      let html = `${lastUpdateText}<p class="note">Puntos acumulados · Top 10 → Nov 29 · ${remainingDates} fechas restantes</p>`;
-
-      playersData.forEach((p, index) => {
-        const rank = index + 1;
-        let rankClass = "rk";
-        if (rank === 1) rankClass += " r1";
-        else if (rank === 2) rankClass += " r2";
-        else if (rank === 3) rankClass += " r3";
-
-        html += `
-        <div class="row ${p.isMe ? 'me' : ''}">
-          <span class="${rankClass}">${rank}</span>
-          <span class="nm">${p.name}</span>
-          <span class="pt">${p.pts}</span>
-        </div>
-      `;
-
-        if (rank === 10) {
-          html += `<div class="cutline">— top 10 · clasificados —</div>`;
-        }
-      });
-
-      if (container) container.innerHTML = html;
-      updateStatsWidget();
-    }
-
-    function updateStatsWidget() {
-      const myData = playersData.find(p => p.isMe);
-      const myRank = playersData.findIndex(p => p.isMe) + 1;
-
-      if (myData) {
-        const statPts = document.getElementById("stat-pts");
-        const statRank = document.getElementById("stat-rank");
-        if (statPts) statPts.textContent = myData.pts;
-        if (statRank) statRank.textContent = `${myRank}°`;
-      }
-      renderCurrentSeasonStats();
-    }
-
-    function renderHistoricDeckStats() {
-      const deckMap = {};
-      fullHistoricData.forEach(item => {
-        if (!item.rank || item.rank === "—" || (item.deck && item.deck.includes("Grixis"))) return;
-
-        const deckName = item.deck;
-        if (!deckMap[deckName]) {
-          deckMap[deckName] = { count: 0, record: { w: 0, l: 0, d: 0 } };
-        }
-        deckMap[deckName].count += 1;
-
-        const match = String(item.wl).match(/(\d+)-(\d+)-(\d+)/);
-        if (match) {
-          deckMap[deckName].record.w += Number(match[1]);
-          deckMap[deckName].record.l += Number(match[2]);
-          deckMap[deckName].record.d += Number(match[3]);
-        }
-      });
-
-      const deckList = Object.entries(deckMap).map(([deck, info]) => {
-        const exactPoints = (info.record.w * 3) + (info.record.d * 1);
-        const ptRatio = info.count > 0 ? (exactPoints / info.count) : 0;
-        return { deck, info, ptRatio };
-      });
-
-      deckList.sort((a, b) => b.ptRatio - a.ptRatio);
-
-      const container = document.getElementById("historic-deck-stats");
-      if (!container) return;
-container.innerHTML = deckList.map(({ deck, info, ptRatio }, index) => {
-        const rec = `${info.record.w}-${info.record.l}-${info.record.d}`;
-        const ppg = ptRatio.toFixed(1);
+      toggleTestMode() {
+        const toggle = document.getElementById('test-mode-toggle');
+        const banner = document.getElementById('test-mode-banner');
+        CONFIG.isTestMode = toggle.checked;
         
-        // 1. Dynamic Check: If it is the first item in the sorted array, it is the top deck
-        const isTopDeck = index === 0;
-
-        // 2. Assign classes and trophy dynamically
-        const nameClass = isTopDeck ? "nm g" : "nm";
-        const ptClass = isTopDeck ? "pt g" : "pt";
-        const trophy = isTopDeck ? " 🏆" : "";
-
-        return `
-        <div class="row">
-          <span class="${nameClass}">${deck}${trophy}</span>
-          <span class="wl">${info.count}T · ${rec}</span>
-          <span class="${ptClass}" style="min-width:52px;text-align:right;">${ppg} p/T</span>
-        </div>
-      `;
-      }).join('');
-    }
-
-    function renderFullHistoric() {
-      // Dynamic calculation for historic cards across all seasons
-      // Ordenar el histórico completo cronológicamente (el más reciente al final)
-      fullHistoricData.sort((a, b) => parseDate(a.date) - parseDate(b.date));
-
-      // Dynamic calculation for historic cards across all seasons
-      const validEntries = fullHistoricData.filter(item => item.rank && item.rank !== "—");
-      const totalHistoricTourneys = validEntries.length;
-      const totalHistoricPts = validEntries.reduce((sum, item) => sum + (Number(item.pts) || 0), 0);
-      const ranks = validEntries.map(item => Number(String(item.rank).replace(/[^\d]/g, '')) || 99).sort((a, b) => a - b);
-      const bestHistoricRank = ranks.length ? ranks[0] : "--";
-      const totalRecord = validEntries.reduce((acc, item) => {
-        const match = String(item.wl).match(/(\d+)-(\d+)-(\d+)/);
-        if (!match) return acc;
-        acc.w += Number(match[1]);
-        acc.l += Number(match[2]);
-        acc.d += Number(match[3]);
-        return acc;
-      }, { w: 0, l: 0, d: 0 });
-
-      const histTourneysEl = document.getElementById("hist-tourneys");
-      const histPtsEl = document.getElementById("hist-pts");
-      const histBestRankEl = document.getElementById("hist-best-rank");
-      const histRecordEl = document.getElementById("hist-record");
-
-      if (histTourneysEl) histTourneysEl.textContent = totalHistoricTourneys;
-      if (histPtsEl) histPtsEl.textContent = totalHistoricPts;
-      if (histBestRankEl) histBestRankEl.textContent = bestHistoricRank !== "--" ? `${bestHistoricRank}°` : "--";
-      if (histRecordEl) histRecordEl.textContent = `${totalRecord.w}-${totalRecord.l}-${totalRecord.d}`;
-
-      const container = document.getElementById("historic-full-list");
-      if (!container) return;
-
-      let html = '';
-      fullHistoricData.forEach(item => {
-        let ptStyle = "";
-        let wlStyle = "";
-        let deckColor = "color:#8b949e";
-        let tagStyle = item.tagStyle || "background:#21262d;color:#8b949e";
-
-        if (item.type === "good") {
-          ptStyle = "color:#3fb950; font-weight:700;";
-          wlStyle = "color:#3fb950;";
-        } else if (item.type === "bad") {
-          ptStyle = "color:#f85149; font-weight:700;";
-          wlStyle = "color:#f85149;";
-        } else if (item.type === "none") {
-          deckColor = "color:#444;font-style:italic";
-        }
-
-        html += `
-        <div class="row" style="background:#161b22;">
-          <span class="rk">${item.rank}</span>
-          <div style="flex:1">
-            <div class="nm" style="color:#e6edf3;">${item.date} <span class="season-tag" style="${tagStyle}">${item.season}</span></div>
-            <div style="font-size:0.68rem; ${deckColor}">${item.deck}</div>
-          </div>
-          <span class="pt" style="${ptStyle}">${item.pts}</span>
-          <span class="wl" style="${wlStyle}">${item.wl}</span>
-        </div>
-      `;
-      });
-
-      container.innerHTML = html;
-    }
-
-    function sp(id, btn) {
-      document.querySelectorAll('.pg').forEach(p => p.classList.remove('on'));
-      document.querySelectorAll('.nb').forEach(b => b.classList.remove('on'));
-      document.getElementById(id).classList.add('on');
-      btn.classList.add('on');
-    }
-
-    function tm(id) {
-      const el = document.getElementById(id);
-      const arrow = document.getElementById('c' + id);
-      if (el.style.display === "none" || !el.style.display) {
-        el.style.display = "block";
-        if (arrow) arrow.style.transform = "rotate(180deg)";
-      } else {
-        el.style.display = "none";
-        if (arrow) arrow.style.transform = "rotate(0deg)";
-      }
-    }
-
-    // Preprocess image using canvas for OCR
-    function preprocessImageForOCR(file) {
-      return new Promise((resolve) => {
-        const img = new Image();
-        const url = URL.createObjectURL(file);
-
-        img.onload = () => {
-          URL.revokeObjectURL(url);
-          try {
-            const maxDim = 1600; // Optimal size for OCR accuracy & low memory consumption
-            let { width, height } = img;
-
-            if (width > maxDim || height > maxDim) {
-              if (width > height) {
-                height = Math.round((height * maxDim) / width);
-                width = maxDim;
-              } else {
-                width = Math.round((width * maxDim) / height);
-                height = maxDim;
-              }
-            }
-
-            const canvas = document.createElement('canvas');
-            canvas.width = width;
-            canvas.height = height;
-            const ctx = canvas.getContext('2d');
-
-            ctx.drawImage(img, 0, 0, width, height);
-
-            canvas.toBlob((blob) => {
-              if (blob) {
-                resolve(blob);
-              } else {
-                resolve(file);
-              }
-            }, 'image/png'); // PNG avoids lossy compression artifacts around numbers and text
-          } catch (err) {
-            console.warn('Preprocessing canvas error, using raw file:', err);
-            resolve(file);
-          }
-        };
-
-        img.onerror = () => {
-          URL.revokeObjectURL(url);
-          resolve(file);
-        };
-
-        img.src = url;
-      });
-    }
-
-    function getSelectedDeck() {
-      const deckSelect = document.getElementById("scan-deck");
-      if (!deckSelect) return "🐂⚪🔴 Torito Boros";
-      if (deckSelect.value === "other") {
-        const customVal = document.getElementById("scan-custom-deck")?.value?.trim();
-        return customVal || "Otro Mazo";
-      }
-      return deckSelect.value;
-    }
-
-    function getFormattedDateInput() {
-      const dateInput = document.getElementById("scan-date");
-      const monthsAbbr = ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic'];
-      if (dateInput && dateInput.value) {
-        const parts = dateInput.value.split("-");
-        const d = new Date(Number(parts[0]), Number(parts[1]) - 1, Number(parts[2]));
-        return `${d.getDate()} ${monthsAbbr[d.getMonth()]}`;
-      }
-      const today = new Date();
-      return `${today.getDate()} ${monthsAbbr[today.getMonth()]}`;
-    }
-
-    async function processImageAndApply() {
-      const fileInput = document.getElementById("screenshot-file");
-      const statusEl = document.getElementById("scan-status");
-      const manualInput = document.getElementById("scan-input");
-
-      if (fileInput && fileInput.files && fileInput.files[0]) {
-        if (statusEl) statusEl.textContent = "⚙️ Preparando imagen y motor OCR...";
-        let worker = null;
-        try {
-          const processedImageBlob = await preprocessImageForOCR(fileInput.files[0]);
-          if (statusEl) statusEl.textContent = "⏳ Cargando motor de reconocimiento...";
-
-          worker = await Tesseract.createWorker('eng+spa', 1, {
-            logger: m => {
-              if (m.status === 'recognizing text' && statusEl) {
-                const pct = Math.round((m.progress || 0) * 100);
-                statusEl.textContent = `🔍 Leyendo imagen... ${pct}%`;
-              }
-            }
-          });
-
-          const ret = await worker.recognize(processedImageBlob);
-          if (manualInput) manualInput.value = ret.data.text;
-          if (statusEl) statusEl.textContent = "✅ ¡Lectura completa! Aplicando fecha...";
-
-          // Terminar el worker de inmediato de forma segura antes de liberar el hilo
-          await worker.terminate();
-          worker = null;
-
-          // Dar un respiro al hilo principal en móvil antes de procesar líneas pesadas
-          setTimeout(() => {
-            applyParsedTextData();
-          }, 300);
-          return;
-        } catch (err) {
-          if (statusEl) statusEl.textContent = "⚠️ Error leyendo imagen. Puedes editar el texto manualmente.";
-          console.error("Error en Tesseract:", err);
-        } finally {
-          if (worker) {
-            await worker.terminate().catch(() => { });
-          }
-        }
-      }
-
-      applyParsedTextData();
-    }
-
-    function applyManualTextOnly() {
-      applyParsedTextData();
-    }
-
-    function cleanPlayerName(str) {
-      if (!str) return '';
-      return str.trim()
-        .replace(/^[\d.#\-—–\sº°|]+/, '') // Remove leading numbers/rank/pipes
-        .replace(/[\.\s:\|\-—–_…]+$/, '') // Remove trailing dots/ellipses/punctuation/pipes
-        .replace(/\s{2,}/g, ' ')
-        .trim();
-    }
-
-    function findMatchingPlayer(rawName) {
-      if (!rawName) return null;
-      const cleanName = cleanPlayerName(rawName);
-      const lowerName = cleanName.toLowerCase();
-
-      // Priority check for Christian Donado (isMe)
-      const isChristianQuery = (lowerName.includes("christian") || lowerName.includes("cristian") || lowerName.startsWith("chris")) &&
-        (lowerName.includes("do") || lowerName.includes("donado") || (!lowerName.includes("machado") && !lowerName.includes("mac")));
-
-      if (isChristianQuery) {
-        const me = playersData.find(p => p.isMe);
-        if (me) return me;
-      }
-
-      // Direct exact match
-      let matched = playersData.find(p => p.name.toLowerCase() === lowerName);
-      if (matched) return matched;
-
-      // Token/prefix match (handles truncated names like "Cristhian Mac..." -> "Cristhian Machado", "Santiago Gutie..." -> "Santiago Gutierrez")
-      const cleanQueryTokens = lowerName.split(/\s+/).filter(t => t.length >= 2);
-
-      matched = playersData.find(p => {
-        const dbLower = p.name.toLowerCase();
-        if (dbLower.includes(lowerName) || lowerName.includes(dbLower)) return true;
-
-        const dbTokens = dbLower.split(/\s+/).filter(t => t.length >= 2);
-        if (cleanQueryTokens.length > 0 && dbTokens.length >= cleanQueryTokens.length) {
-          const allTokensMatch = cleanQueryTokens.every((token, idx) => {
-            const dbToken = dbTokens[idx] || "";
-            return dbToken.startsWith(token) || token.startsWith(dbToken);
-          });
-          if (allTokensMatch) return true;
-        }
-
-        if (lowerName.length >= 4 && dbLower.includes(lowerName.substring(0, 5))) return true;
-        if (dbLower.length >= 4 && lowerName.includes(dbLower.substring(0, 5))) return true;
-
-        return false;
-      });
-
-      return matched;
-    }
-
-    function applyParsedTextData() {
-      const manualInput = document.getElementById("scan-input");
-      const fileInput = document.getElementById("screenshot-file");
-      const statusEl = document.getElementById("scan-status");
-      const rankInput = document.getElementById("scan-rank");
-
-      const contCheckbox = document.getElementById("same-day-continuation");
-          if (contCheckbox) contCheckbox.checked = false;
-      // Controles seguros por si no existen en el HTML
-      const contEl = document.getElementById("same-day-continuation");
-      const isContinuation = contEl ? contEl.checked : false;
-
-      const text = manualInput ? manualInput.value : "";
-      if (!text.trim()) {
-        if (statusEl) {
-          statusEl.style.color = "#f85149";
-          statusEl.textContent = "⚠️ Sube una captura de pantalla o escribe el texto.";
-        }
-        return;
-      }
-
-      try {
-        const lines = text.split("\n");
-        let updatedCount = 0;
-        let myPointsEarned = 0;
-        let myWLD = "";
-        let detectedMyRank = "";
-        const updatedPlayersSet = new Set();
-
-        lines.forEach(line => {
-          const trimmedLine = line.trim();
-          if (!trimmedLine) return;
-
-          const lineToParse = trimmedLine.replace(/[|│｜!]/g, ' ');
-          const rankMatch = lineToParse.match(/^#?(\d{1,2})[\.\s°º\-:]+/);
-          const lineRank = rankMatch ? `${rankMatch[1]}°` : "";
-
-          const wldRegex = /(\d{1,2})\s*[-–—:/]\s*(\d{1,2})\s*[-–—:/]\s*([0-9Oo])\b/;
-          const wldMatch = lineToParse.match(wldRegex);
-
-          let rawName = "";
-          let ptsToAdd = NaN;
-          let wldString = "";
-          let pointsFromWLD = null;
-
-          if (wldMatch) {
-            const w = parseInt(wldMatch[1], 10);
-            const l = parseInt(wldMatch[2], 10);
-            const dStr = wldMatch[3].replace(/[Oo]/g, '0');
-            const d = parseInt(dStr, 10);
-            wldString = `${w}-${l}-${d}`;
-            pointsFromWLD = (w * 3) + (d * 1);
-
-            const textBeforeWLD = lineToParse.substring(0, wldMatch.index).trim();
-            const ptsMatch = textBeforeWLD.match(/(\d{1,3})\s*[\s.:\|\-—–_]*$/);
-
-            if (ptsMatch) {
-              ptsToAdd = parseInt(ptsMatch[1], 10);
-              const namePart = textBeforeWLD.substring(0, ptsMatch.index).trim();
-              rawName = cleanPlayerName(namePart);
-            } else {
-              ptsToAdd = 0;
-              rawName = cleanPlayerName(textBeforeWLD);
-            }
-
-            // REGLA ABSOLUTA: Si el WLD genera puntos, sobrescribe lecturas en 0
-            if (pointsFromWLD > 0) {
-              ptsToAdd = pointsFromWLD;
-            }
-          } else {
-            const simpleMatch = lineToParse.match(/^(.+?)(?:\s*[:\-]?\s*)(\d{1,3})\s*$/);
-            if (simpleMatch) {
-              rawName = cleanPlayerName(simpleMatch[1]);
-              ptsToAdd = parseInt(simpleMatch[2], 10);
-            }
-          }
-
-          if (!rawName || isNaN(ptsToAdd) || ptsToAdd > 50) return;
-
-          const lowerName = rawName.toLowerCase();
-          let player = findMatchingPlayer(rawName);
-
-          if (!player) {
-            const isChristian = (lowerName.includes("christian") || lowerName.includes("cristian") || lowerName.startsWith("chris")) &&
-              (lowerName.includes("do") || lowerName.includes("donado") || (!lowerName.includes("machado") && !lowerName.includes("mac")));
-            player = { name: rawName, pts: 0, isMe: isChristian };
-            playersData.push(player);
-          }
-
-          if (!updatedPlayersSet.has(player.name)) {
-            player.pts += ptsToAdd;
-            updatedPlayersSet.add(player.name);
-            updatedCount++;
-            if (player.isMe) {
-              myPointsEarned = ptsToAdd;
-              if (wldString) myWLD = wldString;
-              if (lineRank) detectedMyRank = lineRank;
-            }
-          }
-        });
-
-        if (updatedCount > 0) {
-          if (!isContinuation) {
-            const formattedDate = getFormattedDateInput();
-            const selectedDeck = getSelectedDeck();
-            const currentSeason = "2026-2";
-
-            let finalRank = rankInput ? rankInput.value.trim() : "";
-            if (!finalRank) {
-              finalRank = detectedMyRank || `${playersData.findIndex(p => p.isMe) + 1}°`;
-            }
-            if (!finalRank.endsWith("°") && !isNaN(parseInt(finalRank, 10))) {
-              finalRank = `${parseInt(finalRank, 10)}°`;
-            }
-
-            if (!myWLD) {
-              if (myPointsEarned >= 15) myWLD = "5-0-0";
-              else if (myPointsEarned >= 12) myWLD = "4-0-0";
-              else if (myPointsEarned >= 10) myWLD = "3-0-1";
-              else if (myPointsEarned >= 9) myWLD = "3-1-0";
-              else if (myPointsEarned >= 7) myWLD = "2-1-1";
-              else if (myPointsEarned >= 6) myWLD = "2-2-0";
-              else if (myPointsEarned >= 4) myWLD = "1-2-1";
-              else if (myPointsEarned >= 3) myWLD = "1-3-0";
-              else if (myPointsEarned >= 1) myWLD = "0-3-1";
-              else myWLD = "0-4-0";
-            }
-
-            fullHistoricData.push({
-              date: formattedDate,
-              season: currentSeason,
-              deck: selectedDeck,
-              rank: finalRank,
-              pts: myPointsEarned,
-              wl: myWLD,
-              type: myPointsEarned >= 9 ? "good" : (myPointsEarned <= 3 ? "bad" : "normal")
-            });
-          }
-
-          saveData();
-          renderLeaderboard();
-          renderFullHistoric();
-          renderHistoricDeckStats();
-          renderCurrentSeasonStats();
-
-          // Limpiar campos visuales
-          if (fileInput) fileInput.value = "";
-          if (manualInput) manualInput.value = "";
-          if (rankInput) rankInput.value = "";
-
-          if (statusEl) {
-            statusEl.style.color = "#3fb950"; // Verde de éxito
-            statusEl.textContent = `✅ Puntajes aplicados correctamente. ${myPointsEarned} puntos añadidos a tu total.`;
-          }
-
-          // Redirigir a General automáticamente tras 1.5 segundos para que leas el mensaje
-          setTimeout(() => {
-            if (statusEl) {
-              statusEl.style.color = "#f97316"; // Volver a naranja original
-              statusEl.textContent = "";
-            }
-            sp('g', document.querySelector('nav .nb'));
-          }, 1500);
-
+        if (CONFIG.isTestMode) {
+            banner.style.display = 'block';
+            State.resetToDefaults();
+            State.save();
         } else {
-          if (statusEl) {
-            statusEl.style.color = "#f85149"; // Rojo de error
-            statusEl.textContent = "⚠️ No se detectaron puntajes válidos en el texto.";
-          }
+            banner.style.display = 'none';
+            localStorage.removeItem('pauper_test_players');
+            localStorage.removeItem('pauper_test_historic');
         }
+        
+        State.load();
+        UI.refreshAll();
+      },
 
-      } catch (err) {
-        // SI ALGO FALLA, lo veremos directamente en pantalla en lugar de congelarse
-        if (statusEl) {
-          statusEl.style.color = "#f85149";
-          statusEl.textContent = "❌ Error en código: " + err.message;
+      switchPage(id, btn) {
+        document.querySelectorAll('.pg').forEach(p => p.classList.remove('on'));
+        document.querySelectorAll('.nb').forEach(b => b.classList.remove('on'));
+        document.getElementById(id).classList.add('on');
+        btn.classList.add('on');
+      },
+
+      toggleAccordion(id) {
+        const el = document.getElementById(id);
+        const arrow = document.getElementById('c' + id);
+        if (el.style.display === "none" || !el.style.display) {
+          el.style.display = "block";
+          if (arrow) arrow.style.transform = "rotate(180deg)";
+        } else {
+          el.style.display = "none";
+          if (arrow) arrow.style.transform = "rotate(0deg)";
         }
-        console.error("Error crítico en applyParsedTextData:", err);
+      },
+
+      toggleCustomDeckInput() {
+        const select = document.getElementById("scan-deck");
+        const customGroup = document.getElementById("custom-deck-group");
+        if (select && customGroup) {
+          customGroup.style.display = select.value === "other" ? "block" : "none";
+        }
+      },
+
+      updateDynamicLabels() {
+        const seasonLabels = document.querySelectorAll('.season-label');
+        seasonLabels.forEach(el => el.textContent = `Temporada ${CONFIG.CURRENT_SEASON}`);
       }
-    }
+    };
 
-    function importBackupJSON(event) {
-      const file = event.target.files[0];
-      if (!file) return;
+    // ═══════════ SECTION: BACKUP ═══════════
+    const Backup = {
+      exportJSON() {
+        const data = {
+          playersData: State.players,
+          fullHistoricData: State.historic,
+          version: CONFIG.DATA_VERSION
+        };
+        const blob = new Blob([JSON.stringify(data, null, 2)], { type: "application/json" });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = `pauper_backup_${CONFIG.CURRENT_SEASON}_${new Date().toISOString().slice(0, 10)}.json`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+      },
 
-      const reader = new FileReader();
-      reader.onload = (e) => {
-        try {
-          const parsed = JSON.parse(e.target.result);
-          if (parsed.playersData && parsed.fullHistoricData) {
-            playersData = parsed.playersData;
-            fullHistoricData = parsed.fullHistoricData;
-            saveData();
-            renderLeaderboard();
-            renderFullHistoric();
-            renderHistoricDeckStats();
-            renderCurrentSeasonStats();
-            alert("✅ ¡Copia de seguridad restaurada correctamente!");
-          } else {
-            alert("El archivo JSON no tiene el formato correcto.");
+      importJSON(event) {
+        const file = event.target.files[0];
+        if (!file) return;
+        const reader = new FileReader();
+        reader.onload = (e) => {
+          try {
+            const parsed = JSON.parse(e.target.result);
+            if (parsed.playersData && parsed.fullHistoricData) {
+              State.players = parsed.playersData;
+              State.historic = parsed.fullHistoricData;
+              State.save();
+              UI.refreshAll();
+              alert("✅ ¡Copia de seguridad restaurada correctamente!");
+            } else {
+              alert("El archivo JSON no tiene el formato correcto.");
+            }
+          } catch (err) {
+            alert("Error al leer el archivo JSON: " + err.message);
           }
-        } catch (err) {
-          alert("Error al leer el archivo JSON: " + err.message);
-        }
-      };
-      reader.readAsText(file);
-      event.target.value = "";
-    }
-
-    function resetAppData() {
-      const confirmReset = confirm("⚠️ ¿Estás seguro de que deseas reiniciar la temporada 2026-2 desde CERO?\n\nEsto pondrá todos los puntajes de la temporada 2026-2 en 0 y vaciará los torneos de 2026-2 para que puedas subirlos uno por uno desde tus capturas.");
-
-      if (confirmReset) {
-        playersData = JSON.parse(JSON.stringify(defaultPlayersData));
-        fullHistoricData = JSON.parse(JSON.stringify(defaultHistoricData));
-        saveData();
-
-        renderLeaderboard();
-        renderFullHistoric();
-        renderHistoricDeckStats();
-        renderCurrentSeasonStats();
-
-        alert("✨ ¡Temporada 2026-2 reiniciada a cero! Ya puedes comenzar a subir tus capturas una a una.");
+        };
+        reader.readAsText(file);
+        event.target.value = "";
       }
-    }
+    };
 
-    window.onload = () => {
-      // Set date input to today by default
+    // ═══════════ SECTION: INIT ═══════════
+    function init() {
       const dateInput = document.getElementById("scan-date");
       if (dateInput) {
         const today = new Date();
@@ -1508,16 +1536,12 @@ container.innerHTML = deckList.map(({ deck, info, ptRatio }, index) => {
         const dd = String(today.getDate()).padStart(2, '0');
         dateInput.value = `${yyyy}-${mm}-${dd}`;
       }
-
-      loadData();
-      if (!localStorage.getItem('lastUpdateTime')) {
-        localStorage.setItem('lastUpdateTime', new Date().toISOString());
-      }
-      renderLeaderboard();
-      renderFullHistoric();
-      renderHistoricDeckStats();
-      renderCurrentSeasonStats();
-    };
+      
+      State.load();
+      UI.updateDynamicLabels();
+      UI.refreshAll();
+    }
+    window.addEventListener('load', init);
   </script>
 </body>
 
