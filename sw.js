@@ -1,4 +1,4 @@
-const CACHE_NAME = 'pauper-tracker-v3';
+const CACHE_NAME = 'pauper-deck-arena-v1';
 const ASSETS = [
   './',
   './index.html',

@@ -1,13 +1,13 @@
 {
-  "id": "pauper-league-tracker",
-  "name": "Pauper League Tracker",
-  "short_name": "Pauper",
-  "description": "Tabla de clasificación, estadísticas y escáner de torneos de Pauper",
+  "id": "pauper-deck-arena",
+  "name": "Pauper Deck Arena",
+  "short_name": "Deck Arena",
+  "description": "Analizador de rendimiento y comparador de mazos de Pauper MTG",
   "start_url": "./",
   "scope": "./",
   "display": "standalone",
-  "background_color": "#0d1117",
-  "theme_color": "#0d1117",
+  "background_color": "#0a0e14",
+  "theme_color": "#0a0e14",
   "orientation": "portrait",
   "categories": ["games", "sports", "utilities"],
   "icons": [
@@ -38,17 +38,17 @@
   ],
   "shortcuts": [
     {
-      "name": "Tabla General",
-      "short_name": "General",
-      "description": "Ver la tabla de posiciones acumulada",
-      "url": "./#g",
+      "name": "Comparador de Mazos",
+      "short_name": "Mazos",
+      "description": "Comparar rendimiento de mazos",
+      "url": "./#pg-decks",
       "icons": [{ "src": "./icon-192.png", "sizes": "192x192" }]
     },
     {
-      "name": "Registrar Fecha",
-      "short_name": "Escanear",
-      "description": "Escanear captura o ingresar resultados",
-      "url": "./#scanner",
+      "name": "Registrar Torneo",
+      "short_name": "Registrar",
+      "description": "Registrar resultado de torneo para tus mazos",
+      "url": "./#pg-logger",
       "icons": [{ "src": "./icon-192.png", "sizes": "192x192" }]
     }
   ]

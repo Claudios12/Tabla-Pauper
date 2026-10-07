@@ -5,293 +5,675 @@
   <meta charset="UTF-8">
   <meta name="viewport"
     content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-  <meta name="theme-color" content="#0d1117">
-  <meta name="background-color" content="#0d1117">
+  <meta name="theme-color" content="#0a0e14">
+  <meta name="background-color" content="#0a0e14">
   <meta name="mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-  <meta name="apple-mobile-web-app-title" content="Pauper">
-  <meta name="description" content="Pauper League Tracker - Tablas, Estadísticas y Escáner OCR de Torneos">
-  <title>Pauper League Tracker</title>
+  <meta name="apple-mobile-web-app-title" content="Pauper Arena">
+  <meta name="description" content="Pauper Deck Arena - Analizador de Rendimiento y Comparador de Mazos de Magic: The Gathering">
+  <title>Pauper Deck Arena · Rendimiento de Mazos</title>
+  
   <link rel="manifest" href="./manifest.json">
   <link rel="icon" type="image/png" sizes="192x192" href="./icon-192.png">
   <link rel="icon" type="image/png" sizes="512x512" href="./icon-512.png">
   <link rel="apple-touch-icon" href="./icon-192.png">
-  <link rel="apple-touch-icon" sizes="192x192" href="./icon-192.png">
-  <link rel="apple-touch-icon" sizes="512x512" href="./icon-512.png">
+  
+  <!-- Google Fonts: Outfit & Inter for high-end gaming/dashboard aesthetic -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Outfit:wght@500;600;700;800;900&display=swap" rel="stylesheet">
+  
+  <!-- OCR Tesseract Engine -->
   <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
+
   <style>
+    :root {
+      --bg-main: #0a0e14;
+      --bg-surface: #111822;
+      --bg-surface-elevated: #16202e;
+      --bg-surface-hover: #1c293c;
+      --border-subtle: rgba(255, 255, 255, 0.08);
+      --border-accent: rgba(249, 115, 22, 0.25);
+      
+      --color-brand: #f97316;
+      --color-brand-glow: rgba(249, 115, 22, 0.35);
+      
+      --color-good: #10b981;
+      --color-good-bg: rgba(16, 185, 129, 0.12);
+      --color-good-border: rgba(16, 185, 129, 0.35);
+      
+      --color-avg: #06b6d4;
+      --color-avg-bg: rgba(6, 182, 212, 0.12);
+      --color-avg-border: rgba(6, 182, 212, 0.35);
+      
+      --color-bad: #f43f5e;
+      --color-bad-bg: rgba(244, 63, 94, 0.12);
+      --color-bad-border: rgba(244, 63, 94, 0.35);
+      
+      --color-neutral: #8b949e;
+      --text-primary: #f0f6fc;
+      --text-secondary: #94a3b8;
+      --text-muted: #64748b;
+      
+      --radius-sm: 8px;
+      --radius-md: 12px;
+      --radius-lg: 16px;
+      --radius-full: 9999px;
+      
+      --font-display: 'Outfit', -apple-system, sans-serif;
+      --font-body: 'Inter', -apple-system, sans-serif;
+    }
+
     * {
       box-sizing: border-box;
       -webkit-tap-highlight-color: transparent;
+      margin: 0;
+      padding: 0;
     }
 
     body {
-      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-      background: #0d1117;
-      color: #e6edf3;
-      margin: 0;
-      padding: 0 0 calc(75px + env(safe-area-inset-bottom, 0px)) 0;
+      font-family: var(--font-body);
+      background: var(--bg-main);
+      color: var(--text-primary);
       min-height: 100vh;
+      padding-bottom: calc(85px + env(safe-area-inset-bottom, 0px));
+      overflow-x: hidden;
+      line-height: 1.45;
     }
 
+    /* Ambient background gradient effect */
+    body::before {
+      content: "";
+      position: fixed;
+      top: -120px;
+      right: -80px;
+      width: 320px;
+      height: 320px;
+      background: radial-gradient(circle, rgba(249, 115, 22, 0.12) 0%, transparent 70%);
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    body::after {
+      content: "";
+      position: fixed;
+      bottom: 60px;
+      left: -80px;
+      width: 300px;
+      height: 300px;
+      background: radial-gradient(circle, rgba(6, 182, 212, 0.08) 0%, transparent 70%);
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    /* Header styling */
     header {
-      background: #161b22;
-      border-bottom: 1px solid #30363d;
-      padding: max(12px, env(safe-area-inset-top, 12px)) 16px 12px 16px;
+      background: rgba(17, 24, 34, 0.85);
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      border-bottom: 1px solid var(--border-subtle);
+      padding: max(14px, env(safe-area-inset-top, 14px)) 16px 14px 16px;
+      position: sticky;
+      top: 0;
+      z-index: 50;
       display: flex;
       justify-content: space-between;
       align-items: center;
-      position: sticky;
-      top: 0;
-      z-index: 10;
     }
 
-    h1 {
-      font-size: 1.1rem;
-      margin: 0;
-      color: #f97316;
-      text-transform: uppercase;
-      letter-spacing: 1px;
+    .brand {
       display: flex;
       align-items: center;
-      gap: 6px;
+      gap: 10px;
     }
 
+    .brand-icon {
+      font-size: 1.35rem;
+      background: linear-gradient(135deg, rgba(249, 115, 22, 0.2), rgba(249, 115, 22, 0.05));
+      border: 1px solid var(--border-accent);
+      border-radius: var(--radius-sm);
+      width: 36px;
+      height: 36px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 0 15px var(--color-brand-glow);
+    }
+
+    .brand-title {
+      font-family: var(--font-display);
+      font-size: 1.15rem;
+      font-weight: 800;
+      letter-spacing: -0.3px;
+      color: #fff;
+      display: flex;
+      flex-direction: column;
+      line-height: 1.1;
+    }
+
+    .brand-subtitle {
+      font-size: 0.65rem;
+      font-weight: 600;
+      color: var(--color-brand);
+      text-transform: uppercase;
+      letter-spacing: 1px;
+    }
+
+    .header-controls {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .season-select-pill {
+      background: var(--bg-surface-elevated);
+      border: 1px solid var(--border-subtle);
+      color: var(--text-primary);
+      font-size: 0.75rem;
+      font-weight: 600;
+      padding: 6px 10px;
+      border-radius: var(--radius-full);
+      outline: none;
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+
+    .season-select-pill:focus, .season-select-pill:hover {
+      border-color: var(--color-brand);
+    }
+
+    /* Container */
     .container {
-      padding: 12px;
-      max-width: 500px;
+      max-width: 640px;
       margin: 0 auto;
+      padding: 14px;
+      position: relative;
+      z-index: 1;
     }
 
     .pg {
       display: none;
+      animation: fadeIn 0.25s cubic-bezier(0.16, 1, 0.3, 1);
     }
 
     .pg.on {
       display: block;
     }
 
-    .row {
-      display: flex;
-      align-items: center;
-      background: #161b22;
-      border: 1px solid #30363d;
-      border-radius: 9px;
-      padding: 10px 12px;
-      margin-bottom: 4px;
-      gap: 8px;
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(6px); }
+      to { opacity: 1; transform: translateY(0); }
     }
 
-    .row.me {
-      border: 1px solid #f97316;
-      background: #1e1408;
-    }
-
-    .row.me .nm {
-      font-weight: 700;
-      color: #f97316;
-    }
-
-    .rk {
-      font-weight: 700;
-      min-width: 28px;
-      color: #8b949e;
-      font-size: 0.9rem;
-    }
-
-    .rk.r1 {
-      color: #ffd700;
-    }
-
-    .rk.r2 {
-      color: #c0c0c0;
-    }
-
-    .rk.r3 {
-      color: #cd7f32;
-    }
-
-    .nm {
-      flex: 1;
-      color: #e6edf3;
-      font-size: 0.9rem;
-      white-space: nowrap;
-      overflow: hidden;
-      text-overflow: ellipsis;
-    }
-
-    .pt {
-      font-weight: 700;
-      color: #e6edf3;
-      font-size: 0.95rem;
-      min-width: 32px;
-      text-align: right;
-    }
-
-    .wl {
-      font-size: 0.73rem;
-      color: #8b949e;
-      min-width: 52px;
-      text-align: right;
-    }
-
-    .cutline {
-      text-align: center;
-      color: #f97316;
-      font-size: 0.75rem;
-      font-weight: 600;
-      margin: 12px 0;
-      letter-spacing: 0.5px;
-      border-top: 1px dashed #f9731640;
-      border-bottom: 1px dashed #f9731640;
-      padding: 4px 0;
-    }
-
-    .cards {
+    /* Global Summary Stats Cards */
+    .hero-metrics {
       display: grid;
-      grid-template-columns: repeat(3, 1fr);
-      gap: 7px;
-      margin-bottom: 14px;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 8px;
+      margin-bottom: 16px;
     }
 
-    .card {
-      background: #161b22;
-      border: 1px solid #30363d;
-      border-radius: 9px;
-      padding: 10px 6px;
+    .metric-card {
+      background: var(--bg-surface);
+      border: 1px solid var(--border-subtle);
+      border-radius: var(--radius-md);
+      padding: 10px 8px;
       text-align: center;
+      position: relative;
+      overflow: hidden;
+      transition: transform 0.2s ease, border-color 0.2s ease;
     }
 
-    .cv {
-      font-size: 1.2rem;
-      font-weight: 700;
-      color: #f97316;
+    .metric-card:hover {
+      border-color: rgba(255, 255, 255, 0.15);
+      transform: translateY(-1px);
     }
 
-    .cl {
-      font-size: 0.6rem;
-      color: #8b949e;
+    .metric-card.highlight {
+      background: linear-gradient(180deg, rgba(249, 115, 22, 0.08) 0%, var(--bg-surface) 100%);
+      border-color: var(--border-accent);
+    }
+
+    .metric-card .val {
+      font-family: var(--font-display);
+      font-size: 1.25rem;
+      font-weight: 800;
+      color: #fff;
+      line-height: 1.2;
+    }
+
+    .metric-card.highlight .val {
+      color: var(--color-brand);
+    }
+
+    .metric-card .lbl {
+      font-size: 0.63rem;
+      font-weight: 600;
+      color: var(--text-secondary);
       text-transform: uppercase;
       letter-spacing: 0.4px;
-      margin-top: 2px;
+      margin-top: 3px;
     }
 
-    .sl {
-      font-size: 0.7rem;
+    /* Section Headers */
+    .section-title {
+      font-family: var(--font-display);
+      font-size: 0.95rem;
       font-weight: 700;
-      color: #f97316;
-      text-transform: uppercase;
-      margin: 16px 0 8px 0;
-      letter-spacing: 0.8px;
-    }
-
-    .note {
-      font-size: 0.67rem;
-      color: #8b949e;
-      text-align: center;
-      margin-top: 9px;
-      margin-bottom: 8px;
-    }
-
-    .mh {
+      color: #fff;
+      margin: 18px 0 10px 0;
       display: flex;
       justify-content: space-between;
       align-items: center;
-      background: #161b22;
-      border: 1px solid #30363d;
-      border-radius: 9px;
-      padding: 11px 13px;
+      letter-spacing: -0.2px;
+    }
+
+    .section-title .badge-count {
+      font-size: 0.68rem;
+      background: var(--bg-surface-elevated);
+      color: var(--text-secondary);
+      border: 1px solid var(--border-subtle);
+      padding: 2px 8px;
+      border-radius: var(--radius-full);
+      font-weight: 600;
+    }
+
+    /* Deck Performance Cards */
+    .deck-card {
+      background: var(--bg-surface);
+      border: 1px solid var(--border-subtle);
+      border-radius: var(--radius-lg);
+      padding: 14px 16px;
+      margin-bottom: 12px;
+      position: relative;
+      transition: all 0.25s ease;
       cursor: pointer;
-      margin-bottom: 4px;
+    }
+
+    .deck-card:hover {
+      border-color: rgba(255, 255, 255, 0.2);
+      background: var(--bg-surface-elevated);
+      transform: translateY(-2px);
+      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3);
+    }
+
+    .deck-card.status-good {
+      border-left: 4px solid var(--color-good);
+    }
+
+    .deck-card.status-average {
+      border-left: 4px solid var(--color-avg);
+    }
+
+    .deck-card.status-bad {
+      border-left: 4px solid var(--color-bad);
+    }
+
+    .deck-card.status-insufficient {
+      border-left: 4px solid var(--text-muted);
+    }
+
+    .deck-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      margin-bottom: 10px;
       gap: 8px;
     }
 
-    .mh:active {
-      background: #1e1408;
+    .deck-name {
+      font-family: var(--font-display);
+      font-size: 1.05rem;
+      font-weight: 700;
+      color: #fff;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      flex: 1;
     }
 
-    .mt {
+    .status-badge {
+      font-size: 0.65rem;
+      font-weight: 700;
+      padding: 3px 8px;
+      border-radius: var(--radius-full);
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      white-space: nowrap;
+    }
+
+    .status-badge.good {
+      background: var(--color-good-bg);
+      color: var(--color-good);
+      border: 1px solid var(--color-good-border);
+    }
+
+    .status-badge.average {
+      background: var(--color-avg-bg);
+      color: var(--color-avg);
+      border: 1px solid var(--color-avg-border);
+    }
+
+    .status-badge.bad {
+      background: var(--color-bad-bg);
+      color: var(--color-bad);
+      border: 1px solid var(--color-bad-border);
+    }
+
+    .status-badge.insufficient {
+      background: rgba(148, 163, 184, 0.1);
+      color: var(--text-secondary);
+      border: 1px solid var(--border-subtle);
+    }
+
+    /* Win Rate Progress Bar */
+    .win-rate-container {
+      margin: 10px 0 12px 0;
+    }
+
+    .win-rate-header {
+      display: flex;
+      justify-content: space-between;
+      font-size: 0.75rem;
+      margin-bottom: 5px;
+    }
+
+    .win-rate-label {
+      color: var(--text-secondary);
+      font-weight: 500;
+    }
+
+    .win-rate-value {
+      font-family: var(--font-display);
+      font-weight: 800;
+      font-size: 0.95rem;
+    }
+
+    .win-rate-value.good { color: var(--color-good); }
+    .win-rate-value.average { color: var(--color-avg); }
+    .win-rate-value.bad { color: var(--color-bad); }
+    .win-rate-value.insufficient { color: var(--text-secondary); }
+
+    .progress-bar-bg {
+      background: rgba(255, 255, 255, 0.06);
+      height: 7px;
+      border-radius: var(--radius-full);
+      overflow: hidden;
+      position: relative;
+    }
+
+    .progress-bar-fill {
+      height: 100%;
+      border-radius: var(--radius-full);
+      transition: width 0.6s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+
+    .progress-bar-fill.good {
+      background: linear-gradient(90deg, #059669, #10b981);
+    }
+
+    .progress-bar-fill.average {
+      background: linear-gradient(90deg, #0284c7, #06b6d4);
+    }
+
+    .progress-bar-fill.bad {
+      background: linear-gradient(90deg, #e11d48, #f43f5e);
+    }
+
+    .progress-bar-fill.insufficient {
+      background: var(--text-muted);
+    }
+
+    /* Benchmark line indicator (50% target) */
+    .progress-bar-bg::after {
+      content: "";
+      position: absolute;
+      left: 50%;
+      top: 0;
+      bottom: 0;
+      width: 2px;
+      background: rgba(255, 255, 255, 0.25);
+      z-index: 2;
+    }
+
+    /* Deck Statistics Grid */
+    .deck-stats-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 6px;
+      background: rgba(0, 0, 0, 0.2);
+      border-radius: var(--radius-md);
+      padding: 8px 6px;
+      margin-bottom: 10px;
+    }
+
+    .deck-stat-col {
+      text-align: center;
+    }
+
+    .deck-stat-col .d-val {
+      font-family: var(--font-display);
+      font-size: 0.95rem;
+      font-weight: 700;
+      color: #fff;
+    }
+
+    .deck-stat-col .d-lbl {
+      font-size: 0.6rem;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      font-weight: 600;
+      margin-top: 1px;
+    }
+
+    /* Recent Form Tracker (W/L/D pills) */
+    .form-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      border-top: 1px solid var(--border-subtle);
+      padding-top: 10px;
+      margin-top: 4px;
+    }
+
+    .form-label {
+      font-size: 0.68rem;
+      color: var(--text-secondary);
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    .form-pills {
+      display: flex;
+      gap: 4px;
+      align-items: center;
+    }
+
+    .form-pill {
+      font-size: 0.65rem;
+      font-weight: 700;
+      padding: 2px 7px;
+      border-radius: var(--radius-sm);
+      line-height: 1.2;
+    }
+
+    .form-pill.w { background: var(--color-good-bg); color: var(--color-good); border: 1px solid var(--color-good-border); }
+    .form-pill.l { background: var(--color-bad-bg); color: var(--color-bad); border: 1px solid var(--color-bad-border); }
+    .form-pill.d { background: rgba(245, 158, 11, 0.15); color: #fbbf24; border: 1px solid rgba(245, 158, 11, 0.35); }
+
+    /* Comparative Table Styling */
+    .table-container {
+      background: var(--bg-surface);
+      border: 1px solid var(--border-subtle);
+      border-radius: var(--radius-lg);
+      overflow-x: auto;
+      margin-bottom: 16px;
+      box-shadow: 0 4px 16px rgba(0, 0, 0, 0.2);
+    }
+
+    .comp-table {
+      width: 100%;
+      border-collapse: collapse;
+      text-align: left;
+      font-size: 0.78rem;
+    }
+
+    .comp-table th {
+      background: var(--bg-surface-elevated);
+      color: var(--text-secondary);
+      font-size: 0.67rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      padding: 10px 12px;
+      border-bottom: 1px solid var(--border-subtle);
+      white-space: nowrap;
+    }
+
+    .comp-table td {
+      padding: 10px 12px;
+      border-bottom: 1px solid var(--border-subtle);
+      white-space: nowrap;
+      color: var(--text-primary);
+    }
+
+    .comp-table tr:last-child td {
+      border-bottom: none;
+    }
+
+    .comp-table tr:hover td {
+      background: var(--bg-surface-hover);
+    }
+
+    .comp-table .deck-cell {
+      font-family: var(--font-display);
+      font-weight: 700;
+      color: #fff;
+    }
+
+    .comp-table .highlight-val {
+      font-weight: 700;
+    }
+
+    /* Insights Box */
+    .insight-card {
+      background: linear-gradient(135deg, rgba(249, 115, 22, 0.08) 0%, rgba(6, 182, 212, 0.05) 100%);
+      border: 1px solid var(--border-accent);
+      border-radius: var(--radius-lg);
+      padding: 14px 16px;
+      margin-bottom: 16px;
+    }
+
+    .insight-header {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-family: var(--font-display);
       font-size: 0.9rem;
       font-weight: 700;
-      color: #f97316;
+      color: var(--color-brand);
+      margin-bottom: 8px;
     }
 
-    .ms {
-      font-size: 0.72rem;
-      color: #8b949e;
-      flex: 1;
-      text-align: right;
-    }
-
-    .ch {
+    .insight-body {
       font-size: 0.78rem;
-      color: #8b949e;
-      transition: transform 0.2s;
+      color: var(--text-secondary);
+      line-height: 1.5;
     }
 
-    .mb {
-      display: none;
-      margin-bottom: 12px;
+    .insight-body strong {
+      color: #fff;
     }
 
-    .g {
-      color: #3fb950 !important;
-      font-weight: 700;
+    /* Form Controls */
+    .card-panel {
+      background: var(--bg-surface);
+      border: 1px solid var(--border-subtle);
+      border-radius: var(--radius-lg);
+      padding: 16px;
+      margin-bottom: 16px;
     }
 
-    .season-tag {
-      font-size: 0.6rem;
-      color: #8b949e;
-      background: #21262d;
-      padding: 2px 8px;
-      border-radius: 6px;
-    }
-
-    /* Forms and Input Controls */
     .field-group {
       display: flex;
       flex-direction: column;
-      text-align: left;
-      margin-bottom: 10px;
+      margin-bottom: 12px;
       gap: 4px;
     }
 
     .field-group label {
-      font-size: 0.72rem;
-      color: #8b949e;
+      font-size: 0.75rem;
+      color: var(--text-secondary);
       font-weight: 600;
     }
 
     .input-ctrl {
-      background: #0d1117;
-      border: 1px solid #30363d;
-      color: #e6edf3;
-      padding: 9px 12px;
-      border-radius: 8px;
+      background: var(--bg-main);
+      border: 1px solid var(--border-subtle);
+      color: var(--text-primary);
+      padding: 10px 12px;
+      border-radius: var(--radius-sm);
       font-size: 0.85rem;
       font-family: inherit;
       width: 100%;
       outline: none;
-      transition: border-color 0.2s;
+      transition: all 0.2s ease;
     }
 
     .input-ctrl:focus {
-      border-color: #f97316;
+      border-color: var(--color-brand);
+      box-shadow: 0 0 0 2px var(--color-brand-glow);
+    }
+
+    .record-inputs-row {
+      display: grid;
+      grid-template-columns: 1fr 1fr 1fr;
+      gap: 8px;
+    }
+
+    .preset-records {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 5px;
+      margin-top: 6px;
+    }
+
+    .preset-chip {
+      background: var(--bg-surface-elevated);
+      border: 1px solid var(--border-subtle);
+      color: var(--text-secondary);
+      font-size: 0.7rem;
+      font-weight: 600;
+      padding: 4px 8px;
+      border-radius: var(--radius-sm);
+      cursor: pointer;
+      transition: all 0.15s ease;
+    }
+
+    .preset-chip:hover {
+      background: var(--color-brand);
+      color: #0a0e14;
+      border-color: var(--color-brand);
     }
 
     .btn {
       border: none;
-      border-radius: 8px;
+      border-radius: var(--radius-sm);
       font-weight: 700;
-      font-size: 0.8rem;
+      font-size: 0.82rem;
       cursor: pointer;
-      padding: 10px;
+      padding: 11px 16px;
       display: flex;
       align-items: center;
       justify-content: center;
       gap: 6px;
-      transition: opacity 0.2s, transform 0.1s;
+      transition: all 0.2s ease;
+      font-family: inherit;
     }
 
     .btn:active {
@@ -299,37 +681,38 @@
     }
 
     .btn-primary {
-      background: #f97316;
-      color: #0d1117;
+      background: linear-gradient(135deg, #f97316 0%, #ea580c 100%);
+      color: #0a0e14;
+      box-shadow: 0 4px 14px var(--color-brand-glow);
       width: 100%;
     }
 
+    .btn-primary:hover {
+      box-shadow: 0 6px 20px var(--color-brand-glow);
+      filter: brightness(1.05);
+    }
+
     .btn-secondary {
-      background: #21262d;
-      color: #c9d1d9;
-      border: 1px solid #30363d;
+      background: var(--bg-surface-elevated);
+      color: var(--text-primary);
+      border: 1px solid var(--border-subtle);
+      width: 100%;
+    }
+
+    .btn-secondary:hover {
+      background: var(--bg-surface-hover);
+      border-color: rgba(255, 255, 255, 0.15);
     }
 
     .btn-danger {
-      background: transparent;
-      color: #ef4444;
-      border: 1px solid #ef4444;
+      background: var(--color-bad-bg);
+      color: var(--color-bad);
+      border: 1px solid var(--color-bad-border);
     }
 
-    .btn-icon-del {
-      background: transparent;
-      border: none;
-      color: #8b949e;
-      font-size: 0.85rem;
-      cursor: pointer;
-      padding: 4px 6px;
-      border-radius: 4px;
-    }
-
-    .btn-icon-del:hover,
-    .btn-icon-del:active {
-      color: #ef4444;
-      background: rgba(239, 68, 68, 0.15);
+    .btn-danger:hover {
+      background: var(--color-bad);
+      color: #fff;
     }
 
     .btn-row {
@@ -339,37 +722,200 @@
       margin-top: 10px;
     }
 
+    /* Tournament History List */
+    .tourney-item {
+      background: var(--bg-surface);
+      border: 1px solid var(--border-subtle);
+      border-radius: var(--radius-md);
+      padding: 10px 14px;
+      margin-bottom: 6px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      transition: all 0.2s ease;
+    }
+
+    .tourney-item:hover {
+      background: var(--bg-surface-elevated);
+      border-color: rgba(255, 255, 255, 0.15);
+    }
+
+    .tourney-rank {
+      font-family: var(--font-display);
+      font-weight: 800;
+      font-size: 1.05rem;
+      min-width: 34px;
+      text-align: center;
+      color: var(--text-secondary);
+    }
+
+    .tourney-rank.top1 { color: #f59e0b; text-shadow: 0 0 10px rgba(245, 158, 11, 0.4); }
+    .tourney-rank.top4 { color: #38bdf8; }
+    .tourney-rank.top8 { color: #a78bfa; }
+
+    .tourney-details {
+      flex: 1;
+      min-width: 0;
+    }
+
+    .tourney-deck {
+      font-size: 0.88rem;
+      font-weight: 700;
+      color: #fff;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .tourney-meta {
+      font-size: 0.7rem;
+      color: var(--text-secondary);
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      margin-top: 2px;
+    }
+
+    .tourney-score {
+      text-align: right;
+    }
+
+    .tourney-pts {
+      font-family: var(--font-display);
+      font-size: 0.95rem;
+      font-weight: 800;
+      color: #fff;
+    }
+
+    .tourney-record {
+      font-size: 0.7rem;
+      color: var(--text-secondary);
+      font-weight: 600;
+    }
+
+    .btn-icon-del {
+      background: transparent;
+      border: none;
+      color: var(--text-muted);
+      cursor: pointer;
+      padding: 6px;
+      border-radius: var(--radius-sm);
+      font-size: 0.85rem;
+      transition: all 0.15s ease;
+    }
+
+    .btn-icon-del:hover {
+      color: var(--color-bad);
+      background: var(--color-bad-bg);
+    }
+
+    /* Fixed Bottom Navigation */
     nav {
       position: fixed;
       bottom: 0;
       left: 0;
       width: 100%;
-      background: #161b22;
-      border-top: 1px solid #30363d;
+      background: rgba(17, 24, 34, 0.9);
+      backdrop-filter: blur(18px);
+      -webkit-backdrop-filter: blur(18px);
+      border-top: 1px solid var(--border-subtle);
       display: flex;
       justify-content: space-around;
       padding: 8px 0 max(8px, env(safe-area-inset-bottom, 8px)) 0;
       z-index: 100;
     }
 
-    .nb {
+    .nav-btn {
       background: none;
       border: none;
-      color: #8b949e;
-      font-size: 0.8rem;
+      color: var(--text-secondary);
+      font-size: 0.72rem;
       font-weight: 600;
       display: flex;
       flex-direction: column;
       align-items: center;
-      gap: 2px;
+      gap: 3px;
       cursor: pointer;
-      padding: 8px 14px;
-      border-radius: 8px;
+      padding: 6px 14px;
+      border-radius: var(--radius-md);
+      transition: all 0.2s ease;
+      font-family: inherit;
     }
 
-    .nb.on {
+    .nav-btn .icon {
+      font-size: 1.15rem;
+      transition: transform 0.2s ease;
+    }
+
+    .nav-btn.on {
       color: #fff;
-      background: #f97316;
+      background: linear-gradient(135deg, rgba(249, 115, 22, 0.2) 0%, rgba(249, 115, 22, 0.08) 100%);
+      border: 1px solid var(--border-accent);
+    }
+
+    .nav-btn.on .icon {
+      transform: scale(1.15);
+    }
+
+    /* Test Mode Banner */
+    #test-mode-banner {
+      display: none;
+      background: linear-gradient(90deg, #b91c1c, #dc2626);
+      color: #fff;
+      text-align: center;
+      font-size: 0.72rem;
+      font-weight: 800;
+      padding: 6px;
+      letter-spacing: 0.5px;
+      position: sticky;
+      top: 64px;
+      z-index: 45;
+    }
+
+    /* Status Toast */
+    #scan-status {
+      font-size: 0.75rem;
+      font-weight: 600;
+      margin: 8px 0;
+      min-height: 18px;
+      text-align: center;
+    }
+
+    /* Modal / Accordion helper */
+    .collapsible-trigger {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      cursor: pointer;
+      padding: 12px 14px;
+      background: var(--bg-surface-elevated);
+      border-radius: var(--radius-md);
+      border: 1px solid var(--border-subtle);
+      margin-bottom: 8px;
+    }
+
+    .collapsible-trigger:hover {
+      background: var(--bg-surface-hover);
+    }
+
+    .collapsible-content {
+      display: none;
+      padding-top: 4px;
+    }
+
+    /* Micro helper styles */
+    .text-good { color: var(--color-good) !important; }
+    .text-bad { color: var(--color-bad) !important; }
+    .text-avg { color: var(--color-avg) !important; }
+    .text-brand { color: var(--color-brand) !important; }
+    .text-muted { color: var(--text-muted) !important; }
+
+    .tag-season {
+      font-size: 0.6rem;
+      padding: 1px 6px;
+      border-radius: var(--radius-full);
+      background: rgba(255, 255, 255, 0.07);
+      color: var(--text-secondary);
       font-weight: 600;
     }
   </style>
@@ -377,444 +923,555 @@
 
 <body>
 
+  <!-- HEADER -->
   <header>
-    <h1>📜 Pauper League</h1>
-    <div style="display: flex; align-items: center; gap: 12px;">
-      <label style="font-size: 0.72rem; color: #8b949e; display: flex; align-items: center; gap: 4px; cursor: pointer;" title="Activar para hacer pruebas sin afectar tu historial real">
-        <input type="checkbox" id="test-mode-toggle" onchange="UI.toggleTestMode()" style="accent-color: #f97316;">
-        Pruebas
-      </label>
-      <span class="season-label" style="font-size: 0.72rem; color: #8b949e;">Temporada 2026-2</span>
+    <div class="brand">
+      <div class="brand-icon">⚔️</div>
+      <div class="brand-title">
+        Pauper Deck Arena
+        <span class="brand-subtitle">Christian Donado · Tracker</span>
+      </div>
+    </div>
+    
+    <div class="header-controls">
+      <span id="header-remaining-badge" class="season-select-pill" style="border-color:var(--border-accent); color:var(--color-brand); font-weight:700; display:flex; align-items:center; gap:4px;">⏳ 0 fechas</span>
+      <select id="season-filter" class="season-select-pill" onchange="Arena.handleSeasonFilterChange()">
+        <option value="all">Todas las temporadas</option>
+        <option value="2026-2" selected>Temporada 2026-2</option>
+        <option value="2026-1">Temporada 2026-1</option>
+      </select>
     </div>
   </header>
-  
-  <div id="test-mode-banner" style="display: none; background: #b3261e; color: white; text-align: center; font-size: 0.75rem; font-weight: bold; padding: 6px; position: sticky; top: 48px; z-index: 9;">
-    ⚠️ MODO DE PRUEBA ACTIVO
+
+  <!-- TEST MODE BANNER -->
+  <div id="test-mode-banner">
+    ⚠️ MODO DE PRUEBA ACTIVO · Los cambios no afectarán tu historial real
   </div>
 
   <div class="container">
 
-    <!-- GENERAL -->
-    <div id="g" class="pg on">
-      <div id="general-list"></div>
-    </div>
-
-    <!-- STATS TAB -->
-    <div id="st" class="pg">
-      <div class="cards">
-        <div class="card">
-          <div class="cv" id="stat-tourneys">0</div>
-          <div class="cl">Torneos</div>
+    <!-- ═════════════════════════════════════════════════════════════ -->
+    <!-- TAB 1: 📊 COMPARADOR DE MAZOS (DECK PERFORMANCE HUB)          -->
+    <!-- ═════════════════════════════════════════════════════════════ -->
+    <div id="pg-decks" class="pg on">
+      
+      <!-- HERO METRICS -->
+      <div class="hero-metrics">
+        <div class="metric-card highlight">
+          <div class="val" id="metric-best-wr">--%</div>
+          <div class="lbl">Mejor Win Rate</div>
         </div>
-        <div class="card">
-          <div class="cv" id="stat-pts">0</div>
-          <div class="cl">Pts acum</div>
+        <div class="metric-card">
+          <div class="val" id="metric-top-deck">--</div>
+          <div class="lbl">Mazo #1</div>
         </div>
-        <div class="card">
-          <div class="cv" id="stat-rank">--</div>
-          <div class="cl">Ranking</div>
+        <div class="metric-card">
+          <div class="val" id="metric-global-record">0-0-0</div>
+          <div class="lbl">Récord Global</div>
         </div>
-        <div class="card">
-          <div class="cv" id="stat-best-rank">--</div>
-          <div class="cl">Mejor pos</div>
-        </div>
-        <div class="card">
-          <div class="cv" id="stat-record">0-0-0</div>
-          <div class="cl">W-L-D</div>
-        </div>
-        <div class="card">
-          <div class="cv" id="stat-remaining">--</div>
-          <div class="cl">Fechas restantes</div>
+        <div class="metric-card">
+          <div class="val" id="metric-total-tourneys">0</div>
+          <div class="lbl">Torneos</div>
         </div>
       </div>
-      <p class="note">Solo liga 2026-2. Para acumulado histórico revisa 📜 Histórico.</p>
 
-      <div class="sl">📊 Por Mazo (2026-2)</div>
-      <div id="current-season-decks"></div>
+      <!-- INSIGHT ANALYTICAL BOX -->
+      <div class="insight-card" id="insights-container">
+        <!-- Rendered dynamically by Arena.renderInsights() -->
+      </div>
 
-      <div class="sl">📋 Torneos jugados (2026-2)</div>
-      <div id="current-season-tournaments"></div>
+      <!-- SORTING TOOLBAR -->
+      <div class="section-title">
+        <span>🏆 Rendimiento de Mazos</span>
+        <div style="display:flex; align-items:center; gap:6px;">
+          <span style="font-size:0.68rem; color:var(--text-muted); font-weight:600;">Ordenar por:</span>
+          <select id="deck-sort-select" class="season-select-pill" style="padding:3px 8px; font-size:0.7rem;" onchange="Arena.renderDeckComparison()">
+            <option value="winrate">Win Rate %</option>
+            <option value="ppg">Pts / Torneo (PPG)</option>
+            <option value="tourneys">Más Jugados</option>
+            <option value="rank">Mejor Puesto</option>
+          </select>
+        </div>
+      </div>
+
+      <!-- DECK CARDS CONTAINER -->
+      <div id="deck-cards-list">
+        <!-- Dynamic Deck Performance Cards -->
+      </div>
+
+      <!-- SIDE-BY-SIDE COMPARATIVE MATRIX TABLE -->
+      <div class="section-title">
+        <span>📊 Matriz Comparativa Detallada</span>
+        <span class="badge-count" id="table-deck-count">0 mazos</span>
+      </div>
+
+      <div class="table-container">
+        <table class="comp-table">
+          <thead>
+            <tr>
+              <th>Mazo</th>
+              <th>Estado</th>
+              <th>Torneos</th>
+              <th>Partidas (W-L-D)</th>
+              <th>Win Rate (MWR)</th>
+              <th>Efectividad (MP%)</th>
+              <th>Pts Reales</th>
+              <th>PPG (p/T)</th>
+              <th>Pos. Prom.</th>
+              <th>Mejor Pos.</th>
+              <th>Top 4 / Top 8</th>
+            </tr>
+          </thead>
+          <tbody id="deck-matrix-tbody">
+            <!-- Dynamic Comparative Table Rows -->
+          </tbody>
+        </table>
+      </div>
+
     </div>
 
-    <!-- SCANNER TAB -->
-    <div id="scanner" class="pg">
-      <div class="card" style="background:#161b22; border-color:#30363d; text-align:center; padding:16px;">
-        <div class="sl" style="margin-top:0;">📸 Registrar Torneo / Fecha</div>
-        <p class="note" style="margin:2px 0 12px 0;">Sube la captura de pantalla para registrar la fecha una por una.
+    <!-- ═════════════════════════════════════════════════════════════ -->
+    <!-- TAB 2: 🔍 DETALLE POR MAZO (DECK DOSSIER & TIMELINE)          -->
+    <!-- ═════════════════════════════════════════════════════════════ -->
+    <div id="pg-detail" class="pg">
+      <div class="card-panel">
+        <div class="field-group" style="margin-bottom:0;">
+          <label for="detail-deck-select" style="font-size:0.8rem; font-weight:700; color:#fff;">🎯 Selecciona un Mazo para Analizar:</label>
+          <select id="detail-deck-select" class="input-ctrl" onchange="Arena.renderDeckDetail()" style="font-weight:700;">
+            <!-- Populated dynamically -->
+          </select>
+        </div>
+      </div>
+
+      <div id="deck-detail-content">
+        <!-- Rendered dynamically -->
+      </div>
+    </div>
+
+    <!-- ═════════════════════════════════════════════════════════════ -->
+    <!-- TAB 3: ✍️ REGISTRAR FECHA / 📸 ESCÁNER OCR                    -->
+    <!-- ═════════════════════════════════════════════════════════════ -->
+    <div id="pg-logger" class="pg">
+      <div class="card-panel">
+        <div class="section-title" style="margin-top:0;">
+          <span>📝 Registrar Resultado de Torneo</span>
+          <span class="tag-season" id="logger-season-tag">2026-2</span>
+        </div>
+        <p style="font-size:0.75rem; color:var(--text-secondary); margin-bottom:14px;">
+          Ingresa tu desempeño en el torneo para alimentar las estadísticas de tu mazo de forma inmediata.
         </p>
 
-        <!-- DATE PICKER -->
+        <!-- DATE & SEASON -->
         <div class="field-group">
-          <label for="scan-date">📅 Fecha del Torneo</label>
-          <input type="date" id="scan-date" class="input-ctrl">
+          <label for="log-date">📅 Fecha del Torneo</label>
+          <input type="date" id="log-date" class="input-ctrl">
         </div>
 
-        <!-- DECK PICKER -->
+        <!-- DECK SELECTOR -->
         <div class="field-group">
-          <label for="scan-deck">⚔️ Mazo Jugado (Christian)</label>
-          <select id="scan-deck" class="input-ctrl" onchange="UI.toggleCustomDeckInput()">
-            <option value="🐂⚪🔴 Torito Boros">🐂⚪🔴 Torito Boros</option>
-            <option value="🐧🔵🔴 Pingüinos Izzet">🐧🔵🔴 Pingüinos Izzet</option>
-            <option value="🧙⚫🔴 Magitos Rakdos">🧙⚫🔴 Magitos Rakdos</option>
-            <option value="other">➕ Otro mazo (escribir)...</option>
+          <label for="log-deck">⚔️ Mazo Jugado (Christian)</label>
+          <select id="log-deck" class="input-ctrl" onchange="Arena.handleDeckPickerChange()">
+            <!-- Populated dynamically with default & existing decks -->
+            <option value="other">➕ Añadir nuevo mazo personalizado...</option>
           </select>
         </div>
 
         <div class="field-group" id="custom-deck-group" style="display:none;">
-          <label for="scan-custom-deck">Nombre del mazo personalizado</label>
-          <input type="text" id="scan-custom-deck" placeholder="Ej: 🟢⚪ Bogles" class="input-ctrl">
+          <label for="log-custom-deck">Nombre del Nuevo Mazo</label>
+          <input type="text" id="log-custom-deck" placeholder="Ej: 🟢⚪ Bogles Hexproof" class="input-ctrl">
         </div>
 
-
-        <!-- SCREENSHOT FILE INPUT -->
+        <!-- POSITION / RANK -->
         <div class="field-group">
-          <label for="screenshot-file">🖼️ Captura de pantalla (SS)</label>
-          <input type="file" id="screenshot-file" accept="image/*" class="input-ctrl">
+          <label for="log-rank">🏆 Puesto / Posición Final (Ej: 3°, 8°, 12°)</label>
+          <input type="text" id="log-rank" placeholder="Ej: 3°" class="input-ctrl">
         </div>
 
-
-        <div class="field-group"
-          style="flex-direction:row; align-items:center; justify-content:space-between; margin:10px 0 12px 0;">
-          <label for="same-day-continuation" style="margin:0; cursor:pointer;">🔗 Continuación de fecha (Parte 2
-            captura)</label>
-          <input type="checkbox" id="same-day-continuation"
-            style="accent-color:#f97316; width:18px; height:18px; cursor:pointer;">
-        </div>
-
-        <!-- STATUS -->
-        <div id="scan-status"
-          style="font-size:0.72rem; color:#f97316; margin-bottom:8px; min-height:16px; font-weight:600;"></div>
-
-        <!-- VERIFICATION TEXTAREA -->
+        <!-- MATCH RECORD (W-L-D) -->
         <div class="field-group">
-          <label for="scan-input">📝 Texto Escaneado / Verificación manual</label>
-          <textarea id="scan-input"
-            placeholder="El texto leído aparecerá aquí para verificar o editar antes de aplicar..." class="input-ctrl"
-            style="height:90px; resize:vertical; font-size:0.78rem;"></textarea>
+          <label>⚔️ Récord de Partidas (Victorias - Derrotas - Empates)</label>
+          <div class="record-inputs-row">
+            <div>
+              <input type="number" id="log-w" min="0" max="20" placeholder="Wins (W)" class="input-ctrl" oninput="Arena.autoCalculatePointsFromRecord()">
+              <span style="font-size:0.6rem; color:var(--color-good); font-weight:700; margin-top:2px; display:block;">Victorias (3 pts)</span>
+            </div>
+            <div>
+              <input type="number" id="log-l" min="0" max="20" placeholder="Losses (L)" class="input-ctrl" oninput="Arena.autoCalculatePointsFromRecord()">
+              <span style="font-size:0.6rem; color:var(--color-bad); font-weight:700; margin-top:2px; display:block;">Derrotas (0 pts)</span>
+            </div>
+            <div>
+              <input type="number" id="log-d" min="0" max="20" placeholder="Draws (D)" class="input-ctrl" oninput="Arena.autoCalculatePointsFromRecord()">
+              <span style="font-size:0.6rem; color:#fbbf24; font-weight:700; margin-top:2px; display:block;">Empates (1 pt)</span>
+            </div>
+          </div>
+
+          <!-- Quick Presets -->
+          <div class="preset-records">
+            <span class="preset-chip" onclick="Arena.setRecordPreset(4,0,0)">4-0 (12 pts)</span>
+            <span class="preset-chip" onclick="Arena.setRecordPreset(3,0,1)">3-0-1 (10 pts)</span>
+            <span class="preset-chip" onclick="Arena.setRecordPreset(3,1,0)">3-1 (9 pts)</span>
+            <span class="preset-chip" onclick="Arena.setRecordPreset(2,1,1)">2-1-1 (7 pts)</span>
+            <span class="preset-chip" onclick="Arena.setRecordPreset(2,2,0)">2-2 (6 pts)</span>
+            <span class="preset-chip" onclick="Arena.setRecordPreset(1,2,1)">1-2-1 (4 pts)</span>
+            <span class="preset-chip" onclick="Arena.setRecordPreset(1,3,0)">1-3 (3 pts)</span>
+            <span class="preset-chip" onclick="Arena.setRecordPreset(0,4,0)">0-4 (0 pts)</span>
+          </div>
         </div>
 
-        <button onclick="Scanner.processImageAndApply()" class="btn btn-primary" style="margin-top:6px;">🚀 Leer Imagen
-          y
-          Aplicar Fecha</button>
-        <button
-          onclick="Scanner.applyParsedText({isContinuation: document.getElementById('same-day-continuation')?.checked})"
-          class="btn btn-secondary" style="width:100%; margin-top:8px; font-size:0.75rem;">✍️ Solo Aplicar Texto
-          Escrito/Editado</button>
-      </div>
+        <!-- OFFICIAL POINTS (with manual override for events like Paupergeddon) -->
+        <div class="field-group">
+          <label for="log-pts">🎯 Puntos Oficiales del Torneo</label>
+          <input type="number" id="log-pts" min="0" max="60" class="input-ctrl" placeholder="Puntos ganados">
+          <span style="font-size:0.63rem; color:var(--text-muted);">Calculado automáticamente (3×W + 1×D). Puedes ajustarlo manualmente si hubo byes o puntuación especial.</span>
+        </div>
 
-      <!-- BACKUP & EXPORT/IMPORT BUTTONS -->
-      <div class="sl">💾 Copia de Seguridad</div>
-      <div class="btn-row">
-        <button onclick="Backup.exportJSON()" class="btn btn-secondary">📥 Exportar JSON</button>
-        <button onclick="document.getElementById('import-file-input').click()" class="btn btn-secondary">📤 Importar
-          JSON</button>
-        <input type="file" id="import-file-input" accept=".json" style="display:none;"
-          onchange="Backup.importJSON(event)">
-      </div>
+        <!-- NOTES / MATCHUPS -->
+        <div class="field-group">
+          <label for="log-notes">📝 Notas de Matchups / Observaciones (Opcional)</label>
+          <input type="text" id="log-notes" placeholder="Ej: Gané vs Terror, perdí vs Kuldotha Red y Affinity" class="input-ctrl">
+        </div>
 
-      <!-- RESET BUTTON -->
-      <button onclick="State.resetCurrentSeason()" class="btn btn-danger"
-        style="width:100%; margin-top:14px; padding:8px;">🗑️
-        Reiniciar Temporada 2026-2 a Cero</button>
+        <button onclick="Arena.saveManualTournament()" class="btn btn-primary" style="margin-top:8px;">
+          💾 Guardar Torneo en el Historial
+        </button>
+
+        <div id="scan-status"></div>
+
+        <!-- OCR SECTION ACCORDION -->
+        <div style="margin-top:20px; border-top:1px solid var(--border-subtle); padding-top:14px;">
+          <div class="collapsible-trigger" onclick="Arena.toggleOcrAccordion()">
+            <div style="display:flex; align-items:center; gap:8px;">
+              <span>📸 Opcional: Escanear Captura de Standings (OCR)</span>
+            </div>
+            <span id="ocr-arrow" style="font-size:0.8rem; transition:transform 0.2s;">▼</span>
+          </div>
+
+          <div id="ocr-content" class="collapsible-content">
+            <p style="font-size:0.72rem; color:var(--text-secondary); margin:6px 0 10px 0;">
+              Sube la captura de pantalla de la app de torneo o de Companion. El motor OCR extraerá automáticamente tu fila, posición y puntaje.
+            </p>
+
+            <div class="field-group">
+              <label for="ocr-file">🖼️ Archivo de Imagen</label>
+              <input type="file" id="ocr-file" accept="image/*" class="input-ctrl">
+            </div>
+
+            <button onclick="Arena.processOcrScreenshot()" class="btn btn-secondary">
+              🔍 Leer Imagen y Extraer Mis Datos
+            </button>
+          </div>
+        </div>
+
+      </div>
     </div>
 
-    <!-- HISTÓRICO -->
-    <div id="hist" class="pg">
-      <p class="note" style="margin-bottom:8px">Acumulado de todas las temporadas · se actualiza automáticamente con
-        cada torneo de 2026-2</p>
+    <!-- ═════════════════════════════════════════════════════════════ -->
+    <!-- TAB 4: 📜 HISTORIAL & BACKUP                                  -->
+    <!-- ═════════════════════════════════════════════════════════════ -->
+    <div id="pg-history" class="pg">
+      <div class="card-panel">
+        <div class="section-title" style="margin-top:0;">
+          <span>💾 Copias de Seguridad & Configuración</span>
+        </div>
+        <p style="font-size:0.75rem; color:var(--text-secondary); margin-bottom:12px;">
+          Exporta tu historial completo en formato JSON para que nunca pierdas tus estadísticas ni al cambiar de dispositivo.
+        </p>
 
-      <div class="cards">
-        <div class="card">
-          <div class="cv" id="hist-tourneys">0</div>
-          <div class="cl">Torneos</div>
+        <div class="btn-row">
+          <button onclick="Arena.exportJSON()" class="btn btn-secondary">📥 Exportar JSON</button>
+          <button onclick="document.getElementById('import-file-input').click()" class="btn btn-secondary">📤 Importar JSON</button>
+          <input type="file" id="import-file-input" accept=".json" style="display:none;" onchange="Arena.importJSON(event)">
         </div>
-        <div class="card">
-          <div class="cv" id="hist-pts">0</div>
-          <div class="cl">Pts totales</div>
+
+        <div style="margin-top:16px; padding-top:12px; border-top:1px solid var(--border-subtle); display:flex; justify-content:space-between; align-items:center;">
+          <div>
+            <div style="font-size:0.8rem; font-weight:700; color:#fff;">Modo de Pruebas</div>
+            <div style="font-size:0.65rem; color:var(--text-muted);">Prueba funciones sin sobreescribir tus datos reales</div>
+          </div>
+          <input type="checkbox" id="test-mode-toggle" onchange="Arena.toggleTestMode()" style="accent-color:var(--color-brand); width:18px; height:18px; cursor:pointer;">
         </div>
-        <div class="card">
-          <div class="cv" id="hist-best-rank">--</div>
-          <div class="cl">Mejor pos</div>
-        </div>
-        <div class="card">
-          <div class="cv" id="hist-record">0-0-0</div>
-          <div class="cl">W-L-D</div>
-        </div>
+
+        <button onclick="Arena.resetToDefaultsConfirm()" class="btn btn-danger" style="width:100%; margin-top:14px; padding:8px; font-size:0.75rem;">
+          🔄 Restablecer a Datos Iniciales Auditados
+        </button>
       </div>
 
-      <div class="sl">📊 Por Mazo (histórico)</div>
-      <div id="historic-deck-stats"></div>
-
-      <div class="sl">🏆 Temporadas</div>
-      <div class="mh" onclick="UI.toggleAccordion('s1')">
-        <span class="mt">📅 2026-1</span>
-        <span class="ms">24 torneos · 87 pts · 12° final</span>
-        <span class="ch" id="cs1">▼</span>
-      </div>
-      <div class="mb" id="s1">
-        <p class="note"
-          style="text-align:left; padding:8px 12px; background:#161b22; border-radius:9px; border:1px solid #30363d;">
-          Cerrada Jun 18 2026. Mejor: 3° el 14 May con 🐂⚪🔴 Torito Boros. No clasificó Top 8.</p>
+      <!-- FULL CHRONOLOGICAL TOURNAMENT LIST -->
+      <div class="section-title">
+        <span>📋 Historial Cronológico de Torneos</span>
+        <span class="badge-count" id="history-entry-count">0 torneos</span>
       </div>
 
-      <div class="sl">📋 Historial completo</div>
-      <div id="historic-full-list"></div>
+      <div id="full-history-list">
+        <!-- Rendered dynamically -->
+      </div>
     </div>
 
   </div>
 
-  <!-- BOTTOM NAVIGATION -->
+  <!-- FIXED BOTTOM NAVIGATION -->
   <nav>
-    <button class="nb on" onclick="UI.switchPage('g',this)">📊 <span>General</span></button>
-    <button class="nb" onclick="UI.switchPage('st',this)">📈 <span>Stats</span></button>
-    <button class="nb" onclick="UI.switchPage('hist',this)">📜 <span>Histórico</span></button>
-    <button class="nb" onclick="UI.switchPage('scanner',this)">📸 <span>Escáner</span></button>
+    <button class="nav-btn on" onclick="Arena.switchTab('pg-decks', this)">
+      <span class="icon">📊</span>
+      <span>Comparador</span>
+    </button>
+    <button class="nav-btn" onclick="Arena.switchTab('pg-detail', this)">
+      <span class="icon">🔍</span>
+      <span>Detalle Mazo</span>
+    </button>
+    <button class="nav-btn" onclick="Arena.switchTab('pg-logger', this)">
+      <span class="icon">✍️</span>
+      <span>Registrar</span>
+    </button>
+    <button class="nav-btn" onclick="Arena.switchTab('pg-history', this)">
+      <span class="icon">📜</span>
+      <span>Historial</span>
+    </button>
   </nav>
 
+  <!-- JAVASCRIPT APPLICATION LOGIC -->
   <script>
+    // Register Service Worker for offline capability
     if ('serviceWorker' in navigator) {
       window.addEventListener('load', () => {
         navigator.serviceWorker.register('./sw.js')
-          .then(() => console.log('Service worker registered'))
-          .catch((error) => console.error('Service worker registration failed:', error));
+          .then(() => console.log('Service Worker listo'))
+          .catch(e => console.warn('Error en Service Worker:', e));
       });
     }
-  </script>
 
-  <script>
-    // ═══════════ SECTION: CONFIG ═══════════
+    // ══════════════════════════════════════════════════════════════════
+    // CONFIGURATION
+    // ══════════════════════════════════════════════════════════════════
     const CONFIG = {
       isTestMode: false,
+      DATA_VERSION: 'pauper-deck-arena-v1',
       CURRENT_SEASON: '2026-2',
-      DATA_VERSION: '2026-2-dynamic-v2',
-      END_DATE: new Date(2026, 10, 29), // Nov 29, 2026
-      TOURNAMENT_DAY: 4,                // Thursday
-      MY_ALIASES: ["christian", "cristian", "chris", "donado"],
       DEFAULT_DECKS: [
         "🐂⚪🔴 Torito Boros",
         "🐧🔵🔴 Pingüinos Izzet",
-        "🧙⚫🔴 Magitos Rakdos"
+        "🧙⚫🔴 Magitos Rakdos",
+        "🔵⚫🔴 Grixis"
       ],
-      EXCLUDED_DECKS: ["grixis", "mazo de prueba"],
-      POINTS_PER_WIN: 3,
-      POINTS_PER_DRAW: 1,
-      POINTS_PER_LOSS: 0,
-      WLD_FALLBACK: {
-        15: "5-0-0", 12: "4-0-0", 10: "3-0-1",
-        9: "3-1-0", 7: "2-1-1", 6: "2-2-0",
-        4: "1-2-1", 3: "1-3-0", 1: "0-3-1", 0: "0-4-0"
+      // Standard MTG Benchmarks
+      BENCHMARKS: {
+        GOOD_WIN_RATE: 50.0,       // >= 50% Win Rate is positive
+        AVG_WIN_RATE: 45.0,        // 45% - 49.9% is average / viable
+        MIN_SAMPLE_SIZE: 3         // < 3 tournaments is marked as insufficient sample
       },
-      MAX_IMAGE_DIM: 1600,
-      TOP_CUTOFF: 10,
-      GOOD_THRESHOLD: 9,
-      BAD_THRESHOLD: 3,
-      MONTHS_ABBR: ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic'],
       MONTHS_MAP: {
         'ene': 0, 'feb': 1, 'mar': 2, 'abr': 3, 'may': 4, 'jun': 5,
         'jul': 6, 'ago': 7, 'sep': 8, 'oct': 9, 'nov': 10, 'dic': 11
-      }
+      },
+      MONTHS_ABBR: ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic']
     };
 
-    // Base default data (kept outside State for immutability as source)
-    const defaultPlayersData = [
-      { name: "Christian Donado", pts: 0, isMe: true },
-      { name: "Albert Loaiza", pts: 0 },
-      { name: "Andrés Higuera", pts: 0 },
-      { name: "Santiago Ramos", pts: 0 },
-      { name: "Fredy Castro", pts: 0 },
-      { name: "Angel Rodriguez", pts: 0 },
-      { name: "Yesid Soacha", pts: 0 },
-      { name: "Cristhian Machado", pts: 0 },
-      { name: "Camilo Mora", pts: 0 },
-      { name: "Samuel Urueta", pts: 0 },
-      { name: "Esteban Zuleta", pts: 0 },
-      { name: "Pablo Ramirez", pts: 0 },
-      { name: "Camilo Arango", pts: 0 },
-      { name: "Felipe Hurtado", pts: 0 },
-      { name: "Rubén Darío M...", pts: 0 },
-      { name: "Juan Lozada 💀", pts: 0 },
-      { name: "Ivan Sepulveda", pts: 0 },
-      { name: "Fernando Calvo", pts: 0 },
-      { name: "Germán Gabriel", pts: 0 },
-      { name: "Sebastian Guerrero", pts: 0 },
-      { name: "Alejandro R...", pts: 0 },
-      { name: "Henry Beltran", pts: 0 },
-      { name: "Ivan Quiroga", pts: 0 },
-      { name: "Roosevelt Blanco", pts: 0 },
-      { name: "Santiago Jimenez", pts: 0 },
-      { name: "Sebastian Abello", pts: 0 },
-      { name: "Noah Herrera", pts: 0 },
-      { name: "Sergio Andrés", pts: 0 },
-      { name: "Felipe Rangel", pts: 0 },
-      { name: "Mateo Diaz", pts: 0 },
-      { name: "Fabian Martinez", pts: 0 },
-      { name: "Alejandro Solano", pts: 0 },
-      { name: "Johan Gonzalez", pts: 0 },
-      { name: "Alejandro Anto", pts: 0 },
-      { name: "Rafaele Garcia", pts: 0 },
-      { name: "Santiago Gutierrez", pts: 0 },
-      { name: "Emy Lyo", pts: 0 },
-      { name: "Felipe Parra", pts: 0 },
-      { name: "Sebastiab Barr...", pts: 0 },
-      { name: "Juan Real", pts: 0 },
-      { name: "David De La Torre", pts: 0 },
-      { name: "Juan Bedoya", pts: 0 },
-      { name: "Andres Antolinez", pts: 0 }
-    ];
-
+    // ══════════════════════════════════════════════════════════════════
+    // AUDITED BASE DATA (Historical tournaments played by Christian)
+    // ══════════════════════════════════════════════════════════════════
     const defaultHistoricData = [
-      { date: "9 Ene", season: "2026-1", deck: "🧙⚫🔴 Magitos Rakdos", rank: "7°", pts: 6, wl: "2-2-0", type: "normal" },
-      { date: "16 Ene", season: "2026-1", deck: "🧙⚫🔴 Magitos Rakdos", rank: "10°", pts: 0, wl: "0-4-0", type: "bad" },
-      { date: "23 Ene", season: "2026-1", deck: "🧙⚫🔴 Magitos Rakdos", rank: "14°", pts: 0, wl: "0-4-0", type: "bad" },
-      { date: "30 Ene", season: "2026-1", deck: "🧙⚫🔴 Magitos Rakdos", rank: "9°", pts: 6, wl: "2-2-0", type: "normal" },
-      { date: "5 Feb", season: "2026-1", deck: "🐧🔵🔴 Pingüinos Izzet", rank: "3°", pts: 6, wl: "2-1-0", type: "good" },
-      { date: "12 Feb", season: "2026-1", deck: "🐧🔵🔴 Pingüinos Izzet", rank: "11°", pts: 3, wl: "1-3-0", type: "normal" },
-      { date: "19 Feb", season: "2026-1", deck: "🐧🔵🔴 Pingüinos Izzet", rank: "8°", pts: 6, wl: "2-2-0", type: "normal" },
-      { date: "26 Feb", season: "2026-1", deck: "🐧🔵🔴 Pingüinos Izzet", rank: "12°", pts: 3, wl: "1-3-0", type: "normal" },
-      { date: "5 Mar", season: "2026-1", deck: "🐧🔵🔴 Pingüinos Izzet", rank: "8°", pts: 6, wl: "2-2-0", type: "normal" },
-      { date: "12 Mar", season: "2026-1", deck: "No participó", rank: "—", pts: "—", wl: "—", type: "none" },
-      { date: "19 Mar", season: "2026-1", deck: "🐧🔵🔴 Pingüinos Izzet", rank: "10°", pts: 0, wl: "0-4-0", type: "bad" },
-      { date: "26 Mar", season: "2026-1", deck: "🐧🔵🔴 Pingüinos Izzet", rank: "12°", pts: 3, wl: "1-3-0", type: "normal" },
-      { date: "1 Abr", season: "2026-1", deck: "🔵⚫🔴 Grixis", rank: "8°", pts: 0, wl: "0-3-0", type: "bad" },
-      { date: "9 Abr", season: "2026-1", deck: "🔵⚫🔴 Grixis", rank: "16°", pts: 0, wl: "0-4-0", type: "bad" },
-      { date: "16 Abr", season: "2026-1", deck: "🐧🔵🔴 Pingüinos Izzet", rank: "14°", pts: 3, wl: "1-3-0", type: "normal" },
-      { date: "23 Abr", season: "2026-1", deck: "🐧🔵🔴 Pingüinos Izzet", rank: "12°", pts: 3, wl: "1-3-0", type: "normal" },
-      { date: "30 Abr", season: "2026-1", deck: "🐧🔵🔴 Pingüinos Izzet", rank: "19°", pts: 3, wl: "1-4-0", type: "normal" },
-      { date: "7 May", season: "2026-1", deck: "🐂⚪🔴 Torito Boros", rank: "10°", pts: 1, wl: "0-3-1", type: "bad" },
-      { date: "14 May", season: "2026-1", deck: "🐂⚪🔴 Torito Boros", rank: "3°", pts: 7, wl: "2-1-1", type: "good" },
-      { date: "21 May", season: "2026-1", deck: "No participó", rank: "—", pts: "—", wl: "—", type: "none" },
-      { date: "28 May", season: "2026-1", deck: "🐂⚪🔴 Torito Boros", rank: "16°", pts: 0, wl: "0-4-0", type: "bad" },
-      { date: "4 Jun", season: "2026-1", deck: "🐂⚪🔴 Torito Boros", rank: "17°", pts: 4, wl: "1-3-1", type: "normal" },
-      { date: "6 Jun ⚔️ Paupergedón", season: "2026-1", deck: "🐂⚪🔴 Torito Boros", rank: "20°", pts: 5, wl: "1-4-0", type: "bad" },
-      { date: "11 Jun", season: "2026-1", deck: "🐂⚪🔴 Torito Boros", rank: "13°", pts: 6, wl: "2-3-0", type: "normal" },
-      { date: "18 Jun", season: "2026-1", deck: "🐂⚪🔴 Torito Boros", rank: "12°", pts: 3, wl: "1-3-0", type: "normal" },
-      { date: "25 Jun", season: "2026-1", deck: "🐂⚪🔴 Torito Boros", rank: "15°", pts: 3, wl: "1-3-0", type: "extra", tagStyle: "background:#1c2128;color:#8b949e" }
+      { date: "9 Ene", isoDate: "2026-01-09", season: "2026-1", deck: "🧙⚫🔴 Magitos Rakdos", rank: "7°", pts: 6, wl: "2-2-0", type: "normal", notes: "Top 8 finish" },
+      { date: "16 Ene", isoDate: "2026-01-16", season: "2026-1", deck: "🧙⚫🔴 Magitos Rakdos", rank: "10°", pts: 0, wl: "0-4-0", type: "bad", notes: "" },
+      { date: "23 Ene", isoDate: "2026-01-23", season: "2026-1", deck: "🧙⚫🔴 Magitos Rakdos", rank: "14°", pts: 0, wl: "0-4-0", type: "bad", notes: "" },
+      { date: "30 Ene", isoDate: "2026-01-30", season: "2026-1", deck: "🧙⚫🔴 Magitos Rakdos", rank: "9°", pts: 6, wl: "2-2-0", type: "normal", notes: "" },
+      { date: "5 Feb", isoDate: "2026-02-05", season: "2026-1", deck: "🐧🔵🔴 Pingüinos Izzet", rank: "3°", pts: 6, wl: "2-1-0", type: "good", notes: "Podio 3° puesto" },
+      { date: "12 Feb", isoDate: "2026-02-12", season: "2026-1", deck: "🐧🔵🔴 Pingüinos Izzet", rank: "11°", pts: 3, wl: "1-3-0", type: "normal", notes: "" },
+      { date: "19 Feb", isoDate: "2026-02-19", season: "2026-1", deck: "🐧🔵🔴 Pingüinos Izzet", rank: "8°", pts: 6, wl: "2-2-0", type: "normal", notes: "Top 8" },
+      { date: "26 Feb", isoDate: "2026-02-26", season: "2026-1", deck: "🐧🔵🔴 Pingüinos Izzet", rank: "12°", pts: 3, wl: "1-3-0", type: "normal", notes: "" },
+      { date: "5 Mar", isoDate: "2026-03-05", season: "2026-1", deck: "🐧🔵🔴 Pingüinos Izzet", rank: "8°", pts: 6, wl: "2-2-0", type: "normal", notes: "Top 8" },
+      { date: "12 Mar", isoDate: "2026-03-12", season: "2026-1", deck: "No participó", rank: "—", pts: "—", wl: "—", type: "none", notes: "No participó" },
+      { date: "19 Mar", isoDate: "2026-03-19", season: "2026-1", deck: "🐧🔵🔴 Pingüinos Izzet", rank: "10°", pts: 0, wl: "0-4-0", type: "bad", notes: "" },
+      { date: "26 Mar", isoDate: "2026-03-26", season: "2026-1", deck: "🐧🔵🔴 Pingüinos Izzet", rank: "12°", pts: 3, wl: "1-3-0", type: "normal", notes: "" },
+      { date: "1 Abr", isoDate: "2026-04-01", season: "2026-1", deck: "🔵⚫🔴 Grixis", rank: "8°", pts: 0, wl: "0-3-0", type: "bad", notes: "Top 8 suizo reducido" },
+      { date: "9 Abr", isoDate: "2026-04-09", season: "2026-1", deck: "🔵⚫🔴 Grixis", rank: "16°", pts: 0, wl: "0-4-0", type: "bad", notes: "" },
+      { date: "16 Abr", isoDate: "2026-04-16", season: "2026-1", deck: "🐧🔵🔴 Pingüinos Izzet", rank: "14°", pts: 3, wl: "1-3-0", type: "normal", notes: "" },
+      { date: "23 Abr", isoDate: "2026-04-23", season: "2026-1", deck: "🐧🔵🔴 Pingüinos Izzet", rank: "12°", pts: 3, wl: "1-3-0", type: "normal", notes: "" },
+      { date: "30 Abr", isoDate: "2026-04-30", season: "2026-1", deck: "🐧🔵🔴 Pingüinos Izzet", rank: "19°", pts: 3, wl: "1-4-0", type: "normal", notes: "" },
+      { date: "7 May", isoDate: "2026-05-07", season: "2026-1", deck: "🐂⚪🔴 Torito Boros", rank: "10°", pts: 1, wl: "0-3-1", type: "bad", notes: "" },
+      { date: "14 May", isoDate: "2026-05-14", season: "2026-1", deck: "🐂⚪🔴 Torito Boros", rank: "3°", pts: 7, wl: "2-1-1", type: "good", notes: "Podio 3° puesto" },
+      { date: "21 May", isoDate: "2026-05-21", season: "2026-1", deck: "No participó", rank: "—", pts: "—", wl: "—", type: "none", notes: "No participó" },
+      { date: "28 May", isoDate: "2026-05-28", season: "2026-1", deck: "🐂⚪🔴 Torito Boros", rank: "16°", pts: 0, wl: "0-4-0", type: "bad", notes: "" },
+      { date: "4 Jun", isoDate: "2026-06-04", season: "2026-1", deck: "🐂⚪🔴 Torito Boros", rank: "17°", pts: 4, wl: "1-3-1", type: "normal", notes: "" },
+      { date: "6 Jun ⚔️ Paupergedón", isoDate: "2026-06-06", season: "2026-1", deck: "🐂⚪🔴 Torito Boros", rank: "20°", pts: 5, wl: "1-4-0", type: "bad", notes: "Paupergedón especial (5 pts oficiales)" },
+      { date: "11 Jun", isoDate: "2026-06-11", season: "2026-1", deck: "🐂⚪🔴 Torito Boros", rank: "13°", pts: 6, wl: "2-3-0", type: "normal", notes: "" },
+      { date: "18 Jun", isoDate: "2026-06-18", season: "2026-1", deck: "🐂⚪🔴 Torito Boros", rank: "12°", pts: 3, wl: "1-3-0", type: "normal", notes: "" },
+      { date: "25 Jun", isoDate: "2026-06-25", season: "2026-1", deck: "🐂⚪🔴 Torito Boros", rank: "15°", pts: 3, wl: "1-3-0", type: "normal", notes: "" }
     ];
 
-    // ═══════════ SECTION: STATE MANAGEMENT ═══════════
+    // ══════════════════════════════════════════════════════════════════
+    // STATE MANAGEMENT
+    // ══════════════════════════════════════════════════════════════════
     const State = {
-
-      players: [],
       historic: [],
+      decksList: [],
+      deletedDecks: [],
 
       resetToDefaults() {
-        this.players = JSON.parse(JSON.stringify(defaultPlayersData)).map(p => ({ name: p.name, isMe: p.isMe }));
         this.historic = JSON.parse(JSON.stringify(defaultHistoricData));
+        this.deletedDecks = [];
+        this.saveDeletedDecks();
+        this.syncDecksList();
+      },
+
+      saveDeletedDecks() {
+        try {
+          const key = CONFIG.isTestMode ? 'pauper_test_arena_deleted_decks' : 'pauper_arena_deleted_decks';
+          localStorage.setItem(key, JSON.stringify(this.deletedDecks));
+        } catch(e) {}
+      },
+
+      loadDeletedDecks() {
+        try {
+          const key = CONFIG.isTestMode ? 'pauper_test_arena_deleted_decks' : 'pauper_arena_deleted_decks';
+          const stored = localStorage.getItem(key);
+          this.deletedDecks = stored ? JSON.parse(stored) : [];
+        } catch(e) {
+          this.deletedDecks = [];
+        }
+      },
+
+      syncDecksList() {
+        this.loadDeletedDecks();
+        const foundDecks = new Set(CONFIG.DEFAULT_DECKS);
+        this.historic.forEach(item => {
+          if (item.deck && item.deck !== "No participó") {
+            foundDecks.add(item.deck.trim());
+          }
+        });
+        // Filter out any explicitly deleted decks
+        this.deletedDecks.forEach(del => foundDecks.delete(del));
+        this.decksList = Array.from(foundDecks);
+      },
+
+      deleteDeck(deckName) {
+        if (!deckName) return;
+        const normalized = deckName.trim();
+        if (!this.deletedDecks.includes(normalized)) {
+          this.deletedDecks.push(normalized);
+        }
+        this.saveDeletedDecks();
+
+        // Remove all tournaments with this deck from historic
+        this.historic = this.historic.filter(item => {
+          return !item.deck || item.deck.trim().toLowerCase() !== normalized.toLowerCase();
+        });
+
+        this.syncDecksList();
+        this.save();
       },
 
       save() {
         try {
-          const playersKey = CONFIG.isTestMode ? 'pauper_test_players' : 'pauper_players';
-          const historicKey = CONFIG.isTestMode ? 'pauper_test_historic' : 'pauper_historic';
-          localStorage.setItem(playersKey, JSON.stringify(this.players));
-          localStorage.setItem(historicKey, JSON.stringify(this.historic));
-          localStorage.setItem('pauper_data_version', CONFIG.DATA_VERSION);
-          localStorage.setItem('lastUpdateTime', new Date().toISOString());
+          const storageKey = CONFIG.isTestMode ? 'pauper_test_arena_historic' : 'pauper_arena_historic';
+          localStorage.setItem(storageKey, JSON.stringify(this.historic));
+          localStorage.setItem('pauper_arena_version', CONFIG.DATA_VERSION);
+          localStorage.setItem('pauper_arena_last_update', new Date().toISOString());
         } catch (e) {
-          console.warn('No se pudo guardar en localStorage:', e);
+          console.warn('Error guardando en localStorage:', e);
         }
       },
 
       load() {
         try {
-          const storedVersion = localStorage.getItem('pauper_data_version');
-          if (storedVersion !== CONFIG.DATA_VERSION) {
-            this.resetToDefaults();
-            this.save();
-            return;
-          }
-          const playersKey = CONFIG.isTestMode ? 'pauper_test_players' : 'pauper_players';
-          const historicKey = CONFIG.isTestMode ? 'pauper_test_historic' : 'pauper_historic';
-          const storedPlayers = localStorage.getItem(playersKey);
-          const storedHistoric = localStorage.getItem(historicKey);
-          if (storedPlayers) {
-            this.players = JSON.parse(storedPlayers);
-            this.players.forEach(p => {
-              if (!p.isMe && p.name && Utils.isMyName(p.name)) {
-                p.isMe = true;
+          this.loadDeletedDecks();
+          const storageKey = CONFIG.isTestMode ? 'pauper_test_arena_historic' : 'pauper_arena_historic';
+          const stored = localStorage.getItem(storageKey);
+          
+          if (stored) {
+            this.historic = JSON.parse(stored);
+            // Enrich with isoDate if missing
+            this.historic.forEach(item => {
+              if (!item.isoDate) {
+                const def = defaultHistoricData.find(d => d.date === item.date && d.deck === item.deck && d.season === item.season);
+                if (def && def.isoDate) {
+                  item.isoDate = def.isoDate;
+                } else {
+                  const d = Analytics.parseDate(item.date, item.season);
+                  const y = d.getFullYear();
+                  const m = String(d.getMonth() + 1).padStart(2, '0');
+                  const day = String(d.getDate()).padStart(2, '0');
+                  item.isoDate = `${y}-${m}-${day}`;
+                }
               }
             });
           } else {
-            this.players = JSON.parse(JSON.stringify(defaultPlayersData)).map(p => ({ name: p.name, isMe: p.isMe }));
+            // Also check legacy key if transitioning
+            const legacyKey = localStorage.getItem('pauper_historic');
+            if (legacyKey) {
+              try {
+                this.historic = JSON.parse(legacyKey);
+              } catch(e) {
+                this.resetToDefaults();
+              }
+            } else {
+              this.resetToDefaults();
+            }
           }
-          if (storedHistoric) {
-            this.historic = JSON.parse(storedHistoric);
-          } else {
-            this.historic = JSON.parse(JSON.stringify(defaultHistoricData));
+
+          // Filter out any entries belonging to deleted decks
+          if (this.deletedDecks.length > 0) {
+            this.historic = this.historic.filter(item => {
+              return !item.deck || !this.deletedDecks.some(d => d.toLowerCase() === item.deck.trim().toLowerCase());
+            });
           }
+
+          this.syncDecksList();
         } catch (e) {
-          console.error('Error cargando datos de localStorage:', e);
+          console.error('Error cargando datos:', e);
           this.resetToDefaults();
         }
-      },
-
-      getCurrentSeasonEntries() {
-        return this.historic.filter(item => item.season === CONFIG.CURRENT_SEASON);
-      },
-
-      resetCurrentSeason() {
-        const confirmReset = confirm(`⚠️ ¿Estás seguro de que deseas reiniciar la temporada ${CONFIG.CURRENT_SEASON} desde CERO?\n\nEsto vaciará los torneos de ${CONFIG.CURRENT_SEASON} para que puedas subirlos uno por uno desde tus capturas.`);
-        if (confirmReset) {
-          this.historic = this.historic.filter(item => item.season !== CONFIG.CURRENT_SEASON);
-          this.save();
-          UI.refreshAll();
-          alert(`✨ ¡Temporada ${CONFIG.CURRENT_SEASON} reiniciada a cero! Ya puedes comenzar a subir tus capturas una a una.`);
-        }
-      },
-
-      deleteSeasonTournament(globalIdx) {
-        const target = this.historic[globalIdx];
-        if (!target) return;
-        const confirmDel = confirm(`¿Deseas eliminar la fecha "${target.date} - ${target.deck}" del historial?`);
-        if (!confirmDel) return;
-        this.historic.splice(globalIdx, 1);
-        this.save();
-        UI.refreshAll();
-      },
-      
-      mergePlayers(badName) {
-        const goodName = prompt(`Fusionar jugador:\n\nVas a mover todos los puntos de "${badName}" hacia otro jugador (y "${badName}" será eliminado).\n\nEscribe el nombre EXACTO del jugador destino:`);
-        if (!goodName || goodName.trim() === "") return;
-        
-        const cleanGoodName = goodName.trim();
-        const cleanBadName = badName.trim();
-        
-        this.players = this.players.filter(p => p.name.toLowerCase() !== cleanBadName.toLowerCase());
-        
-        if (!this.players.find(p => p.name.toLowerCase() === cleanGoodName.toLowerCase())) {
-           this.players.push({ name: cleanGoodName, isMe: Utils.isMyName(cleanGoodName) });
-        }
-        
-        let mergedCount = 0;
-        this.historic.forEach(entry => {
-           if (entry.playerResults) {
-               const badEntry = entry.playerResults.find(pr => pr.name.toLowerCase() === cleanBadName.toLowerCase());
-               if (badEntry) {
-                   const goodEntry = entry.playerResults.find(pr => pr.name.toLowerCase() === cleanGoodName.toLowerCase());
-                   if (goodEntry) {
-                       goodEntry.pts += badEntry.pts; 
-                   } else {
-                       badEntry.name = cleanGoodName; 
-                   }
-                   entry.playerResults = entry.playerResults.filter(pr => pr.name.toLowerCase() !== cleanBadName.toLowerCase() || pr.name.toLowerCase() === cleanGoodName.toLowerCase());
-                   mergedCount++;
-               }
-           }
-        });
-        
-        this.save();
-        UI.refreshAll();
-        alert(`✅ Fusión completada. Se actualizaron ${mergedCount} torneos históricos.`);
       }
     };
 
-    // ═══════════ SECTION: UTILS ═══════════
-    const Utils = {
-      parseDate(dateStr) {
+    // ══════════════════════════════════════════════════════════════════
+    // MATHEMATICAL & ANALYTICAL ENGINE (AUDITED & ACCURATE)
+    // ══════════════════════════════════════════════════════════════════
+    const Analytics = {
+      parseWLD(wldStr) {
+        if (!wldStr || typeof wldStr !== 'string') return null;
+        const match = wldStr.match(/(\d+)\s*[-–—:/]\s*(\d+)\s*[-–—:/]\s*(\d+)/);
+        if (!match) return null;
+        return {
+          w: parseInt(match[1], 10),
+          l: parseInt(match[2], 10),
+          d: parseInt(match[3], 10)
+        };
+      },
+
+      calculatePoints(w, d) {
+        return (Number(w) || 0) * 3 + (Number(d) || 0) * 1;
+      },
+
+      parseRankNumber(rankStr) {
+        if (!rankStr) return null;
+        const num = Number(String(rankStr).replace(/[^\d]/g, ''));
+        return (!isNaN(num) && num > 0) ? num : null;
+      },
+
+      getRemainingDates(baseDate = new Date()) {
+        const endDate = new Date(2026, 10, 29); // 29 Nov 2026
+        let nextThursday = new Date(baseDate.getFullYear(), baseDate.getMonth(), baseDate.getDate());
+        nextThursday.setDate(nextThursday.getDate() + 1);
+        let safety = 0;
+        while (nextThursday.getDay() !== 4 && safety < 7) {
+          nextThursday.setDate(nextThursday.getDate() + 1);
+          safety++;
+        }
+        let count = 0;
+        while (nextThursday <= endDate && count < 52) {
+          count++;
+          nextThursday.setDate(nextThursday.getDate() + 7);
+        }
+        return Math.max(0, count);
+      },
+
+      parseDate(dateStr, seasonStr, item) {
+        if (item && item.isoDate) {
+          const d = new Date(item.isoDate);
+          if (!isNaN(d.getTime())) return d;
+        }
         if (!dateStr || typeof dateStr !== 'string') return new Date();
         const trimmed = dateStr.trim();
-        if (trimmed.toLowerCase() === 'hoy' || trimmed.toLowerCase() === 'today') return new Date();
-
         if (/^\d{4}-\d{2}-\d{2}$/.test(trimmed)) {
           const [y, m, d] = trimmed.split('-').map(Number);
           return new Date(y, m - 1, d);
@@ -824,677 +1481,898 @@
         if (match) {
           const day = parseInt(match[1], 10);
           const monthKey = match[2].toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").substring(0, 3);
-          const month = CONFIG.MONTHS_MAP[monthKey] !== undefined ? CONFIG.MONTHS_MAP[monthKey] : 7;
+          const month = CONFIG.MONTHS_MAP[monthKey] !== undefined ? CONFIG.MONTHS_MAP[monthKey] : 0;
           
-          let year = new Date().getFullYear();
-          const seasonYearMatch = CONFIG.CURRENT_SEASON.match(/^(\d{4})/);
-          if (seasonYearMatch) {
-             year = parseInt(seasonYearMatch[1], 10);
+          let year = 2026;
+          if (seasonStr) {
+            const seasonYearMatch = String(seasonStr).match(/^(\d{4})/);
+            if (seasonYearMatch) year = parseInt(seasonYearMatch[1], 10);
           }
           return new Date(year, month, day);
         }
 
-        const parsed = new Date(trimmed);
-        return isNaN(parsed.getTime()) ? new Date() : parsed;
+        const d = new Date(trimmed);
+        return isNaN(d.getTime()) ? new Date() : d;
       },
 
-      parseWLD(wld) {
-        if (!wld) return null;
-        const match = String(wld).match(/(\d+)-(\d+)-(\d+)/);
-        if (!match) return null;
-        return { w: Number(match[1]), l: Number(match[2]), d: Number(match[3]) };
-      },
-
-      aggregateRecord(entries) {
-        return entries.reduce((acc, item) => {
-          const wld = this.parseWLD(item.wl);
-          if (wld) {
-            acc.w += wld.w;
-            acc.l += wld.l;
-            acc.d += wld.d;
-          }
-          return acc;
-        }, { w: 0, l: 0, d: 0 });
-      },
-
-      calculatePoints({ w, d }) {
-        return (w * CONFIG.POINTS_PER_WIN) + (d * CONFIG.POINTS_PER_DRAW);
-      },
-
-      inferWLDFromPoints(points) {
-        if (CONFIG.WLD_FALLBACK[points]) return CONFIG.WLD_FALLBACK[points];
-        if (points >= 15) return "5-0-0";
-        if (points >= 12) return "4-0-0";
-        if (points >= 10) return "3-0-1";
-        if (points >= 9)  return "3-1-0";
-        if (points >= 7)  return "2-1-1";
-        if (points >= 6)  return "2-2-0";
-        if (points >= 4)  return "1-2-1";
-        if (points >= 3)  return "1-3-0";
-        if (points >= 1)  return "0-3-1";
-        return "0-4-0";
-      },
-
-      cleanPlayerName(raw) {
-        if (!raw) return '';
-        return raw.trim()
-          .replace(/^[\d.#\-—–\sº°|]+/, '')
-          .replace(/[\.\s:\|\-—–_…]+$/, '')
-          .replace(/\s{2,}/g, ' ')
-          .trim();
-      },
-
-      findMatchingPlayer(rawName, playersList) {
-        if (!rawName) return null;
-        const cleanName = this.cleanPlayerName(rawName);
-        const lowerName = cleanName.toLowerCase();
-
-        if (this.isMyName(lowerName)) {
-          const me = playersList.find(p => p.isMe);
-          if (me) return me;
-        }
-
-        let matched = playersList.find(p => p.name.toLowerCase() === lowerName);
-        if (matched) return matched;
-
-        const cleanQueryTokens = lowerName.split(/\s+/).filter(t => t.length >= 2);
-        matched = playersList.find(p => {
-          const dbLower = p.name.toLowerCase();
-          if (dbLower.includes(lowerName) || lowerName.includes(dbLower)) return true;
-
-          const dbTokens = dbLower.split(/\s+/).filter(t => t.length >= 2);
-          if (cleanQueryTokens.length > 0 && dbTokens.length >= cleanQueryTokens.length) {
-            const allTokensMatch = cleanQueryTokens.every((token, idx) => {
-              const dbToken = dbTokens[idx] || "";
-              return dbToken.startsWith(token) || token.startsWith(dbToken);
-            });
-            if (allTokensMatch) return true;
-          }
-
-          if (lowerName.length >= 4 && dbLower.includes(lowerName.substring(0, 5))) return true;
-          if (dbLower.length >= 4 && lowerName.includes(dbLower.substring(0, 5))) return true;
-          return false;
+      // Comprehensive Deck Statistics Calculation
+      computeDeckStats(deckName, entries) {
+        const deckEntries = entries.filter(e => {
+          if (!e.deck || e.deck === "No participó" || e.rank === "—") return false;
+          return e.deck.trim().toLowerCase() === deckName.trim().toLowerCase();
         });
 
-        return matched;
+        const count = deckEntries.length;
+        let totalWins = 0;
+        let totalLosses = 0;
+        let totalDraws = 0;
+        let totalPts = 0;
+        const rankList = [];
+        let top4Count = 0;
+        let top8Count = 0;
+
+        deckEntries.forEach(item => {
+          // Points: Use official recorded points (with fallback to calculated WLD points if missing)
+          const itemPts = Number(item.pts);
+          const parsed = this.parseWLD(item.wl);
+
+          if (!isNaN(itemPts)) {
+            totalPts += itemPts;
+          } else if (parsed) {
+            totalPts += this.calculatePoints(parsed.w, parsed.d);
+          }
+          if (parsed) {
+            totalWins += parsed.w;
+            totalLosses += parsed.l;
+            totalDraws += parsed.d;
+          }
+
+          // Ranks
+          const r = this.parseRankNumber(item.rank);
+          if (r !== null) {
+            rankList.push(r);
+            if (r <= 4) top4Count++;
+            if (r <= 8) top8Count++;
+          }
+        });
+
+        const totalMatches = totalWins + totalLosses + totalDraws;
+        
+        // Exact Match Win Rate %: W / Total Matches
+        const winRate = totalMatches > 0 ? (totalWins / totalMatches) * 100 : 0;
+        
+        // Match Point Percentage: (3*W + 1*D) / (3*Total Matches)
+        const matchPointRate = totalMatches > 0 ? (((totalWins * 3) + (totalDraws * 1)) / (totalMatches * 3)) * 100 : 0;
+        
+        // Points Per Tournament (PPG)
+        const ppg = count > 0 ? (totalPts / count) : 0;
+        
+        // Average and Best Rank
+        const avgRank = rankList.length > 0 ? (rankList.reduce((a, b) => a + b, 0) / rankList.length) : null;
+        const bestRank = rankList.length > 0 ? Math.min(...rankList) : null;
+
+        // Form (Recent 5 tourneys chronologically)
+        const sortedDeckEntries = [...deckEntries].sort((a, b) => {
+          return Analytics.parseDate(a.date, a.season, a) - Analytics.parseDate(b.date, b.season, b);
+        });
+        const recentForm = sortedDeckEntries.slice(-5);
+
+        // Benchmark Classification
+        let status = { key: 'insufficient', label: 'Muestra Insuficiente', icon: '⏱️', class: 'insufficient', desc: '< 3 torneos jugados' };
+        if (count >= CONFIG.BENCHMARKS.MIN_SAMPLE_SIZE) {
+          if (winRate >= CONFIG.BENCHMARKS.GOOD_WIN_RATE) {
+            status = { key: 'good', label: 'Buen Rendimiento', icon: '🔥', class: 'good', desc: 'Récord positivo (≥ 50% WR)' };
+          } else if (winRate >= CONFIG.BENCHMARKS.AVG_WIN_RATE) {
+            status = { key: 'average', label: 'Promedio / Viable', icon: '⚖️', class: 'average', desc: 'Competitivo (45% - 49% WR)' };
+          } else {
+            status = { key: 'bad', label: 'Bajo Rendimiento', icon: '⚠️', class: 'bad', desc: 'Por debajo del corte (< 45% WR)' };
+          }
+        }
+
+        return {
+          deck: deckName,
+          count,
+          totalWins,
+          totalLosses,
+          totalDraws,
+          totalMatches,
+          winRate,
+          matchPointRate,
+          totalPts,
+          ppg,
+          avgRank,
+          bestRank,
+          top4Count,
+          top8Count,
+          recentForm,
+          status,
+          entries: sortedDeckEntries
+        };
       },
 
-      isMyName(name) {
-        const lowerName = name.toLowerCase();
-        return (lowerName.includes("christian") || lowerName.includes("cristian") || lowerName.startsWith("chris")) &&
-               (lowerName.includes("do") || lowerName.includes("donado") || (!lowerName.includes("machado") && !lowerName.includes("mac")));
-      },
+      getAllDeckStats(entries) {
+        // Collect all unique decks that are active in State.decksList
+        const deckNames = new Set(State.decksList);
+        entries.forEach(e => {
+          if (e.deck && e.deck !== "No participó" && !State.deletedDecks.some(d => d.toLowerCase() === e.deck.trim().toLowerCase())) {
+            deckNames.add(e.deck.trim());
+          }
+        });
 
-      getRemainingDates(baseDate = new Date()) {
-        const currentSeasonEntries = State.getCurrentSeasonEntries();
-        let lastDate = baseDate;
-        if (currentSeasonEntries.length > 0) {
-          const lastEntry = currentSeasonEntries[currentSeasonEntries.length - 1];
-          const d = this.parseDate(lastEntry.date);
-          if (!isNaN(d.getTime())) lastDate = d;
-        }
+        const results = [];
+        deckNames.forEach(name => {
+          const stats = this.computeDeckStats(name, entries);
+          results.push(stats);
+        });
 
-        let nextThursday = new Date(lastDate.getFullYear(), lastDate.getMonth(), lastDate.getDate());
-        nextThursday.setDate(nextThursday.getDate() + 1);
-
-        let safetyCounter = 0;
-        while (nextThursday.getDay() !== CONFIG.TOURNAMENT_DAY && safetyCounter < 7) {
-          nextThursday.setDate(nextThursday.getDate() + 1);
-          safetyCounter++;
-        }
-
-        let count = 0;
-        let maxThursdays = 52;
-        while (nextThursday <= CONFIG.END_DATE && count < maxThursdays) {
-          count++;
-          nextThursday.setDate(nextThursday.getDate() + 7);
-        }
-
-        return Math.max(0, count);
+        return results;
       }
     };
 
-    // ═══════════ SECTION: OCR / SCANNER ═══════════
-    const Scanner = {
-      parseLine(line) {
-        const trimmedLine = line.trim();
-        if (!trimmedLine) return null;
-        
-        const lineToParse = trimmedLine.replace(/[|│｜!]/g, ' ');
-        const rankMatch = lineToParse.match(/^#?(\d{1,2})[\.\s°º\-:]+/);
-        const rank = rankMatch ? `${rankMatch[1]}°` : "";
+    // ══════════════════════════════════════════════════════════════════
+    // UI CONTROLLER & RENDERING
+    // ══════════════════════════════════════════════════════════════════
+    const Arena = {
+      currentFilterSeason: '2026-2',
 
-        const wldRegex = /(\d{1,2})\s*[-–—:/]\s*(\d{1,2})\s*[-–—:/]\s*([0-9Oo])\b/;
-        const wldMatch = lineToParse.match(wldRegex);
-
-        let rawName = "";
-        let ptsToAdd = NaN;
-        let wldString = "";
-        let pointsFromWLD = null;
-
-        if (wldMatch) {
-          const w = parseInt(wldMatch[1], 10);
-          const l = parseInt(wldMatch[2], 10);
-          const dStr = wldMatch[3].replace(/[Oo]/g, '0');
-          const d = parseInt(dStr, 10);
-          wldString = `${w}-${l}-${d}`;
-          pointsFromWLD = Utils.calculatePoints({w, d});
-
-          const textBeforeWLD = lineToParse.substring(0, wldMatch.index).trim();
-          const ptsMatch = textBeforeWLD.match(/(\d{1,3})\s*[\s.:\|\-—–_]*$/);
-
-          if (ptsMatch) {
-            ptsToAdd = parseInt(ptsMatch[1], 10);
-            rawName = Utils.cleanPlayerName(textBeforeWLD.substring(0, ptsMatch.index).trim());
-          } else {
-            ptsToAdd = 0;
-            rawName = Utils.cleanPlayerName(textBeforeWLD);
-          }
-          if (pointsFromWLD > 0) {
-            ptsToAdd = pointsFromWLD;
-          }
-        } else {
-          const simpleMatch = lineToParse.match(/^(.+?)(?:\s*[:\-]?\s*)(\d{1,3})\s*$/);
-          if (simpleMatch) {
-            rawName = Utils.cleanPlayerName(simpleMatch[1]);
-            ptsToAdd = parseInt(simpleMatch[2], 10);
-          }
-        }
-
-        if (!rawName || isNaN(ptsToAdd) || ptsToAdd > 50) return null;
-        return { rawName, pts: ptsToAdd, wld: wldString, rank };
-      },
-
-      applyParsedText({ isContinuation } = {}) {
-        const manualInput = document.getElementById("scan-input");
-        const fileInput = document.getElementById("screenshot-file");
-        const rankInput = document.getElementById("scan-rank");
-        const text = manualInput ? manualInput.value : "";
-        
-        if (!text.trim()) {
-          UI.setStatus("⚠️ Sube una captura de pantalla o escribe el texto.", "#f85149");
-          return;
-        }
-
-        try {
-          const lines = text.split("\n");
-          let updatedCount = 0;
-          let myPointsEarned = 0;
-          let myWLD = "";
-          let detectedMyRank = "";
-          const updatedPlayersSet = new Set();
-          const playerResults = [];
-
-          lines.forEach(line => {
-            const parsed = this.parseLine(line);
-            if (!parsed) return;
-            
-            let player = Utils.findMatchingPlayer(parsed.rawName, State.players);
-            if (!player) {
-              const isMe = Utils.isMyName(parsed.rawName);
-              player = { name: parsed.rawName, isMe };
-              State.players.push(player);
-            }
-
-            if (!updatedPlayersSet.has(player.name)) {
-              playerResults.push({ name: player.name, pts: parsed.pts });
-              updatedPlayersSet.add(player.name);
-              updatedCount++;
-              if (player.isMe) {
-                myPointsEarned = parsed.pts;
-                if (parsed.wld) myWLD = parsed.wld;
-                if (parsed.rank) detectedMyRank = parsed.rank;
-              }
-            }
-          });
-
-          if (updatedCount > 0) {
-            if (!isContinuation) {
-              const formattedDate = this.getFormattedDate();
-              const selectedDeck = this.getSelectedDeck();
-              if (selectedDeck === "Otro Mazo") {
-                 UI.setStatus("⚠️ Escribe el nombre del mazo personalizado antes de guardar.", "#f85149");
-                 return;
-              }
-              
-              let finalRank = rankInput ? rankInput.value.trim() : "";
-              if (!finalRank) {
-                finalRank = detectedMyRank || `${State.players.findIndex(p => p.isMe) + 1}°`;
-              }
-              if (!finalRank.endsWith("°") && !isNaN(parseInt(finalRank, 10))) {
-                finalRank = `${parseInt(finalRank, 10)}°`;
-              }
-              if (!myWLD) {
-                myWLD = Utils.inferWLDFromPoints(myPointsEarned);
-              }
-
-              State.historic.push({
-                date: formattedDate,
-                season: CONFIG.CURRENT_SEASON,
-                deck: selectedDeck,
-                rank: finalRank,
-                pts: myPointsEarned,
-                wl: myWLD,
-                type: myPointsEarned >= CONFIG.GOOD_THRESHOLD ? "good" : (myPointsEarned <= CONFIG.BAD_THRESHOLD ? "bad" : "normal"),
-                playerResults: playerResults
-              });
-            } else {
-              const entries = State.getCurrentSeasonEntries();
-              if (entries.length > 0) {
-                const lastEntry = entries[entries.length - 1];
-                if (!lastEntry.playerResults) lastEntry.playerResults = [];
-                
-                playerResults.forEach(pr => {
-                    const existing = lastEntry.playerResults.find(e => e.name === pr.name);
-                    if (existing) existing.pts += pr.pts;
-                    else lastEntry.playerResults.push(pr);
-                });
-                
-                if (myPointsEarned > 0) {
-                   lastEntry.pts = (lastEntry.pts || 0) + myPointsEarned;
-                }
-              }
-            }
-
-            State.save();
-            UI.refreshAll();
-
-            if (fileInput) fileInput.value = "";
-            if (manualInput) manualInput.value = "";
-            if (rankInput) rankInput.value = "";
-            if (document.getElementById("same-day-continuation")) document.getElementById("same-day-continuation").checked = false;
-
-            UI.setStatus(`✅ Puntajes aplicados correctamente. ${myPointsEarned} puntos añadidos.`, "#3fb950");
-            setTimeout(() => {
-              UI.setStatus("");
-              UI.switchPage('g', document.querySelector('nav .nb'));
-            }, 1500);
-
-          } else {
-            UI.setStatus("⚠️ No se detectaron puntajes válidos en el texto.", "#f85149");
-          }
-        } catch (err) {
-          UI.setStatus(`❌ Error en código: ${err.message}`, "#f85149");
-          console.error("Error crítico en applyParsedText:", err);
-        }
-      },
-
-      async processImageAndApply() {
-        const fileInput = document.getElementById("screenshot-file");
-        const manualInput = document.getElementById("scan-input");
-
-        if (fileInput && fileInput.files && fileInput.files[0]) {
-          UI.setStatus("⚙️ Preparando imagen y motor OCR...", "#f97316");
-          let worker = null;
-          try {
-            const processedImageBlob = await this.preprocessImage(fileInput.files[0]);
-            UI.setStatus("⏳ Cargando motor de reconocimiento...", "#f97316");
-            worker = await Tesseract.createWorker('eng+spa', 1, {
-              logger: m => {
-                if (m.status === 'recognizing text') {
-                  const pct = Math.round((m.progress || 0) * 100);
-                  UI.setStatus(`🔍 Leyendo imagen... ${pct}%`, "#f97316");
-                }
-              }
-            });
-            const ret = await worker.recognize(processedImageBlob);
-            if (manualInput) manualInput.value = ret.data.text;
-            UI.setStatus("✅ ¡Lectura completa! Aplicando fecha...", "#3fb950");
-            
-            await worker.terminate();
-            worker = null;
-            
-            const contCheckbox = document.getElementById("same-day-continuation");
-            setTimeout(() => {
-              this.applyParsedText({ isContinuation: contCheckbox ? contCheckbox.checked : false });
-            }, 300);
-            return;
-          } catch (err) {
-            UI.setStatus("⚠️ Error leyendo imagen. Puedes editar el texto manualmente.", "#f85149");
-            console.error("Error en Tesseract:", err);
-          } finally {
-            if (worker) {
-              await worker.terminate().catch(() => {});
-            }
-          }
-        } else {
-           const contCheckbox = document.getElementById("same-day-continuation");
-           this.applyParsedText({ isContinuation: contCheckbox ? contCheckbox.checked : false });
-        }
-      },
-
-      preprocessImage(file) {
-        return new Promise((resolve) => {
-          const img = new Image();
-          const url = URL.createObjectURL(file);
-          img.onload = () => {
-            URL.revokeObjectURL(url);
-            try {
-              let { width, height } = img;
-              if (width > CONFIG.MAX_IMAGE_DIM || height > CONFIG.MAX_IMAGE_DIM) {
-                if (width > height) {
-                  height = Math.round((height * CONFIG.MAX_IMAGE_DIM) / width);
-                  width = CONFIG.MAX_IMAGE_DIM;
-                } else {
-                  width = Math.round((width * CONFIG.MAX_IMAGE_DIM) / height);
-                  height = CONFIG.MAX_IMAGE_DIM;
-                }
-              }
-              const canvas = document.createElement('canvas');
-              canvas.width = width;
-              canvas.height = height;
-              const ctx = canvas.getContext('2d');
-              ctx.drawImage(img, 0, 0, width, height);
-              canvas.toBlob((blob) => {
-                resolve(blob || file);
-              }, 'image/png');
-            } catch (err) {
-              console.warn('Preprocessing error:', err);
-              resolve(file);
-            }
-          };
-          img.onerror = () => {
-            URL.revokeObjectURL(url);
-            resolve(file);
-          };
-          img.src = url;
-        });
-      },
-
-      getSelectedDeck() {
-        const deckSelect = document.getElementById("scan-deck");
-        if (!deckSelect) return CONFIG.DEFAULT_DECKS[0];
-        if (deckSelect.value === "other") {
-          const customVal = document.getElementById("scan-custom-deck")?.value?.trim();
-          return customVal || "Otro Mazo";
-        }
-        return deckSelect.value.trim();
-      },
-
-      getFormattedDate() {
-        const dateInput = document.getElementById("scan-date");
-        if (dateInput && dateInput.value) {
-          const parts = dateInput.value.split("-");
-          const d = new Date(Number(parts[0]), Number(parts[1]) - 1, Number(parts[2]));
-          return `${d.getDate()} ${CONFIG.MONTHS_ABBR[d.getMonth()]}`;
-        }
-        const today = new Date();
-        return `${today.getDate()} ${CONFIG.MONTHS_ABBR[today.getMonth()]}`;
-      }
-    };
-
-    // ═══════════ SECTION: UI ═══════════
-    const UI = {
-      refreshAll() {
-        this.renderLeaderboard();
-        this.renderCurrentSeasonStats();
-        this.renderFullHistoric();
-        this.renderHistoricDeckStats();
-      },
-
-      renderLeaderboard() {
-        const computedPlayers = State.players.map(p => ({ name: p.name, isMe: p.isMe, pts: 0 }));
-        
-        State.historic.forEach(entry => {
-           if (entry.season === CONFIG.CURRENT_SEASON) {
-               if (entry.playerResults) {
-                   entry.playerResults.forEach(pr => {
-                       let p = computedPlayers.find(cp => cp.name === pr.name);
-                       if (!p) {
-                           p = { name: pr.name, isMe: Utils.isMyName(pr.name), pts: 0 };
-                           computedPlayers.push(p);
-                       }
-                       p.pts += (Number(pr.pts) || 0);
-                   });
-               } else {
-                   const me = computedPlayers.find(cp => cp.isMe);
-                   if (me && entry.pts) me.pts += (Number(entry.pts) || 0);
-               }
-           }
-        });
-        
-        computedPlayers.sort((a, b) => b.pts - a.pts);
-        
-        const container = document.getElementById("general-list");
-        const stored = localStorage.getItem('lastUpdateTime');
-        const lastUpdateText = stored ? `<p class="note" style="font-size:0.75rem; color:#8b949e; margin-bottom:8px;">Última actualización: ${new Date(stored).toLocaleDateString('es-ES', { year: 'numeric', month: 'short', day: 'numeric' })}</p>` : '';
-        const remainingDates = Utils.getRemainingDates();
-        
-        let html = `${lastUpdateText}<p class="note">Puntos acumulados · Top ${CONFIG.TOP_CUTOFF} → Nov 29 · ${remainingDates} fechas restantes</p>`;
-        computedPlayers.forEach((p, index) => {
-          const rank = index + 1;
-          let rankClass = "rk" + (rank <= 3 ? ` r${rank}` : "");
-          html += `
-          <div class="row ${p.isMe ? 'me' : ''}">
-            <span class="${rankClass}">${rank}</span>
-            <span class="nm">${p.name}</span>
-            <span class="pt">${p.pts}</span>
-            ${!p.isMe ? `<button class="btn-icon-del" style="opacity:0.6; font-size:0.8rem" onclick="State.mergePlayers('${p.name.replace(/'/g, "\\'")}')" title="Fusionar con otro jugador">⚙️</button>` : ""}
-          </div>`;
-          if (rank === CONFIG.TOP_CUTOFF) html += `<div class="cutline">— top ${CONFIG.TOP_CUTOFF} · clasificados —</div>`;
-        });
-        if (container) container.innerHTML = html;
-
-        const myData = computedPlayers.find(p => p.isMe);
-        if (myData) {
-          const myRank = computedPlayers.findIndex(p => p.isMe) + 1;
-          if (document.getElementById("stat-pts")) document.getElementById("stat-pts").textContent = myData.pts;
-          if (document.getElementById("stat-rank")) document.getElementById("stat-rank").textContent = `${myRank}°`;
-        }
-      },
-
-      buildDeckStatsHTML(entries, isHistoric) {
-        const deckMap = {};
-        entries.forEach(item => {
-          const safeDeck = item.deck ? item.deck.trim() : "Desconocido";
-          if (item.rank === "—" || CONFIG.EXCLUDED_DECKS.some(d => safeDeck.toLowerCase().includes(d))) return;
-          if (!deckMap[safeDeck]) deckMap[safeDeck] = { count: 0, pts: 0, record: { w: 0, l: 0, d: 0 } };
-          deckMap[safeDeck].count += 1;
-          deckMap[safeDeck].pts += Number(item.pts) || 0;
-          const wld = Utils.parseWLD(item.wl);
-          if (wld) {
-            deckMap[safeDeck].record.w += wld.w;
-            deckMap[safeDeck].record.l += wld.l;
-            deckMap[safeDeck].record.d += wld.d;
-          }
-        });
-
-        const deckList = Object.entries(deckMap).map(([deck, info]) => {
-          const exactPoints = Utils.calculatePoints(info.record);
-          const ptRatio = info.count > 0 ? (exactPoints / info.count) : 0;
-          return { deck, info, ptRatio };
-        }).sort((a, b) => b.ptRatio - a.ptRatio);
-
-        if (deckList.length === 0) return `<p class="note" style="text-align:left;">No hay torneos registrados aún.</p>`;
-
-        return deckList.map(({ deck, info, ptRatio }, index) => {
-          const rec = `${info.record.w}-${info.record.l}-${info.record.d}`;
-          const ppg = ptRatio.toFixed(1);
-          const isTopDeck = index === 0;
-
-          if (isHistoric) {
-            const nameClass = isTopDeck ? "nm g" : "nm";
-            const ptClass = isTopDeck ? "pt g" : "pt";
-            const trophy = isTopDeck ? " 🏆" : "";
-            return `
-              <div class="row">
-                <span class="${nameClass}">${deck}${trophy}</span>
-                <span class="wl">${info.count}T · ${rec}</span>
-                <span class="${ptClass}" style="min-width:52px;text-align:right;">${ppg} p/T</span>
-              </div>`;
-          } else {
-            const isWorst = index === deckList.length - 1 && deckList.length > 1;
-            let nameColor = isTopDeck ? '#f97316' : (isWorst ? '#8b949e' : '#f0f6fc');
-            let ppgColor = isTopDeck ? '#f97316' : (isWorst ? '#ef4444' : '#58a6ff');
-            let badge = isTopDeck ? '<span style="font-size:0.55rem; background:#f97316; color:#0d1117; padding:1px 3px; border-radius:3px; margin-left:3px; font-weight:800; vertical-align:middle;">TOP</span>' : (isWorst ? '<span style="font-size:0.55rem; background:#ef4444; color:#fff; padding:1px 3px; border-radius:3px; margin-left:3px; font-weight:700; vertical-align:middle;">LOW</span>' : '');
-
-            return `
-              <div class="row" style="display:flex; align-items:center; justify-content:space-between; gap:4px; padding:6px 8px; width:100%; box-sizing:border-box;">
-                <span class="nm" style="flex:1 1 auto; min-width:0; color:${nameColor}; font-weight:700; font-size:clamp(0.7rem, 3vw, 0.85rem); white-space:nowrap; overflow:hidden;">
-                  ${deck} ${badge}
-                </span>
-                <span class="wl" style="flex:0 0 auto; font-size:clamp(0.68rem, 2.5vw, 0.72rem); color:#8b949e; white-space:nowrap;">
-                  ${info.count}T · ${rec}
-                </span>
-                <span class="pt" style="flex:0 0 auto; min-width:48px; text-align:right; font-size:clamp(0.75rem, 3vw, 0.88rem); font-weight:800; color:${ppgColor}; white-space:nowrap;">
-                  ${ppg} <small style="font-size:0.55rem; font-weight:normal;">p/T</small>
-                </span>
-              </div>`;
-          }
-        }).join('');
-      },
-
-      renderCurrentSeasonStats() {
-        const entries = State.getCurrentSeasonEntries().sort((a, b) => Utils.parseDate(a.date) - Utils.parseDate(b.date));
-        const validEntries = entries.filter(item => item.rank && item.rank !== "—");
-        
-        if (document.getElementById("stat-tourneys")) document.getElementById("stat-tourneys").textContent = validEntries.length;
-        const ranks = validEntries.map(item => Number(String(item.rank).replace(/[^\d]/g, '')) || 99).sort((a, b) => a - b);
-        if (document.getElementById("stat-best-rank")) document.getElementById("stat-best-rank").textContent = ranks.length ? `${ranks[0]}°` : "--";
-        
-        const recordTotals = Utils.aggregateRecord(validEntries);
-        if (document.getElementById("stat-record")) document.getElementById("stat-record").textContent = `${recordTotals.w}-${recordTotals.l}-${recordTotals.d}`;
-        if (document.getElementById("stat-remaining")) document.getElementById("stat-remaining").textContent = Utils.getRemainingDates();
-
-        const deckContainer = document.getElementById("current-season-decks");
-        if (deckContainer) deckContainer.innerHTML = this.buildDeckStatsHTML(entries, false);
-
-        const tournamentList = document.getElementById("current-season-tournaments");
-        if (tournamentList) {
-          if (entries.length === 0) {
-            tournamentList.innerHTML = `<p class="note" style="text-align:left;">Sube una captura en la pestaña 📸 Escáner para registrar el primer torneo de la temporada.</p>`;
-          } else {
-            tournamentList.innerHTML = entries.map((item) => {
-              const globalIdx = State.historic.indexOf(item);
-              return `
-              <div class="row me">
-                <span class="rk">${item.rank}</span>
-                <div style="flex:1; min-width:0;">
-                  <div class="nm">${item.date}</div>
-                  <div style="font-size:.68rem;color:#8b949e; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${item.deck}</div>
-                </div>
-                <span class="pt">${item.pts}</span>
-                <span class="wl">${item.wl}</span>
-                <button class="btn-icon-del" onclick="State.deleteSeasonTournament(${globalIdx})" title="Eliminar este torneo">🗑️</button>
-              </div>`;
-            }).join('');
-          }
-        }
-      },
-
-      renderFullHistoric() {
-        State.historic.sort((a, b) => Utils.parseDate(a.date) - Utils.parseDate(b.date));
-        const validEntries = State.historic.filter(item => item.rank && item.rank !== "—");
-        
-        if (document.getElementById("hist-tourneys")) document.getElementById("hist-tourneys").textContent = validEntries.length;
-        if (document.getElementById("hist-pts")) document.getElementById("hist-pts").textContent = validEntries.reduce((sum, item) => sum + (Number(item.pts) || 0), 0);
-        
-        const ranks = validEntries.map(item => Number(String(item.rank).replace(/[^\d]/g, '')) || 99).sort((a, b) => a - b);
-        if (document.getElementById("hist-best-rank")) document.getElementById("hist-best-rank").textContent = ranks.length ? `${ranks[0]}°` : "--";
-        
-        const recordTotals = Utils.aggregateRecord(validEntries);
-        if (document.getElementById("hist-record")) document.getElementById("hist-record").textContent = `${recordTotals.w}-${recordTotals.l}-${recordTotals.d}`;
-
-        const container = document.getElementById("historic-full-list");
-        if (container) {
-          container.innerHTML = State.historic.map(item => {
-            let ptStyle = "", wlStyle = "", deckColor = "color:#8b949e", tagStyle = item.tagStyle || "background:#21262d;color:#8b949e";
-            if (item.type === "good") { ptStyle = wlStyle = "color:#3fb950; font-weight:700;"; }
-            else if (item.type === "bad") { ptStyle = wlStyle = "color:#f85149; font-weight:700;"; }
-            else if (item.type === "none") { deckColor = "color:#444;font-style:italic"; }
-
-            return `
-            <div class="row" style="background:#161b22;">
-              <span class="rk">${item.rank}</span>
-              <div style="flex:1">
-                <div class="nm" style="color:#e6edf3;">${item.date} <span class="season-tag" style="${tagStyle}">${item.season}</span></div>
-                <div style="font-size:0.68rem; ${deckColor}">${item.deck}</div>
-              </div>
-              <span class="pt" style="${ptStyle}">${item.pts}</span>
-              <span class="wl" style="${wlStyle}">${item.wl}</span>
-            </div>`;
-          }).join('');
-        }
-      },
-
-      renderHistoricDeckStats() {
-        const container = document.getElementById("historic-deck-stats");
-        if (container) container.innerHTML = this.buildDeckStatsHTML(State.historic, true);
-      },
-
-      setStatus(message, color = '#f97316') {
-        const statusEl = document.getElementById("scan-status");
-        if (statusEl) {
-          statusEl.style.color = color;
-          statusEl.textContent = message;
-        }
-      },
-
-      toggleTestMode() {
-        const toggle = document.getElementById('test-mode-toggle');
-        const banner = document.getElementById('test-mode-banner');
-        CONFIG.isTestMode = toggle.checked;
-        
-        if (CONFIG.isTestMode) {
-            banner.style.display = 'block';
-            State.resetToDefaults();
-            State.save();
-        } else {
-            banner.style.display = 'none';
-            localStorage.removeItem('pauper_test_players');
-            localStorage.removeItem('pauper_test_historic');
-        }
-        
+      init() {
         State.load();
-        UI.refreshAll();
+        this.initDatePicker();
+        this.populateDeckPickers();
+        this.refreshAll();
       },
 
-      switchPage(id, btn) {
-        document.querySelectorAll('.pg').forEach(p => p.classList.remove('on'));
-        document.querySelectorAll('.nb').forEach(b => b.classList.remove('on'));
-        document.getElementById(id).classList.add('on');
-        btn.classList.add('on');
-      },
-
-      toggleAccordion(id) {
-        const el = document.getElementById(id);
-        const arrow = document.getElementById('c' + id);
-        if (el.style.display === "none" || !el.style.display) {
-          el.style.display = "block";
-          if (arrow) arrow.style.transform = "rotate(180deg)";
-        } else {
-          el.style.display = "none";
-          if (arrow) arrow.style.transform = "rotate(0deg)";
+      initDatePicker() {
+        const dateInput = document.getElementById("log-date");
+        if (dateInput) {
+          const today = new Date();
+          const yyyy = today.getFullYear();
+          const mm = String(today.getMonth() + 1).padStart(2, '0');
+          const dd = String(today.getDate()).padStart(2, '0');
+          dateInput.value = `${yyyy}-${mm}-${dd}`;
         }
       },
 
-      toggleCustomDeckInput() {
-        const select = document.getElementById("scan-deck");
+      getFilteredEntries() {
+        if (this.currentFilterSeason === 'all') {
+          return State.historic;
+        }
+        return State.historic.filter(item => item.season === this.currentFilterSeason);
+      },
+
+      handleSeasonFilterChange() {
+        const select = document.getElementById("season-filter");
+        if (select) {
+          this.currentFilterSeason = select.value;
+          const loggerTag = document.getElementById("logger-season-tag");
+          if (loggerTag) {
+            loggerTag.textContent = this.currentFilterSeason === 'all' ? CONFIG.CURRENT_SEASON : this.currentFilterSeason;
+          }
+          this.refreshAll();
+        }
+      },
+
+      refreshAll() {
+        this.renderHeroMetrics();
+        this.renderInsights();
+        this.renderDeckComparison();
+        this.renderDeckDetail();
+        this.renderFullHistory();
+      },
+
+      populateDeckPickers() {
+        State.syncDecksList();
+        const logDeckSelect = document.getElementById("log-deck");
+        const detailDeckSelect = document.getElementById("detail-deck-select");
+        
+        if (logDeckSelect) {
+          const currentVal = logDeckSelect.value;
+          let html = '';
+          State.decksList.forEach(deck => {
+            html += `<option value="${deck}">${deck}</option>`;
+          });
+          html += `<option value="other">➕ Añadir nuevo mazo personalizado...</option>`;
+          logDeckSelect.innerHTML = html;
+          if (currentVal && State.decksList.includes(currentVal)) {
+            logDeckSelect.value = currentVal;
+          }
+        }
+
+        if (detailDeckSelect) {
+          const currentDetailVal = detailDeckSelect.value;
+          let html = '';
+          State.decksList.forEach(deck => {
+            html += `<option value="${deck}">${deck}</option>`;
+          });
+          detailDeckSelect.innerHTML = html;
+          if (currentDetailVal && State.decksList.includes(currentDetailVal)) {
+            detailDeckSelect.value = currentDetailVal;
+          }
+        }
+      },
+
+      handleDeckPickerChange() {
+        const select = document.getElementById("log-deck");
         const customGroup = document.getElementById("custom-deck-group");
         if (select && customGroup) {
           customGroup.style.display = select.value === "other" ? "block" : "none";
         }
       },
 
-      updateDynamicLabels() {
-        const seasonLabels = document.querySelectorAll('.season-label');
-        seasonLabels.forEach(el => el.textContent = `Temporada ${CONFIG.CURRENT_SEASON}`);
-      }
-    };
+      setRecordPreset(w, l, d) {
+        document.getElementById("log-w").value = w;
+        document.getElementById("log-l").value = l;
+        document.getElementById("log-d").value = d;
+        this.autoCalculatePointsFromRecord();
+      },
 
-    // ═══════════ SECTION: BACKUP ═══════════
-    const Backup = {
+      autoCalculatePointsFromRecord() {
+        const w = parseInt(document.getElementById("log-w").value, 10) || 0;
+        const d = parseInt(document.getElementById("log-d").value, 10) || 0;
+        const pts = Analytics.calculatePoints(w, d);
+        document.getElementById("log-pts").value = pts;
+      },
+
+      // ─────────────────────────────────────────────────────────────
+      // HERO METRICS & INSIGHTS
+      // ─────────────────────────────────────────────────────────────
+      renderHeroMetrics() {
+        const entries = this.getFilteredEntries();
+        const validEntries = entries.filter(e => e.deck && e.deck !== "No participó");
+        const allDeckStats = Analytics.getAllDeckStats(entries).filter(d => d.count > 0);
+
+        let globalW = 0, globalL = 0, globalD = 0;
+        validEntries.forEach(e => {
+          const parsed = Analytics.parseWLD(e.wl);
+          if (parsed) {
+            globalW += parsed.w;
+            globalL += parsed.l;
+            globalD += parsed.d;
+          }
+        });
+
+        // Best deck by win rate (minimum 2 tournaments if available)
+        const qualifiedDecks = allDeckStats.filter(d => d.count >= 2);
+        const deckPool = qualifiedDecks.length > 0 ? qualifiedDecks : allDeckStats;
+        const sortedByWR = [...deckPool].sort((a, b) => b.winRate - a.winRate);
+
+        const bestDeck = sortedByWR[0];
+        const bestWrVal = bestDeck ? `${bestDeck.winRate.toFixed(1)}%` : '--%';
+        const bestDeckName = bestDeck ? bestDeck.deck.replace(/^[^\w\s]+/, '').trim() : '--';
+
+        document.getElementById("metric-best-wr").textContent = bestWrVal;
+        document.getElementById("metric-top-deck").textContent = bestDeckName;
+        document.getElementById("metric-global-record").textContent = `${globalW}-${globalL}-${globalD}`;
+        document.getElementById("metric-total-tourneys").textContent = validEntries.length;
+
+        // Dynamic remaining dates from current date (Hallazgo 6)
+        const remainingDates = Analytics.getRemainingDates();
+        const remBadge = document.getElementById("header-remaining-badge");
+        if (remBadge) {
+          remBadge.textContent = `⏳ ${remainingDates} fechas`;
+          remBadge.title = `Fechas restantes de jueves hasta el 29 de Noviembre de 2026`;
+        }
+      },
+
+      renderInsights() {
+        const entries = this.getFilteredEntries();
+        const allStats = Analytics.getAllDeckStats(entries).filter(d => d.count > 0);
+        const container = document.getElementById("insights-container");
+        if (!container) return;
+
+        if (allStats.length === 0) {
+          container.innerHTML = `
+            <div class="insight-header">💡 Diagnóstico de Rendimiento</div>
+            <div class="insight-body">No hay torneos registrados para el filtro seleccionado. Sube tus resultados para generar diagnósticos competitivos.</div>
+          `;
+          return;
+        }
+
+        // Identify Top Performer, Most Consistent, and Underperforming
+        const sortedByWR = [...allStats].sort((a, b) => b.winRate - a.winRate);
+        const topWr = sortedByWR[0];
+        const worstWr = sortedByWR[sortedByWR.length - 1];
+
+        // Best peak finish
+        const sortedByPeak = [...allStats].filter(d => d.bestRank !== null).sort((a, b) => a.bestRank - b.bestRank);
+        const peakDeck = sortedByPeak[0];
+
+        let insightHtml = `
+          <div class="insight-header">💡 Diagnóstico Competitivo (Benchmark MTG 50% WR)</div>
+          <div class="insight-body">
+            <strong>Mazo más efectivo:</strong> <span>${topWr.deck}</span> con un <strong>${topWr.winRate.toFixed(1)}%</strong> de Win Rate (${topWr.totalWins}W - ${topWr.totalLosses}L en ${topWr.count} torneos).<br>
+        `;
+
+        if (peakDeck && peakDeck.bestRank) {
+          insightHtml += `<strong>Mejor pico de torneo:</strong> <span>${peakDeck.deck}</span> alcanzó el <strong>${peakDeck.bestRank}° puesto</strong> histórico.<br>`;
+        }
+
+        if (worstWr && worstWr.deck !== topWr.deck && worstWr.count >= 2) {
+          insightHtml += `<strong>Mazo con mayor dificultad:</strong> <span>${worstWr.deck}</span> promedia solo <strong>${worstWr.ppg.toFixed(1)} pts/T</strong> (Win Rate: ${worstWr.winRate.toFixed(1)}%). Requiere ajustes de lista o banquillo.`;
+        }
+
+        insightHtml += `</div>`;
+        container.innerHTML = insightHtml;
+      },
+
+      // ─────────────────────────────────────────────────────────────
+      // DECK COMPARISON HUB & MATRIX
+      // ─────────────────────────────────────────────────────────────
+      renderDeckComparison() {
+        const entries = this.getFilteredEntries();
+        const allStats = Analytics.getAllDeckStats(entries);
+        const sortMode = document.getElementById("deck-sort-select")?.value || 'winrate';
+
+        // Filter out decks with 0 count if viewing a specific season, unless it's a default deck
+        let displayStats = allStats.filter(d => d.count > 0);
+        if (displayStats.length === 0) {
+          displayStats = allStats; // Show all even if 0
+        }
+
+        // Sorting
+        displayStats.sort((a, b) => {
+          if (sortMode === 'winrate') {
+            if (b.count > 0 && a.count === 0) return 1;
+            if (a.count > 0 && b.count === 0) return -1;
+            return b.winRate - a.winRate || b.ppg - a.ppg;
+          }
+          if (sortMode === 'ppg') return b.ppg - a.ppg;
+          if (sortMode === 'tourneys') return b.count - a.count;
+          if (sortMode === 'rank') {
+            const rA = a.bestRank !== null ? a.bestRank : 999;
+            const rB = b.bestRank !== null ? b.bestRank : 999;
+            return rA - rB;
+          }
+          return 0;
+        });
+
+        // 1. Render Deck Cards
+        const cardsContainer = document.getElementById("deck-cards-list");
+        if (cardsContainer) {
+          if (displayStats.length === 0) {
+            cardsContainer.innerHTML = `<p style="font-size:0.8rem; color:var(--text-muted); text-align:center; padding:20px;">No hay mazos registrados para esta temporada.</p>`;
+          } else {
+            cardsContainer.innerHTML = displayStats.map(stat => {
+              const wrFixed = stat.winRate.toFixed(1);
+              const mpFixed = stat.matchPointRate.toFixed(1);
+              const ppgFixed = stat.ppg.toFixed(1);
+              const avgRankDisplay = stat.avgRank ? `${stat.avgRank.toFixed(1)}°` : '--';
+              const bestRankDisplay = stat.bestRank ? `${stat.bestRank}°` : '--';
+
+              // Form pills
+              let formHtml = '';
+              if (stat.recentForm && stat.recentForm.length > 0) {
+                formHtml = stat.recentForm.map(f => {
+                  let pillClass = 'd';
+                  if (f.pts >= 6 || f.type === 'good') pillClass = 'w';
+                  else if (f.pts <= 3 || f.type === 'bad') pillClass = 'l';
+                  return `<span class="form-pill ${pillClass}" title="${f.date}: ${f.rank} (${f.wl})">${f.wl || f.pts + 'p'}</span>`;
+                }).join('');
+              } else {
+                formHtml = `<span style="font-size:0.65rem; color:var(--text-muted);">Sin partidas</span>`;
+              }
+
+              // Status badge HTML
+              const badgeClass = stat.status.class;
+              const badgeLabel = `${stat.status.icon} ${stat.status.label}`;
+
+              return `
+              <div class="deck-card status-${badgeClass}" onclick="Arena.openDeckDetail('${stat.deck.replace(/'/g, "\\'")}')">
+                <div class="deck-header">
+                  <div class="deck-name">${stat.deck}</div>
+                  <div style="display:flex; align-items:center; gap:6px;">
+                    <span class="status-badge ${badgeClass}">${badgeLabel}</span>
+                    <button class="btn-icon-del" onclick="event.stopPropagation(); Arena.deleteDeck('${stat.deck.replace(/'/g, "\\'")}')" title="Eliminar este mazo del tracker">🗑️</button>
+                  </div>
+                </div>
+
+                <div class="win-rate-container">
+                  <div class="win-rate-header">
+                    <span class="win-rate-label">Match Win Rate (MWR)</span>
+                    <span class="win-rate-value ${badgeClass}">${wrFixed}% <small style="font-size:0.65rem; color:var(--text-muted); font-weight:normal;">(${stat.totalWins}W-${stat.totalLosses}L-${stat.totalDraws}D)</small></span>
+                  </div>
+                  <div class="progress-bar-bg" title="Línea media indica el 50% de Win Rate (positivo)">
+                    <div class="progress-bar-fill ${badgeClass}" style="width: ${Math.min(100, stat.winRate)}%;"></div>
+                  </div>
+                  <div style="display:flex; justify-content:space-between; font-size:0.68rem; color:var(--text-secondary); margin-top:5px;">
+                    <span>Efectividad Puntos: <strong style="color:#38bdf8;">${mpFixed}% MP</strong></span>
+                    <span>Puntos reales: <strong style="color:#fff;">${stat.totalPts} pts</strong></span>
+                  </div>
+                </div>
+
+                <div class="deck-stats-grid">
+                  <div class="deck-stat-col">
+                    <div class="d-val">${stat.count}</div>
+                    <div class="d-lbl">Torneos</div>
+                  </div>
+                  <div class="deck-stat-col">
+                    <div class="d-val text-brand">${ppgFixed}</div>
+                    <div class="d-lbl">Pts / Torneo</div>
+                  </div>
+                  <div class="deck-stat-col">
+                    <div class="d-val">${bestRankDisplay}</div>
+                    <div class="d-lbl">Mejor Pos.</div>
+                  </div>
+                  <div class="deck-stat-col">
+                    <div class="d-val">${avgRankDisplay}</div>
+                    <div class="d-lbl">Pos. Prom.</div>
+                  </div>
+                </div>
+
+                <div class="form-row">
+                  <span class="form-label">Última Racha</span>
+                  <div class="form-pills">${formHtml}</div>
+                </div>
+              </div>`;
+            }).join('');
+          }
+        }
+
+        // 2. Render Comparative Matrix Table
+        const tbody = document.getElementById("deck-matrix-tbody");
+        const countBadge = document.getElementById("table-deck-count");
+        if (countBadge) countBadge.textContent = `${displayStats.length} mazos`;
+
+        if (tbody) {
+          tbody.innerHTML = displayStats.map(stat => {
+            const wrClass = stat.winRate >= 50 ? 'text-good' : (stat.winRate < 45 ? 'text-bad' : 'text-avg');
+            return `
+            <tr>
+              <td class="deck-cell">
+                <div style="display:flex; align-items:center; justify-content:space-between; gap:6px;">
+                  <span>${stat.deck}</span>
+                  <button class="btn-icon-del" onclick="Arena.deleteDeck('${stat.deck.replace(/'/g, "\\'")}')" title="Eliminar mazo del tracker" style="padding:2px 4px; font-size:0.75rem;">🗑️</button>
+                </div>
+              </td>
+              <td><span class="status-badge ${stat.status.class}" style="font-size:0.58rem; padding:2px 6px;">${stat.status.icon} ${stat.status.label}</span></td>
+              <td style="text-align:center;">${stat.count}</td>
+              <td>${stat.totalWins}-${stat.totalLosses}-${stat.totalDraws} <span style="font-size:0.65rem; color:var(--text-muted);">(${stat.totalMatches})</span></td>
+              <td class="highlight-val ${wrClass}">${stat.winRate.toFixed(1)}%</td>
+              <td style="font-weight:700; color:#38bdf8;" title="Match Point %: (${stat.totalWins}×3 + ${stat.totalDraws}×1)/(${stat.totalMatches}×3)">${stat.matchPointRate.toFixed(1)}%</td>
+              <td style="font-weight:700;">${stat.totalPts} pts</td>
+              <td class="text-brand font-weight:700;">${stat.ppg.toFixed(1)} p/T</td>
+              <td>${stat.avgRank ? stat.avgRank.toFixed(1) + '°' : '--'}</td>
+              <td style="font-weight:700;">${stat.bestRank ? stat.bestRank + '°' : '--'}</td>
+              <td>${stat.top4Count}T4 · ${stat.top8Count}T8</td>
+            </tr>`;
+          }).join('');
+        }
+      },
+
+      // ─────────────────────────────────────────────────────────────
+      // DECK DRILL-DOWN DOSSIER
+      // ─────────────────────────────────────────────────────────────
+      openDeckDetail(deckName) {
+        const select = document.getElementById("detail-deck-select");
+        if (select) {
+          select.value = deckName;
+        }
+        this.switchTab('pg-detail', document.querySelectorAll('.nav-btn')[1]);
+        this.renderDeckDetail();
+      },
+
+      renderDeckDetail() {
+        const select = document.getElementById("detail-deck-select");
+        const container = document.getElementById("deck-detail-content");
+        if (!select || !container) return;
+
+        const deckName = select.value || State.decksList[0];
+        if (!deckName) {
+          container.innerHTML = `<p style="padding:20px; color:var(--text-muted); text-align:center;">Selecciona un mazo.</p>`;
+          return;
+        }
+
+        const entries = this.getFilteredEntries();
+        const stat = Analytics.computeDeckStats(deckName, entries);
+
+        let timelineHtml = '';
+        if (stat.entries.length === 0) {
+          timelineHtml = `<div class="card-panel" style="text-align:center; color:var(--text-muted); font-size:0.8rem;">No hay torneos registrados para ${deckName} en este filtro.</div>`;
+        } else {
+          timelineHtml = [...stat.entries].reverse().map(item => {
+            const globalIdx = State.historic.indexOf(item);
+            let rankClass = '';
+            const rNum = Analytics.parseRankNumber(item.rank);
+            if (rNum === 1) rankClass = 'top1';
+            else if (rNum && rNum <= 4) rankClass = 'top4';
+            else if (rNum && rNum <= 8) rankClass = 'top8';
+
+            return `
+            <div class="tourney-item">
+              <span class="tourney-rank ${rankClass}">${item.rank || '—'}</span>
+              <div class="tourney-details">
+                <div class="tourney-deck">${item.date} <span class="tag-season">${item.season}</span></div>
+                <div class="tourney-meta">
+                  <span>${item.wl || '—'}</span>
+                  ${item.notes ? `<span>· ${item.notes}</span>` : ''}
+                </div>
+              </div>
+              <div class="tourney-score">
+                <div class="tourney-pts">${item.pts} pts</div>
+                <div class="tourney-record">${item.wl}</div>
+              </div>
+              <button class="btn-icon-del" onclick="Arena.deleteTournament(${globalIdx})" title="Eliminar torneo">🗑️</button>
+            </div>`;
+          }).join('');
+        }
+
+        container.innerHTML = `
+          <!-- DOSSIER CARD -->
+          <div class="card-panel" style="border-top: 4px solid var(--color-brand); margin-bottom:14px;">
+            <div style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:12px;">
+              <div>
+                <h2 style="font-family:var(--font-display); font-size:1.3rem; font-weight:800; color:#fff; margin-bottom:2px;">${stat.deck}</h2>
+                <span class="status-badge ${stat.status.class}">${stat.status.icon} ${stat.status.label} (${stat.status.desc})</span>
+              </div>
+              <div style="text-align:right;">
+                <div style="font-family:var(--font-display); font-size:1.4rem; font-weight:800; color:${stat.winRate >= 50 ? 'var(--color-good)' : (stat.winRate < 45 ? 'var(--color-bad)' : 'var(--color-avg)')};">${stat.winRate.toFixed(1)}%</div>
+                <div style="font-size:0.65rem; color:var(--text-muted); font-weight:600; text-transform:uppercase;">Match Win Rate</div>
+              </div>
+            </div>
+
+            <div class="hero-metrics" style="grid-template-columns: repeat(4, 1fr); margin-bottom:12px;">
+              <div class="metric-card">
+                <div class="val">${stat.count}</div>
+                <div class="lbl">Torneos</div>
+              </div>
+              <div class="metric-card">
+                <div class="val">${stat.totalWins}-${stat.totalLosses}-${stat.totalDraws}</div>
+                <div class="lbl">Partidas</div>
+              </div>
+              <div class="metric-card highlight">
+                <div class="val">${stat.ppg.toFixed(1)}</div>
+                <div class="lbl">Pts/Torneo</div>
+              </div>
+              <div class="metric-card">
+                <div class="val">${stat.bestRank ? stat.bestRank + '°' : '--'}</div>
+                <div class="lbl">Mejor Pos.</div>
+              </div>
+            </div>
+
+            <!-- Distribution bar -->
+            <div style="font-size:0.75rem; color:var(--text-secondary); margin-bottom:6px; display:flex; justify-content:space-between;">
+              <span>Desglose de Partidas:</span>
+              <span>${stat.totalWins} Victorias · ${stat.totalLosses} Derrotas · ${stat.totalDraws} Empates</span>
+            </div>
+            <div style="display:flex; height:8px; border-radius:var(--radius-full); overflow:hidden; background:rgba(255,255,255,0.06); margin-bottom:12px;">
+              <div style="width:${stat.totalMatches > 0 ? (stat.totalWins/stat.totalMatches*100) : 0}%; background:var(--color-good);"></div>
+              <div style="width:${stat.totalMatches > 0 ? (stat.totalDraws/stat.totalMatches*100) : 0}%; background:#f59e0b;"></div>
+              <div style="width:${stat.totalMatches > 0 ? (stat.totalLosses/stat.totalMatches*100) : 0}%; background:var(--color-bad);"></div>
+            </div>
+
+            <!-- DELETE DECK BUTTON -->
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-top:14px; padding-top:10px; border-top:1px solid var(--border-subtle);">
+              <span style="font-size:0.7rem; color:var(--text-muted);">¿Ya no juegas este mazo o deseas retirarlo del tracker?</span>
+              <button onclick="Arena.deleteDeck('${stat.deck.replace(/'/g, "\\'")}')" class="btn btn-danger" style="font-size:0.72rem; padding:6px 12px; gap:4px; border-radius:var(--radius-sm); width:auto;">
+                🗑️ Eliminar este Mazo
+              </button>
+            </div>
+          </div>
+
+          <!-- TIMELINE -->
+          <div class="section-title">
+            <span>📅 Historial de Torneos con este Mazo</span>
+            <span class="badge-count">${stat.entries.length} fechas</span>
+          </div>
+
+          <div>${timelineHtml}</div>
+        `;
+      },
+
+      // ─────────────────────────────────────────────────────────────
+      // CHRONOLOGICAL FULL HISTORY
+      // ─────────────────────────────────────────────────────────────
+      renderFullHistory() {
+        const entries = this.getFilteredEntries();
+        const container = document.getElementById("full-history-list");
+        const countBadge = document.getElementById("history-entry-count");
+        if (countBadge) countBadge.textContent = `${entries.length} torneos`;
+
+        if (!container) return;
+
+        if (entries.length === 0) {
+          container.innerHTML = `<p style="padding:20px; color:var(--text-muted); text-align:center;">No hay registros en el historial.</p>`;
+          return;
+        }
+
+        const sortedEntries = [...entries].sort((a, b) => {
+          return Analytics.parseDate(b.date, b.season, b) - Analytics.parseDate(a.date, a.season, a);
+        });
+
+        container.innerHTML = sortedEntries.map(item => {
+          const globalIdx = State.historic.indexOf(item);
+          const rNum = Analytics.parseRankNumber(item.rank);
+          let rankClass = '';
+          if (rNum === 1) rankClass = 'top1';
+          else if (rNum && rNum <= 4) rankClass = 'top4';
+          else if (rNum && rNum <= 8) rankClass = 'top8';
+
+          return `
+          <div class="tourney-item">
+            <span class="tourney-rank ${rankClass}">${item.rank || '—'}</span>
+            <div class="tourney-details">
+              <div class="tourney-deck">${item.deck}</div>
+              <div class="tourney-meta">
+                <span>${item.date}</span>
+                <span class="tag-season">${item.season}</span>
+                ${item.notes ? `<span>· ${item.notes}</span>` : ''}
+              </div>
+            </div>
+            <div class="tourney-score">
+              <div class="tourney-pts">${item.pts} pts</div>
+              <div class="tourney-record">${item.wl || '—'}</div>
+            </div>
+            <button class="btn-icon-del" onclick="Arena.deleteTournament(${globalIdx})" title="Eliminar torneo">🗑️</button>
+          </div>`;
+        }).join('');
+      },
+
+      // ─────────────────────────────────────────────────────────────
+      // TOURNAMENT LOGGING (MANUAL + OCR)
+      // ─────────────────────────────────────────────────────────────
+      saveManualTournament() {
+        const dateInput = document.getElementById("log-date");
+        const deckSelect = document.getElementById("log-deck");
+        const customDeckInput = document.getElementById("log-custom-deck");
+        const rankInput = document.getElementById("log-rank");
+        const wInput = document.getElementById("log-w");
+        const lInput = document.getElementById("log-l");
+        const dInput = document.getElementById("log-d");
+        const ptsInput = document.getElementById("log-pts");
+        const notesInput = document.getElementById("log-notes");
+
+        // Validate deck
+        let selectedDeck = deckSelect.value;
+        if (selectedDeck === "other") {
+          selectedDeck = customDeckInput.value.trim();
+          if (!selectedDeck) {
+            this.setStatus("⚠️ Ingresa el nombre del mazo personalizado.", "var(--color-bad)");
+            return;
+          }
+        }
+
+        // Format date (e.g. "12 Oct" or from picker)
+        let formattedDate = "Hoy";
+        if (dateInput && dateInput.value) {
+          const parts = dateInput.value.split("-");
+          const d = new Date(Number(parts[0]), Number(parts[1]) - 1, Number(parts[2]));
+          formattedDate = `${d.getDate()} ${CONFIG.MONTHS_ABBR[d.getMonth()]}`;
+        }
+
+        // Format Rank
+        let rankVal = rankInput.value.trim();
+        if (rankVal && !rankVal.endsWith("°") && !isNaN(parseInt(rankVal, 10))) {
+          rankVal = `${parseInt(rankVal, 10)}°`;
+        }
+        if (!rankVal) rankVal = "—";
+
+        // Record
+        const w = parseInt(wInput.value, 10) || 0;
+        const l = parseInt(lInput.value, 10) || 0;
+        const d = parseInt(dInput.value, 10) || 0;
+        const wlStr = `${w}-${l}-${d}`;
+
+        // Points
+        let ptsVal = ptsInput.value !== "" ? Number(ptsInput.value) : Analytics.calculatePoints(w, d);
+        if (isNaN(ptsVal)) ptsVal = 0;
+
+        const currentSeason = this.currentFilterSeason === 'all' ? CONFIG.CURRENT_SEASON : this.currentFilterSeason;
+        const notesVal = notesInput.value.trim();
+
+        // Push new entry
+        const isoDateVal = (dateInput && dateInput.value) ? dateInput.value : new Date().toISOString().slice(0, 10);
+        State.historic.push({
+          date: formattedDate,
+          isoDate: isoDateVal,
+          season: currentSeason,
+          deck: selectedDeck,
+          rank: rankVal,
+          pts: ptsVal,
+          wl: wlStr,
+          type: ptsVal >= 9 ? "good" : (ptsVal <= 3 ? "bad" : "normal"),
+          notes: notesVal
+        });
+
+        State.syncDecksList();
+        State.save();
+        this.populateDeckPickers();
+        this.refreshAll();
+
+        this.setStatus(`✅ ¡Torneo guardado con éxito! (${selectedDeck} · ${wlStr} · ${ptsVal} pts)`, "var(--color-good)");
+
+        // Reset form
+        rankInput.value = "";
+        wInput.value = "";
+        lInput.value = "";
+        dInput.value = "";
+        ptsInput.value = "";
+        notesInput.value = "";
+        if (customDeckInput) customDeckInput.value = "";
+
+        setTimeout(() => {
+          this.switchTab('pg-decks', document.querySelectorAll('.nav-btn')[0]);
+        }, 1200);
+      },
+
+      deleteTournament(globalIdx) {
+        const item = State.historic[globalIdx];
+        if (!item) return;
+        const confirmDelete = confirm(`¿Deseas eliminar el torneo del "${item.date} - ${item.deck}"?`);
+        if (!confirmDelete) return;
+
+        State.historic.splice(globalIdx, 1);
+        State.save();
+        this.refreshAll();
+      },
+
+      deleteDeck(deckName) {
+        if (!deckName) return;
+        const confirmDel = confirm(`⚠️ ¿Estás seguro de que deseas eliminar el mazo "${deckName}" del tracker?\n\nEsto eliminará el mazo de tu lista de mazos y borrará todos los torneos registrados con él del historial.`);
+        if (!confirmDel) return;
+
+        State.deleteDeck(deckName);
+        this.populateDeckPickers();
+        this.refreshAll();
+        this.switchTab('pg-decks', document.querySelectorAll('.nav-btn')[0]);
+        alert(`✅ El mazo "${deckName}" ha sido eliminado exitosamente.`);
+      },
+
+      toggleOcrAccordion() {
+        const content = document.getElementById("ocr-content");
+        const arrow = document.getElementById("ocr-arrow");
+        if (content.style.display === "block") {
+          content.style.display = "none";
+          if (arrow) arrow.style.transform = "rotate(0deg)";
+        } else {
+          content.style.display = "block";
+          if (arrow) arrow.style.transform = "rotate(180deg)";
+        }
+      },
+
+      async processOcrScreenshot() {
+        const fileInput = document.getElementById("ocr-file");
+        if (!fileInput || !fileInput.files || !fileInput.files[0]) {
+          this.setStatus("⚠️ Selecciona un archivo de imagen primero.", "var(--color-bad)");
+          return;
+        }
+
+        this.setStatus("⏳ Inicializando motor OCR...", "var(--color-brand)");
+        let worker = null;
+        try {
+          worker = await Tesseract.createWorker('eng+spa', 1, {
+            logger: m => {
+              if (m.status === 'recognizing text') {
+                const pct = Math.round((m.progress || 0) * 100);
+                this.setStatus(`🔍 Escaneando imagen... ${pct}%`, "var(--color-brand)");
+              }
+            }
+          });
+
+          const ret = await worker.recognize(fileInput.files[0]);
+          await worker.terminate();
+          worker = null;
+
+          const text = ret.data.text;
+          const extracted = this.extractMyRowFromText(text);
+
+          if (extracted) {
+            if (extracted.rank) document.getElementById("log-rank").value = extracted.rank;
+            if (extracted.w !== undefined) document.getElementById("log-w").value = extracted.w;
+            if (extracted.l !== undefined) document.getElementById("log-l").value = extracted.l;
+            if (extracted.d !== undefined) document.getElementById("log-d").value = extracted.d;
+            if (extracted.pts !== undefined) document.getElementById("log-pts").value = extracted.pts;
+            else this.autoCalculatePointsFromRecord();
+
+            this.setStatus(`✅ ¡Datos extraídos! Récord: ${extracted.w}-${extracted.l}-${extracted.d}, Puesto: ${extracted.rank || 'detectado'}. Verifica y haz clic en Guardar.`, "var(--color-good)");
+          } else {
+            this.setStatus("⚠️ Texto leído pero no se detectó tu fila automáticamente. Por favor ingresa los valores manualmente.", "#fbbf24");
+          }
+        } catch (err) {
+          console.error("Error OCR:", err);
+          this.setStatus(`❌ Error al procesar imagen: ${err.message}`, "var(--color-bad)");
+          if (worker) await worker.terminate().catch(() => {});
+        }
+      },
+
+      extractMyRowFromText(rawText) {
+        const lines = rawText.split('\n');
+        const myAliases = ["christian", "cristian", "chris", "donado"];
+
+        for (const line of lines) {
+          const lower = line.toLowerCase();
+          const isMe = myAliases.some(alias => lower.includes(alias)) && !lower.includes("machado");
+          if (isMe) {
+            // Find rank
+            const rankMatch = line.match(/#?(\d{1,2})[\.\s°º\-:]+/);
+            const rank = rankMatch ? `${rankMatch[1]}°` : "";
+
+            // Find W-L-D
+            const wldMatch = line.match(/(\d{1,2})\s*[-–—:/]\s*(\d{1,2})\s*[-–—:/]\s*([0-9Oo])\b/);
+            let w = 0, l = 0, d = 0, pts = undefined;
+            if (wldMatch) {
+              w = parseInt(wldMatch[1], 10);
+              l = parseInt(wldMatch[2], 10);
+              d = parseInt(wldMatch[3].replace(/[Oo]/g, '0'), 10);
+              pts = Analytics.calculatePoints(w, d);
+            }
+
+            // Points match before WLD if any
+            const ptsMatch = line.match(/\b(\d{1,2})\s*(?:pts|puntos)?\b/i);
+            if (ptsMatch && pts === undefined) {
+              pts = parseInt(ptsMatch[1], 10);
+            }
+
+            return { rank, w, l, d, pts };
+          }
+        }
+        return null;
+      },
+
+      setStatus(msg, color = 'var(--color-brand)') {
+        const el = document.getElementById("scan-status");
+        if (el) {
+          el.style.color = color;
+          el.textContent = msg;
+        }
+      },
+
+      // ─────────────────────────────────────────────────────────────
+      // NAVIGATION & TEST MODE
+      // ─────────────────────────────────────────────────────────────
+      switchTab(pageId, btnEl) {
+        document.querySelectorAll('.pg').forEach(p => p.classList.remove('on'));
+        document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('on'));
+        const target = document.getElementById(pageId);
+        if (target) target.classList.add('on');
+        if (btnEl) btnEl.classList.add('on');
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+      },
+
+      toggleTestMode() {
+        const toggle = document.getElementById("test-mode-toggle");
+        const banner = document.getElementById("test-mode-banner");
+        CONFIG.isTestMode = toggle ? toggle.checked : false;
+
+        if (CONFIG.isTestMode) {
+          if (banner) banner.style.display = 'block';
+          State.resetToDefaults();
+          State.save();
+        } else {
+          if (banner) banner.style.display = 'none';
+          localStorage.removeItem('pauper_test_arena_historic');
+          State.load();
+        }
+        this.populateDeckPickers();
+        this.refreshAll();
+      },
+
+      resetToDefaultsConfirm() {
+        const ok = confirm("¿Estás seguro de restablecer todo a los datos iniciales auditados?");
+        if (ok) {
+          State.resetToDefaults();
+          State.save();
+          this.populateDeckPickers();
+          this.refreshAll();
+          alert("✅ Datos restablecidos a los valores por defecto auditados.");
+        }
+      },
+
+      // ─────────────────────────────────────────────────────────────
+      // BACKUP IMPORT / EXPORT
+      // ─────────────────────────────────────────────────────────────
       exportJSON() {
-        const data = {
-          playersData: State.players,
-          fullHistoricData: State.historic,
-          version: CONFIG.DATA_VERSION
+        const exportData = {
+          version: CONFIG.DATA_VERSION,
+          exportDate: new Date().toISOString(),
+          historic: State.historic,
+          decksList: State.decksList,
+          deletedDecks: State.deletedDecks
         };
-        const blob = new Blob([JSON.stringify(data, null, 2)], { type: "application/json" });
+        const blob = new Blob([JSON.stringify(exportData, null, 2)], { type: "application/json" });
         const url = URL.createObjectURL(blob);
         const a = document.createElement("a");
         a.href = url;
-        a.download = `pauper_backup_${CONFIG.CURRENT_SEASON}_${new Date().toISOString().slice(0, 10)}.json`;
+        a.download = `pauper_decks_backup_${new Date().toISOString().slice(0, 10)}.json`;
         document.body.appendChild(a);
         a.click();
         document.body.removeChild(a);
@@ -1507,18 +2385,31 @@
         const reader = new FileReader();
         reader.onload = (e) => {
           try {
-            const parsed = JSON.parse(e.target.result);
-            if (parsed.playersData && parsed.fullHistoricData) {
-              State.players = parsed.playersData;
-              State.historic = parsed.fullHistoricData;
+            const data = JSON.parse(e.target.result);
+            if (data.deletedDecks && Array.isArray(data.deletedDecks)) {
+              State.deletedDecks = data.deletedDecks;
+              State.saveDeletedDecks();
+            }
+            if (data.historic && Array.isArray(data.historic)) {
+              State.historic = data.historic;
+              State.syncDecksList();
               State.save();
-              UI.refreshAll();
+              this.populateDeckPickers();
+              this.refreshAll();
               alert("✅ ¡Copia de seguridad restaurada correctamente!");
+            } else if (data.fullHistoricData && Array.isArray(data.fullHistoricData)) {
+              // Legacy format compatibility
+              State.historic = data.fullHistoricData;
+              State.syncDecksList();
+              State.save();
+              this.populateDeckPickers();
+              this.refreshAll();
+              alert("✅ ¡Copia de seguridad (formato anterior) restaurada con éxito!");
             } else {
-              alert("El archivo JSON no tiene el formato correcto.");
+              alert("⚠️ El archivo JSON no tiene la estructura esperada.");
             }
           } catch (err) {
-            alert("Error al leer el archivo JSON: " + err.message);
+            alert("❌ Error al leer el archivo JSON: " + err.message);
           }
         };
         reader.readAsText(file);
@@ -1526,22 +2417,10 @@
       }
     };
 
-    // ═══════════ SECTION: INIT ═══════════
-    function init() {
-      const dateInput = document.getElementById("scan-date");
-      if (dateInput) {
-        const today = new Date();
-        const yyyy = today.getFullYear();
-        const mm = String(today.getMonth() + 1).padStart(2, '0');
-        const dd = String(today.getDate()).padStart(2, '0');
-        dateInput.value = `${yyyy}-${mm}-${dd}`;
-      }
-      
-      State.load();
-      UI.updateDynamicLabels();
-      UI.refreshAll();
-    }
-    window.addEventListener('load', init);
+    // Initialize application on page load
+    window.addEventListener('DOMContentLoaded', () => {
+      Arena.init();
+    });
   </script>
 </body>
 
