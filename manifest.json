@@ -3,8 +3,8 @@
   "name": "Pauper Deck Arena",
   "short_name": "Deck Arena",
   "description": "Analizador de rendimiento y comparador de mazos de Pauper MTG",
-  "start_url": "./",
-  "scope": "./",
+  "start_url": "/",
+  "scope": "/",
   "display": "standalone",
   "background_color": "#0a0e14",
   "theme_color": "#0a0e14",
@@ -41,14 +41,14 @@
       "name": "Comparador de Mazos",
       "short_name": "Mazos",
       "description": "Comparar rendimiento de mazos",
-      "url": "./#pg-decks",
+      "url": "/#pg-decks",
       "icons": [{ "src": "./icon-192.png", "sizes": "192x192" }]
     },
     {
       "name": "Registrar Torneo",
       "short_name": "Registrar",
       "description": "Registrar resultado de torneo para tus mazos",
-      "url": "./#pg-logger",
+      "url": "/#pg-logger",
       "icons": [{ "src": "./icon-192.png", "sizes": "192x192" }]
     }
   ]

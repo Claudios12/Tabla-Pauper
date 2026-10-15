@@ -1,10 +1,13 @@
-const CACHE_NAME = 'pauper-deck-arena-v1';
+const CACHE_NAME = 'pauper-deck-arena-v2';
+const FONT_CACHE = 'pauper-fonts-v1';
+const CDN_CACHE = 'pauper-cdn-v1';
+
 const ASSETS = [
-  './',
-  './index.html',
-  './manifest.json',
-  './icon-192.png',
-  './icon-512.png'
+  '/',
+  '/index.html',
+  '/manifest.json',
+  '/icon-192.png',
+  '/icon-512.png'
 ];
 
 self.addEventListener('install', (event) => {
@@ -20,7 +23,7 @@ self.addEventListener('activate', (event) => {
     caches.keys().then((keys) =>
       Promise.all(
         keys
-          .filter((key) => key !== CACHE_NAME)
+          .filter((key) => key !== CACHE_NAME && key !== FONT_CACHE && key !== CDN_CACHE)
           .map((key) => caches.delete(key))
       )
     ).then(() => self.clients.claim())
@@ -31,14 +34,60 @@ self.addEventListener('fetch', (event) => {
   if (event.request.method !== 'GET') return;
 
   const url = new URL(event.request.url);
-  
-  // Only handle http and https requests
+
   if (!url.protocol.startsWith('http')) return;
 
-  // Let cross-origin requests (CDNs, Tesseract workers, traineddata) pass through directly to network
-  if (url.origin !== self.location.origin) {
+  // Google Fonts CSS — stale-while-revalidate so new font weights are picked up
+  if (url.hostname === 'fonts.googleapis.com') {
+    event.respondWith(
+      caches.open(FONT_CACHE).then(async (cache) => {
+        const cached = await cache.match(event.request);
+        const networkFetch = fetch(event.request).then((response) => {
+          if (response && response.status === 200) {
+            cache.put(event.request, response.clone());
+          }
+          return response;
+        }).catch(() => cached);
+        return cached || networkFetch;
+      })
+    );
     return;
   }
+
+  // Google Fonts woff2 files — cache-first (font binaries never change for a given URL)
+  if (url.hostname === 'fonts.gstatic.com') {
+    event.respondWith(
+      caches.open(FONT_CACHE).then(async (cache) => {
+        const cached = await cache.match(event.request);
+        if (cached) return cached;
+        const response = await fetch(event.request);
+        if (response && response.status === 200) {
+          cache.put(event.request, response.clone());
+        }
+        return response;
+      })
+    );
+    return;
+  }
+
+  // Tesseract CDN — cache-first (versioned URLs don't change)
+  if (url.hostname === 'cdn.jsdelivr.net') {
+    event.respondWith(
+      caches.open(CDN_CACHE).then(async (cache) => {
+        const cached = await cache.match(event.request);
+        if (cached) return cached;
+        const response = await fetch(event.request);
+        if (response && response.status === 200) {
+          cache.put(event.request, response.clone());
+        }
+        return response;
+      })
+    );
+    return;
+  }
+
+  // All other cross-origin requests pass through (e.g., Tesseract workers, traineddata)
+  if (url.origin !== self.location.origin) return;
 
   const isHtml = event.request.mode === 'navigate' || url.pathname.endsWith('.html') || url.pathname.endsWith('manifest.json');
 
@@ -53,10 +102,10 @@ self.addEventListener('fetch', (event) => {
           }
           return response;
         })
-        .catch(() => caches.match(event.request) || caches.match('./index.html'))
+        .catch(() => caches.match(event.request) || caches.match('/index.html'))
     );
   } else {
-    // Cache-first for same-origin assets: use cache, fallback to network
+    // Cache-first for same-origin assets
     event.respondWith(
       caches.match(event.request).then((cached) => {
         if (cached) return cached;
@@ -69,7 +118,7 @@ self.addEventListener('fetch', (event) => {
             }
             return response;
           })
-          .catch(() => caches.match('./index.html'));
+          .catch(() => caches.match('/index.html'));
       })
     );
   }

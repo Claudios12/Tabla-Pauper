@@ -17,15 +17,16 @@
   <link rel="manifest" href="./manifest.json">
   <link rel="icon" type="image/png" sizes="192x192" href="./icon-192.png">
   <link rel="icon" type="image/png" sizes="512x512" href="./icon-512.png">
-  <link rel="apple-touch-icon" href="./icon-192.png">
-  
+  <link rel="apple-touch-icon" sizes="180x180" href="./icon-192.png">
+  <link rel="apple-touch-startup-image" href="./icon-512.png">
+
   <!-- Google Fonts: Outfit & Inter for high-end gaming/dashboard aesthetic -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Outfit:wght@500;600;700;800;900&display=swap" rel="stylesheet">
   
   <!-- OCR Tesseract Engine -->
-  <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
+  <script async src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
 
   <style>
     :root {
@@ -72,6 +73,11 @@
       padding: 0;
     }
 
+    button, a, input, select, textarea, label,
+    .btn, .nav-btn, .deck-card, .preset-chip, .collapsible-trigger, .metric-card {
+      touch-action: manipulation;
+    }
+
     html {
       /* Prevent iOS font size inflation on orientation change */
       -webkit-text-size-adjust: 100%;
@@ -92,36 +98,9 @@
       -webkit-overflow-scrolling: touch;
     }
 
-    /* Ambient background gradient effect */
-    body::before {
-      content: "";
-      position: fixed;
-      top: -120px;
-      right: -80px;
-      width: 320px;
-      height: 320px;
-      background: radial-gradient(circle, rgba(249, 115, 22, 0.12) 0%, transparent 70%);
-      pointer-events: none;
-      z-index: 0;
-    }
-
-    body::after {
-      content: "";
-      position: fixed;
-      bottom: 60px;
-      left: -80px;
-      width: 300px;
-      height: 300px;
-      background: radial-gradient(circle, rgba(6, 182, 212, 0.08) 0%, transparent 70%);
-      pointer-events: none;
-      z-index: 0;
-    }
-
     /* Header styling */
     header {
-      background: rgba(17, 24, 34, 0.95);
-      backdrop-filter: blur(20px);
-      -webkit-backdrop-filter: blur(20px);
+      background: var(--bg-surface);
       border-bottom: 1px solid var(--border-subtle);
       /* Top padding accounts for iPhone notch/Dynamic Island */
       padding: max(16px, env(safe-area-inset-top, 16px)) 14px 12px 14px;
@@ -143,7 +122,7 @@
 
     .brand-icon {
       font-size: 1.2rem;
-      background: linear-gradient(135deg, rgba(249, 115, 22, 0.2), rgba(249, 115, 22, 0.05));
+      background: rgba(249, 115, 22, 0.12);
       border: 1px solid var(--border-accent);
       border-radius: var(--radius-sm);
       width: 34px;
@@ -152,7 +131,6 @@
       display: flex;
       align-items: center;
       justify-content: center;
-      box-shadow: 0 0 15px var(--color-brand-glow);
     }
 
     .brand-title {
@@ -193,7 +171,7 @@
       border-radius: var(--radius-full);
       outline: none;
       cursor: pointer;
-      transition: all 0.2s ease;
+      transition: border-color 0.2s ease;
       /* Proper iOS touch target */
       min-height: 36px;
       -webkit-appearance: none;
@@ -225,6 +203,14 @@
     @keyframes fadeIn {
       from { opacity: 0; transform: translateY(5px); }
       to { opacity: 1; transform: translateY(0); }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after {
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
+      }
     }
 
     /* Global Summary Stats Cards — 2×2 grid on mobile */
@@ -313,7 +299,7 @@
       padding: 14px 14px;
       margin-bottom: 12px;
       position: relative;
-      transition: all 0.2s ease;
+      transition: background 0.2s ease, border-color 0.2s ease, transform 0.2s ease;
       cursor: pointer;
       /* iOS tap highlight */
       -webkit-tap-highlight-color: rgba(249,115,22,0.08);
@@ -439,15 +425,15 @@
     }
 
     .progress-bar-fill.good {
-      background: linear-gradient(90deg, #059669, #10b981);
+      background: #10b981;
     }
 
     .progress-bar-fill.average {
-      background: linear-gradient(90deg, #0284c7, #06b6d4);
+      background: #06b6d4;
     }
 
     .progress-bar-fill.bad {
-      background: linear-gradient(90deg, #e11d48, #f43f5e);
+      background: #f43f5e;
     }
 
     .progress-bar-fill.insufficient {
@@ -540,8 +526,6 @@
       overflow-x: auto;
       -webkit-overflow-scrolling: touch;
       margin-bottom: 16px;
-      box-shadow: 0 4px 16px rgba(0, 0, 0, 0.2);
-      /* Visual hint that table scrolls */
       scroll-snap-type: x proximity;
     }
 
@@ -606,7 +590,7 @@
 
     /* Insights Box */
     .insight-card {
-      background: linear-gradient(135deg, rgba(249, 115, 22, 0.08) 0%, rgba(6, 182, 212, 0.05) 100%);
+      background: var(--bg-surface-elevated);
       border: 1px solid var(--border-accent);
       border-radius: var(--radius-lg);
       padding: 14px 16px;
@@ -667,7 +651,7 @@
       font-family: inherit;
       width: 100%;
       outline: none;
-      transition: all 0.2s ease;
+      transition: border-color 0.2s ease;
       /* Disable iOS inner shadow */
       -webkit-appearance: none;
       appearance: none;
@@ -702,7 +686,7 @@
       padding: 8px 12px;
       border-radius: var(--radius-sm);
       cursor: pointer;
-      transition: all 0.15s ease;
+      transition: background 0.15s ease, border-color 0.15s ease, color 0.15s ease;
       /* iOS min tap target */
       min-height: 40px;
       display: inline-flex;
@@ -726,7 +710,7 @@
       align-items: center;
       justify-content: center;
       gap: 6px;
-      transition: all 0.2s ease;
+      transition: background 0.2s ease, opacity 0.2s ease, transform 0.2s ease;
       font-family: inherit;
       /* Solid iOS touch target */
       min-height: 50px;
@@ -739,14 +723,13 @@
     }
 
     .btn-primary {
-      background: linear-gradient(135deg, #f97316 0%, #ea580c 100%);
+      background: var(--color-brand);
       color: #0a0e14;
-      box-shadow: 0 4px 14px var(--color-brand-glow);
       width: 100%;
     }
 
     .btn-primary:active {
-      box-shadow: 0 2px 8px var(--color-brand-glow);
+      background: #ea580c;
     }
 
     .btn-secondary {
@@ -788,7 +771,7 @@
       display: flex;
       align-items: center;
       gap: 12px;
-      transition: all 0.2s ease;
+      transition: background 0.2s ease, border-color 0.2s ease;
     }
 
     .tourney-item:hover {
@@ -805,7 +788,7 @@
       color: var(--text-secondary);
     }
 
-    .tourney-rank.top1 { color: #f59e0b; text-shadow: 0 0 10px rgba(245, 158, 11, 0.4); }
+    .tourney-rank.top1 { color: #f59e0b; }
     .tourney-rank.top4 { color: #38bdf8; }
     .tourney-rank.top8 { color: #a78bfa; }
 
@@ -860,7 +843,7 @@
       min-height: 44px;
       border-radius: var(--radius-sm);
       font-size: 1rem;
-      transition: all 0.15s ease;
+      transition: background 0.15s ease, color 0.15s ease;
       display: inline-flex;
       align-items: center;
       justify-content: center;
@@ -878,9 +861,7 @@
       bottom: 0;
       left: 0;
       width: 100%;
-      background: rgba(10, 14, 20, 0.96);
-      backdrop-filter: blur(24px);
-      -webkit-backdrop-filter: blur(24px);
+      background: var(--bg-main);
       border-top: 1px solid var(--border-subtle);
       display: flex;
       justify-content: space-around;
@@ -905,7 +886,7 @@
       min-width: 64px;
       min-height: 48px;
       border-radius: var(--radius-md);
-      transition: all 0.18s ease;
+      transition: background 0.18s ease, color 0.18s ease, border-color 0.18s ease;
       font-family: inherit;
       -webkit-tap-highlight-color: transparent;
     }
@@ -917,7 +898,7 @@
 
     .nav-btn.on {
       color: #fff;
-      background: linear-gradient(135deg, rgba(249, 115, 22, 0.2) 0%, rgba(249, 115, 22, 0.08) 100%);
+      background: rgba(249, 115, 22, 0.12);
       border: 1px solid var(--border-accent);
     }
 
@@ -928,7 +909,7 @@
     /* Test Mode Banner */
     #test-mode-banner {
       display: none;
-      background: linear-gradient(90deg, #b91c1c, #dc2626);
+      background: #dc2626;
       color: #fff;
       text-align: center;
       font-size: 0.72rem;
@@ -1192,7 +1173,7 @@
         <!-- DATE & SEASON -->
         <div class="field-group">
           <label for="log-date">📅 Fecha del Torneo</label>
-          <input type="date" id="log-date" class="input-ctrl">
+          <input type="date" id="log-date" class="input-ctrl" autocomplete="off">
         </div>
 
         <!-- DECK SELECTOR -->
@@ -1206,13 +1187,13 @@
 
         <div class="field-group" id="custom-deck-group" style="display:none;">
           <label for="log-custom-deck">Nombre del Nuevo Mazo</label>
-          <input type="text" id="log-custom-deck" placeholder="Ej: 🟢⚪ Bogles Hexproof" class="input-ctrl">
+          <input type="text" id="log-custom-deck" placeholder="Ej: 🟢⚪ Bogles Hexproof" class="input-ctrl" autocomplete="off">
         </div>
 
         <!-- POSITION / RANK -->
         <div class="field-group">
           <label for="log-rank">🏆 Puesto / Posición Final (Ej: 3°, 8°, 12°)</label>
-          <input type="text" id="log-rank" placeholder="Ej: 3°" class="input-ctrl">
+          <input type="text" id="log-rank" placeholder="Ej: 3°" class="input-ctrl" autocomplete="off">
         </div>
 
         <!-- MATCH RECORD (W-L-D) -->
@@ -1220,15 +1201,15 @@
           <label>⚔️ Récord de Partidas (Victorias - Derrotas - Empates)</label>
           <div class="record-inputs-row">
             <div>
-              <input type="number" id="log-w" min="0" max="20" placeholder="Wins (W)" class="input-ctrl" oninput="Arena.autoCalculatePointsFromRecord()">
+              <input type="number" id="log-w" min="0" max="20" placeholder="Wins (W)" class="input-ctrl" autocomplete="off" oninput="Arena.autoCalculatePointsFromRecord()">
               <span style="font-size:0.6rem; color:var(--color-good); font-weight:700; margin-top:2px; display:block;">Victorias (3 pts)</span>
             </div>
             <div>
-              <input type="number" id="log-l" min="0" max="20" placeholder="Losses (L)" class="input-ctrl" oninput="Arena.autoCalculatePointsFromRecord()">
+              <input type="number" id="log-l" min="0" max="20" placeholder="Losses (L)" class="input-ctrl" autocomplete="off" oninput="Arena.autoCalculatePointsFromRecord()">
               <span style="font-size:0.6rem; color:var(--color-bad); font-weight:700; margin-top:2px; display:block;">Derrotas (0 pts)</span>
             </div>
             <div>
-              <input type="number" id="log-d" min="0" max="20" placeholder="Draws (D)" class="input-ctrl" oninput="Arena.autoCalculatePointsFromRecord()">
+              <input type="number" id="log-d" min="0" max="20" placeholder="Draws (D)" class="input-ctrl" autocomplete="off" oninput="Arena.autoCalculatePointsFromRecord()">
               <span style="font-size:0.6rem; color:#fbbf24; font-weight:700; margin-top:2px; display:block;">Empates (1 pt)</span>
             </div>
           </div>
@@ -1249,30 +1230,30 @@
         <!-- OFFICIAL POINTS (with manual override for events like Paupergeddon) -->
         <div class="field-group">
           <label for="log-pts">🎯 Puntos Oficiales del Torneo</label>
-          <input type="number" id="log-pts" min="0" max="60" class="input-ctrl" placeholder="Puntos ganados">
+          <input type="number" id="log-pts" min="0" max="60" class="input-ctrl" autocomplete="off" placeholder="Puntos ganados">
           <span style="font-size:0.63rem; color:var(--text-muted);">Calculado automáticamente (3×W + 1×D). Puedes ajustarlo manualmente si hubo byes o puntuación especial.</span>
         </div>
 
         <!-- NOTES / MATCHUPS -->
         <div class="field-group">
           <label for="log-notes">📝 Notas de Matchups / Observaciones (Opcional)</label>
-          <input type="text" id="log-notes" placeholder="Ej: Gané vs Terror, perdí vs Kuldotha Red y Affinity" class="input-ctrl">
+          <input type="text" id="log-notes" placeholder="Ej: Gané vs Terror, perdí vs Kuldotha Red y Affinity" class="input-ctrl" autocomplete="off">
         </div>
 
-        <button onclick="Arena.saveManualTournament()" class="btn btn-primary" style="margin-top:8px;">
+        <button type="button" onclick="Arena.saveManualTournament()" class="btn btn-primary" style="margin-top:8px;">
           💾 Guardar Torneo en el Historial
         </button>
 
-        <div id="scan-status"></div>
+        <div id="scan-status" aria-live="polite" aria-atomic="true"></div>
 
         <!-- OCR SECTION ACCORDION -->
         <div style="margin-top:20px; border-top:1px solid var(--border-subtle); padding-top:14px;">
-          <div class="collapsible-trigger" onclick="Arena.toggleOcrAccordion()">
+          <button type="button" class="collapsible-trigger" onclick="Arena.toggleOcrAccordion()" aria-expanded="false" aria-controls="ocr-accordion-content">
             <div style="display:flex; align-items:center; gap:8px;">
               <span>📸 Opcional: Escanear Captura de Standings (OCR)</span>
             </div>
             <span id="ocr-arrow" style="font-size:0.8rem; transition:transform 0.2s;">▼</span>
-          </div>
+          </button>
 
           <div id="ocr-content" class="collapsible-content">
             <p style="font-size:0.72rem; color:var(--text-secondary); margin:6px 0 10px 0;">
@@ -1284,7 +1265,7 @@
               <input type="file" id="ocr-file" accept="image/*" class="input-ctrl">
             </div>
 
-            <button onclick="Arena.processOcrScreenshot()" class="btn btn-secondary">
+            <button type="button" onclick="Arena.processOcrScreenshot()" class="btn btn-secondary">
               🔍 Leer Imagen y Extraer Mis Datos
             </button>
           </div>
@@ -1306,8 +1287,8 @@
         </p>
 
         <div class="btn-row">
-          <button onclick="Arena.exportJSON()" class="btn btn-secondary">📥 Exportar JSON</button>
-          <button onclick="document.getElementById('import-file-input').click()" class="btn btn-secondary">📤 Importar JSON</button>
+          <button type="button" onclick="Arena.exportJSON()" class="btn btn-secondary">📥 Exportar JSON</button>
+          <button type="button" onclick="document.getElementById('import-file-input').click()" class="btn btn-secondary">📤 Importar JSON</button>
           <input type="file" id="import-file-input" accept=".json" style="display:none;" onchange="Arena.importJSON(event)">
         </div>
 
@@ -1319,7 +1300,7 @@
           <input type="checkbox" id="test-mode-toggle" onchange="Arena.toggleTestMode()" style="accent-color:var(--color-brand); width:18px; height:18px; cursor:pointer;">
         </div>
 
-        <button onclick="Arena.resetToDefaultsConfirm()" class="btn btn-danger" style="width:100%; margin-top:14px; padding:8px; font-size:0.75rem;">
+        <button type="button" onclick="Arena.resetToDefaultsConfirm()" class="btn btn-danger" style="width:100%; margin-top:14px; padding:8px; font-size:0.75rem;">
           🔄 Restablecer a Datos Iniciales Auditados
         </button>
       </div>
@@ -1385,7 +1366,11 @@
       BENCHMARKS: {
         GOOD_WIN_RATE: 50.0,       // >= 50% Win Rate is positive
         AVG_WIN_RATE: 45.0,        // 45% - 49.9% is average / viable
-        MIN_SAMPLE_SIZE: 3         // < 3 tournaments is marked as insufficient sample
+        MIN_SAMPLE_SIZE: 3,        // < 3 tournaments is marked as insufficient sample
+        FORM_WIN_PTS: 6,           // >= this pts = form pill "w" (win)
+        FORM_LOSS_PTS: 3,          // <= this pts = form pill "l" (loss)
+        TYPE_GOOD_PTS: 6,          // saved tournament type: "good" when pts >= this
+        TYPE_BAD_PTS: 3            // saved tournament type: "bad" when pts <= this
       },
       MONTHS_MAP: {
         'ene': 0, 'feb': 1, 'mar': 2, 'abr': 3, 'may': 4, 'jun': 5,
@@ -1567,7 +1552,25 @@
       },
 
       calculatePoints(w, d) {
-        return (Number(w) || 0) * 3 + (Number(d) || 0) * 1;
+        const wn = Math.max(0, Number(w) || 0);
+        const dn = Math.max(0, Number(d) || 0);
+        return wn * 3 + dn;
+      },
+
+      // Rounds a percentage to 1 decimal place, used for display AND comparisons
+      // so the displayed "50.0%" and the status threshold check always agree.
+      roundPct(x) {
+        return Math.round(x * 10) / 10;
+      },
+
+      // Escapes HTML special characters so user-provided strings are safe in innerHTML
+      escHtml(s) {
+        return String(s ?? '')
+          .replace(/&/g, '&amp;')
+          .replace(/</g, '&lt;')
+          .replace(/>/g, '&gt;')
+          .replace(/"/g, '&quot;')
+          .replace(/'/g, '&#39;');
       },
 
       parseRankNumber(rankStr) {
@@ -1640,12 +1643,13 @@
         let top8Count = 0;
 
         deckEntries.forEach(item => {
-          // Points: Use official recorded points (with fallback to calculated WLD points if missing)
-          const itemPts = Number(item.pts);
+          // Points: Use recorded pts when genuinely set; fall back to WLD calc
+          // Note: Number("") === 0 and Number(null) === 0 (both pass !isNaN) — guard explicitly
+          const hasExplicitPts = item.pts !== null && item.pts !== undefined && item.pts !== "" && !isNaN(Number(item.pts));
           const parsed = this.parseWLD(item.wl);
 
-          if (!isNaN(itemPts)) {
-            totalPts += itemPts;
+          if (hasExplicitPts) {
+            totalPts += Number(item.pts);
           } else if (parsed) {
             totalPts += this.calculatePoints(parsed.w, parsed.d);
           }
@@ -1685,12 +1689,13 @@
         });
         const recentForm = sortedDeckEntries.slice(-5);
 
-        // Benchmark Classification
+        // Benchmark Classification — compare rounded value so display and badge always agree
+        const winRateRounded = this.roundPct(winRate);
         let status = { key: 'insufficient', label: 'Muestra Insuficiente', icon: '⏱️', class: 'insufficient', desc: '< 3 torneos jugados' };
         if (count >= CONFIG.BENCHMARKS.MIN_SAMPLE_SIZE) {
-          if (winRate >= CONFIG.BENCHMARKS.GOOD_WIN_RATE) {
+          if (winRateRounded >= CONFIG.BENCHMARKS.GOOD_WIN_RATE) {
             status = { key: 'good', label: 'Buen Rendimiento', icon: '🔥', class: 'good', desc: 'Récord positivo (≥ 50% WR)' };
-          } else if (winRate >= CONFIG.BENCHMARKS.AVG_WIN_RATE) {
+          } else if (winRateRounded >= CONFIG.BENCHMARKS.AVG_WIN_RATE) {
             status = { key: 'average', label: 'Promedio / Viable', icon: '⚖️', class: 'average', desc: 'Competitivo (45% - 49% WR)' };
           } else {
             status = { key: 'bad', label: 'Bajo Rendimiento', icon: '⚠️', class: 'bad', desc: 'Por debajo del corte (< 45% WR)' };
@@ -1797,7 +1802,7 @@
           const currentVal = logDeckSelect.value;
           let html = '';
           State.decksList.forEach(deck => {
-            html += `<option value="${deck}">${deck}</option>`;
+            html += `<option value="${Analytics.escHtml(deck)}">${Analytics.escHtml(deck)}</option>`;
           });
           html += `<option value="other">➕ Añadir nuevo mazo personalizado...</option>`;
           logDeckSelect.innerHTML = html;
@@ -1810,7 +1815,7 @@
           const currentDetailVal = detailDeckSelect.value;
           let html = '';
           State.decksList.forEach(deck => {
-            html += `<option value="${deck}">${deck}</option>`;
+            html += `<option value="${Analytics.escHtml(deck)}">${Analytics.escHtml(deck)}</option>`;
           });
           detailDeckSelect.innerHTML = html;
           if (currentDetailVal && State.decksList.includes(currentDetailVal)) {
@@ -1862,7 +1867,9 @@
         // Best deck by win rate (minimum 2 tournaments if available)
         const qualifiedDecks = allDeckStats.filter(d => d.count >= 2);
         const deckPool = qualifiedDecks.length > 0 ? qualifiedDecks : allDeckStats;
-        const sortedByWR = [...deckPool].sort((a, b) => b.winRate - a.winRate);
+        const sortedByWR = [...deckPool].sort((a, b) =>
+          (b.winRate - a.winRate) || (b.totalMatches - a.totalMatches) || (b.ppg - a.ppg)
+        );
 
         const bestDeck = sortedByWR[0];
         const bestWrVal = bestDeck ? `${bestDeck.winRate.toFixed(1)}%` : '--%';
@@ -1901,8 +1908,10 @@
         const topWr = sortedByWR[0];
         const worstWr = sortedByWR[sortedByWR.length - 1];
 
-        // Best peak finish
-        const sortedByPeak = [...allStats].filter(d => d.bestRank !== null).sort((a, b) => a.bestRank - b.bestRank);
+        // Best peak finish — only decks with enough data, tiebreak by count then winRate
+        const sortedByPeak = [...allStats]
+          .filter(d => d.bestRank !== null && d.count >= CONFIG.BENCHMARKS.MIN_SAMPLE_SIZE)
+          .sort((a, b) => (a.bestRank - b.bestRank) || (b.count - a.count) || (b.winRate - a.winRate));
         const peakDeck = sortedByPeak[0];
 
         let insightHtml = `
@@ -1915,7 +1924,7 @@
           insightHtml += `<strong>Mejor pico de torneo:</strong> <span>${peakDeck.deck}</span> alcanzó el <strong>${peakDeck.bestRank}° puesto</strong> histórico.<br>`;
         }
 
-        if (worstWr && worstWr.deck !== topWr.deck && worstWr.count >= 2) {
+        if (worstWr && worstWr.deck !== topWr.deck && worstWr.count >= CONFIG.BENCHMARKS.MIN_SAMPLE_SIZE) {
           insightHtml += `<strong>Mazo con mayor dificultad:</strong> <span>${worstWr.deck}</span> promedia solo <strong>${worstWr.ppg.toFixed(1)} pts/T</strong> (Win Rate: ${worstWr.winRate.toFixed(1)}%). Requiere ajustes de lista o banquillo.`;
         }
 
@@ -1972,8 +1981,8 @@
               if (stat.recentForm && stat.recentForm.length > 0) {
                 formHtml = stat.recentForm.map(f => {
                   let pillClass = 'd';
-                  if (f.pts >= 6 || f.type === 'good') pillClass = 'w';
-                  else if (f.pts <= 3 || f.type === 'bad') pillClass = 'l';
+                  if (f.pts >= CONFIG.BENCHMARKS.FORM_WIN_PTS || f.type === 'good') pillClass = 'w';
+                  else if (f.pts <= CONFIG.BENCHMARKS.FORM_LOSS_PTS || f.type === 'bad') pillClass = 'l';
                   return `<span class="form-pill ${pillClass}" title="${f.date}: ${f.rank} (${f.wl})">${f.wl || f.pts + 'p'}</span>`;
                 }).join('');
               } else {
@@ -1985,12 +1994,12 @@
               const badgeLabel = `${stat.status.icon} ${stat.status.label}`;
 
               return `
-              <div class="deck-card status-${badgeClass}" onclick="Arena.openDeckDetail('${stat.deck.replace(/'/g, "\\'")}')">
+              <div class="deck-card status-${badgeClass}" data-deck="${Analytics.escHtml(stat.deck)}" onclick="Arena.openDeckDetail(this.dataset.deck)">
                 <div class="deck-header">
-                  <div class="deck-name">${stat.deck}</div>
+                  <div class="deck-name">${Analytics.escHtml(stat.deck)}</div>
                   <div style="display:flex; align-items:center; gap:6px;">
                     <span class="status-badge ${badgeClass}">${badgeLabel}</span>
-                    <button class="btn-icon-del" onclick="event.stopPropagation(); Arena.deleteDeck('${stat.deck.replace(/'/g, "\\'")}')" title="Eliminar este mazo del tracker">🗑️</button>
+                    <button type="button" class="btn-icon-del" data-deck="${Analytics.escHtml(stat.deck)}" onclick="event.stopPropagation(); Arena.deleteDeck(this.dataset.deck)" title="Eliminar este mazo del tracker" aria-label="Eliminar mazo">🗑️</button>
                   </div>
                 </div>
 
@@ -2048,8 +2057,8 @@
             <tr>
               <td class="deck-cell">
                 <div style="display:flex; align-items:center; justify-content:space-between; gap:6px;">
-                  <span>${stat.deck}</span>
-                  <button class="btn-icon-del" onclick="Arena.deleteDeck('${stat.deck.replace(/'/g, "\\'")}')" title="Eliminar mazo del tracker" style="padding:2px 4px; font-size:0.75rem;">🗑️</button>
+                  <span>${Analytics.escHtml(stat.deck)}</span>
+                  <button type="button" class="btn-icon-del" data-deck="${Analytics.escHtml(stat.deck)}" onclick="Arena.deleteDeck(this.dataset.deck)" title="Eliminar mazo del tracker" aria-label="Eliminar mazo" style="padding:2px 4px; font-size:0.75rem;">🗑️</button>
                 </div>
               </td>
               <td><span class="status-badge ${stat.status.class}" style="font-size:0.58rem; padding:2px 6px;">${stat.status.icon} ${stat.status.label}</span></td>
@@ -2061,7 +2070,7 @@
               <td class="text-brand font-weight:700;">${stat.ppg.toFixed(1)} p/T</td>
               <td>${stat.avgRank ? stat.avgRank.toFixed(1) + '°' : '--'}</td>
               <td style="font-weight:700;">${stat.bestRank ? stat.bestRank + '°' : '--'}</td>
-              <td>${stat.top4Count}T4 · ${stat.top8Count}T8</td>
+              <td>${stat.top4Count} Top-4 · ${stat.top8Count} Top-8</td>
             </tr>`;
           }).join('');
         }
@@ -2112,14 +2121,14 @@
                 <div class="tourney-deck">${item.date} <span class="tag-season">${item.season}</span></div>
                 <div class="tourney-meta">
                   <span>${item.wl || '—'}</span>
-                  ${item.notes ? `<span>· ${item.notes}</span>` : ''}
+                  ${item.notes ? `<span>· ${Analytics.escHtml(item.notes)}</span>` : ''}
                 </div>
               </div>
               <div class="tourney-score">
                 <div class="tourney-pts">${item.pts} pts</div>
                 <div class="tourney-record">${item.wl}</div>
               </div>
-              <button class="btn-icon-del" onclick="Arena.deleteTournament(${globalIdx})" title="Eliminar torneo">🗑️</button>
+              <button type="button" class="btn-icon-del" onclick="Arena.deleteTournament(${globalIdx})" title="Eliminar torneo" aria-label="Eliminar torneo">🗑️</button>
             </div>`;
           }).join('');
         }
@@ -2129,7 +2138,7 @@
           <div class="card-panel" style="border-top: 4px solid var(--color-brand); margin-bottom:14px; padding:14px;">
 
             <!-- Deck name -->
-            <h2 style="font-family:var(--font-display); font-size:1.2rem; font-weight:800; color:#fff; line-height:1.25; margin-bottom:8px; word-break:break-word;">${stat.deck}</h2>
+            <h2 style="font-family:var(--font-display); font-size:1.2rem; font-weight:800; color:#fff; line-height:1.25; margin-bottom:8px; word-break:break-word;">${Analytics.escHtml(stat.deck)}</h2>
             <span class="status-badge ${stat.status.class}" style="display:inline-block; white-space:normal; line-height:1.4; margin-bottom:12px;">
               ${stat.status.icon} ${stat.status.label} &middot; ${stat.status.desc}
             </span>
@@ -2138,7 +2147,7 @@
             <div style="background:rgba(0,0,0,0.25); border-radius:var(--radius-md); padding:12px 14px; margin-bottom:12px; display:flex; align-items:center; justify-content:space-between; gap:10px;">
               <div>
                 <div style="font-size:0.6rem; color:var(--text-muted); font-weight:700; text-transform:uppercase; letter-spacing:0.6px; margin-bottom:4px;">Match Win Rate</div>
-                <div style="font-family:var(--font-display); font-size:2rem; font-weight:900; line-height:1; color:${stat.winRate >= 50 ? 'var(--color-good)' : (stat.winRate < 45 ? 'var(--color-bad)' : 'var(--color-avg)')};">${stat.winRate.toFixed(1)}<span style="font-size:1.1rem;">%</span></div>
+                <div style="font-family:var(--font-display); font-size:2rem; font-weight:900; line-height:1; color:${{ good: 'var(--color-good)', average: 'var(--color-avg)', bad: 'var(--color-bad)', insufficient: 'var(--text-secondary)' }[stat.status.class]};">${Analytics.roundPct(stat.winRate).toFixed(1)}<span style="font-size:1.1rem;">%</span></div>
               </div>
               <div style="text-align:right; flex-shrink:0;">
                 <div style="font-size:0.72rem; color:var(--text-secondary); font-weight:600; margin-bottom:3px;">${stat.totalWins}W &middot; ${stat.totalLosses}L &middot; ${stat.totalDraws}D</div>
@@ -2177,17 +2186,22 @@
                   <span style="color:#f59e0b; font-weight:700;">${stat.totalDraws} Emp</span>
                 </span>
               </div>
-              <div style="display:flex; height:10px; border-radius:var(--radius-full); overflow:hidden; background:rgba(255,255,255,0.06);">
-                <div style="width:${stat.totalMatches > 0 ? (stat.totalWins/stat.totalMatches*100).toFixed(1) : 0}%; background:var(--color-good); transition:width 0.5s ease;"></div>
-                <div style="width:${stat.totalMatches > 0 ? (stat.totalDraws/stat.totalMatches*100).toFixed(1) : 0}%; background:#f59e0b;"></div>
-                <div style="width:${stat.totalMatches > 0 ? (stat.totalLosses/stat.totalMatches*100).toFixed(1) : 0}%; background:var(--color-bad);"></div>
-              </div>
+              ${(() => {
+                const wPct = stat.totalMatches > 0 ? (stat.totalWins / stat.totalMatches) * 100 : 0;
+                const dPct = stat.totalMatches > 0 ? (stat.totalDraws / stat.totalMatches) * 100 : 0;
+                const lPct = 100 - wPct - dPct;
+                return `<div style="display:flex; height:10px; border-radius:var(--radius-full); overflow:hidden; background:rgba(255,255,255,0.06);">
+                <div style="width:${wPct.toFixed(1)}%; background:var(--color-good); transition:width 0.5s ease;"></div>
+                <div style="width:${dPct.toFixed(1)}%; background:#f59e0b;"></div>
+                <div style="width:${lPct.toFixed(1)}%; background:var(--color-bad);"></div>
+              </div>`;
+              })()}
             </div>
 
             <!-- Delete deck — full-width stacked button -->
             <div style="border-top:1px solid var(--border-subtle); padding-top:12px;">
               <p style="font-size:0.7rem; color:var(--text-muted); margin-bottom:8px; line-height:1.5;">¿Ya no juegas este mazo o deseas retirarlo del tracker?</p>
-              <button onclick="Arena.deleteDeck('${stat.deck.replace(/'/g, "\\'")}')" class="btn btn-danger" style="width:100%; font-size:0.82rem; padding:12px; min-height:46px;">
+              <button type="button" data-deck="${Analytics.escHtml(stat.deck)}" onclick="Arena.deleteDeck(this.dataset.deck)" class="btn btn-danger" style="width:100%; font-size:0.82rem; padding:12px; min-height:46px;">
                 🗑️ Eliminar este Mazo
               </button>
             </div>
@@ -2239,14 +2253,14 @@
               <div class="tourney-meta">
                 <span>${item.date}</span>
                 <span class="tag-season">${item.season}</span>
-                ${item.notes ? `<span>· ${item.notes}</span>` : ''}
+                ${item.notes ? `<span>· ${Analytics.escHtml(item.notes)}</span>` : ''}
               </div>
             </div>
             <div class="tourney-score">
               <div class="tourney-pts">${item.pts} pts</div>
               <div class="tourney-record">${item.wl || '—'}</div>
             </div>
-            <button class="btn-icon-del" onclick="Arena.deleteTournament(${globalIdx})" title="Eliminar torneo">🗑️</button>
+            <button type="button" class="btn-icon-del" onclick="Arena.deleteTournament(${globalIdx})" title="Eliminar torneo" aria-label="Eliminar torneo">🗑️</button>
           </div>`;
         }).join('');
       },
@@ -2290,17 +2304,22 @@
         }
         if (!rankVal) rankVal = "—";
 
-        // Record
-        const w = parseInt(wInput.value, 10) || 0;
-        const l = parseInt(lInput.value, 10) || 0;
-        const d = parseInt(dInput.value, 10) || 0;
+        // Record — clamp to non-negative
+        const w = Math.max(0, parseInt(wInput.value, 10) || 0);
+        const l = Math.max(0, parseInt(lInput.value, 10) || 0);
+        const d = Math.max(0, parseInt(dInput.value, 10) || 0);
         const wlStr = `${w}-${l}-${d}`;
 
         // Points
         let ptsVal = ptsInput.value !== "" ? Number(ptsInput.value) : Analytics.calculatePoints(w, d);
         if (isNaN(ptsVal)) ptsVal = 0;
 
-        const currentSeason = this.currentFilterSeason === 'all' ? CONFIG.CURRENT_SEASON : this.currentFilterSeason;
+        // Derive season from the actual chosen date (Jan–Jun = first half, Jul–Dec = second half)
+        const currentSeason = (() => {
+          const iso = (dateInput && dateInput.value) ? dateInput.value : new Date().toISOString().slice(0, 10);
+          const [y, m] = iso.split('-').map(Number);
+          return `${y}-${m <= 6 ? 1 : 2}`;
+        })();
         const notesVal = notesInput.value.trim();
 
         // Push new entry
@@ -2313,7 +2332,7 @@
           rank: rankVal,
           pts: ptsVal,
           wl: wlStr,
-          type: ptsVal >= 9 ? "good" : (ptsVal <= 3 ? "bad" : "normal"),
+          type: ptsVal >= CONFIG.BENCHMARKS.TYPE_GOOD_PTS ? "good" : (ptsVal <= CONFIG.BENCHMARKS.TYPE_BAD_PTS ? "bad" : "normal"),
           notes: notesVal
         });
 
@@ -2374,12 +2393,14 @@
       },
 
       async processOcrScreenshot() {
+        if (this._ocrRunning) return;
         const fileInput = document.getElementById("ocr-file");
         if (!fileInput || !fileInput.files || !fileInput.files[0]) {
           this.setStatus("⚠️ Selecciona un archivo de imagen primero.", "var(--color-bad)");
           return;
         }
 
+        this._ocrRunning = true;
         this.setStatus("⏳ Inicializando motor OCR...", "var(--color-brand)");
         let worker = null;
         try {
@@ -2407,14 +2428,24 @@
             if (extracted.pts !== undefined) document.getElementById("log-pts").value = extracted.pts;
             else this.autoCalculatePointsFromRecord();
 
-            this.setStatus(`✅ ¡Datos extraídos! Récord: ${extracted.w}-${extracted.l}-${extracted.d}, Puesto: ${extracted.rank || 'detectado'}. Verifica y haz clic en Guardar.`, "var(--color-good)");
+            const parts = [];
+            if (extracted.rank) parts.push(`Puesto ${extracted.rank}`);
+            if (extracted.w !== undefined) parts.push(`Récord ${extracted.w}-${extracted.l}-${extracted.d}`);
+            if (extracted.pts !== undefined) parts.push(`${extracted.pts} pts`);
+            const missing = [];
+            if (!extracted.rank) missing.push('posición');
+            if (extracted.w === undefined) missing.push('récord W-L-D');
+            const missingNote = missing.length ? ` · Ingresa manualmente: ${missing.join(', ')}.` : ' Verifica y guarda.';
+            this.setStatus(`✅ Detectado: ${parts.join(', ')}.${missingNote}`, "var(--color-good)");
           } else {
-            this.setStatus("⚠️ Texto leído pero no se detectó tu fila automáticamente. Por favor ingresa los valores manualmente.", "#fbbf24");
+            this.setStatus("⚠️ Texto leído pero no se detectó tu fila. Por favor ingresa los valores manualmente.", "#fbbf24");
           }
         } catch (err) {
           console.error("Error OCR:", err);
           this.setStatus(`❌ Error al procesar imagen: ${err.message}`, "var(--color-bad)");
           if (worker) await worker.terminate().catch(() => {});
+        } finally {
+          this._ocrRunning = false;
         }
       },
 
@@ -2430,23 +2461,23 @@
             const rankMatch = line.match(/#?(\d{1,2})[\.\s°º\-:]+/);
             const rank = rankMatch ? `${rankMatch[1]}°` : "";
 
-            // Find W-L-D
+            // Find W-L-D — only include in result when actually matched
             const wldMatch = line.match(/(\d{1,2})\s*[-–—:/]\s*(\d{1,2})\s*[-–—:/]\s*([0-9Oo])\b/);
-            let w = 0, l = 0, d = 0, pts = undefined;
+            const result = { rank };
             if (wldMatch) {
-              w = parseInt(wldMatch[1], 10);
-              l = parseInt(wldMatch[2], 10);
-              d = parseInt(wldMatch[3].replace(/[Oo]/g, '0'), 10);
-              pts = Analytics.calculatePoints(w, d);
+              result.w = parseInt(wldMatch[1], 10);
+              result.l = parseInt(wldMatch[2], 10);
+              result.d = parseInt(wldMatch[3].replace(/[Oo]/g, '0'), 10);
+              result.pts = Analytics.calculatePoints(result.w, result.d);
             }
 
-            // Points match before WLD if any
-            const ptsMatch = line.match(/\b(\d{1,2})\s*(?:pts|puntos)?\b/i);
-            if (ptsMatch && pts === undefined) {
-              pts = parseInt(ptsMatch[1], 10);
+            // Points override when explicitly labeled
+            const ptsMatch = line.match(/\b(\d{1,2})\s*(?:pts|puntos)\b/i);
+            if (ptsMatch) {
+              result.pts = parseInt(ptsMatch[1], 10);
             }
 
-            return { rank, w, l, d, pts };
+            return result;
           }
         }
         return null;
