@@ -7,30 +7,30 @@
   "scope": "/",
   "display": "standalone",
   "background_color": "#0a0e14",
-  "theme_color": "#0a0e14",
+  "theme_color": "#111822",
   "orientation": "portrait",
   "categories": ["games", "sports", "utilities"],
   "icons": [
     {
-      "src": "./icon-192.png",
+      "src": "./Imgs/icons/icon-192.png",
       "sizes": "192x192",
       "type": "image/png",
       "purpose": "any"
     },
     {
-      "src": "./icon-192.png",
+      "src": "./Imgs/icons/icon-192.png",
       "sizes": "192x192",
       "type": "image/png",
       "purpose": "maskable"
     },
     {
-      "src": "./icon-512.png",
+      "src": "./Imgs/icons/icon-512.png",
       "sizes": "512x512",
       "type": "image/png",
       "purpose": "any"
     },
     {
-      "src": "./icon-512.png",
+      "src": "./Imgs/icons/icon-512.png",
       "sizes": "512x512",
       "type": "image/png",
       "purpose": "maskable"
@@ -41,15 +41,15 @@
       "name": "Comparador de Mazos",
       "short_name": "Mazos",
       "description": "Comparar rendimiento de mazos",
-      "url": "/#pg-decks",
-      "icons": [{ "src": "./icon-192.png", "sizes": "192x192" }]
+      "url": "/#tab=decks",
+      "icons": [{ "src": "./Imgs/icons/icon-192.png", "sizes": "192x192" }]
     },
     {
       "name": "Registrar Torneo",
       "short_name": "Registrar",
       "description": "Registrar resultado de torneo para tus mazos",
-      "url": "/#pg-logger",
-      "icons": [{ "src": "./icon-192.png", "sizes": "192x192" }]
+      "url": "/#tab=logger",
+      "icons": [{ "src": "./Imgs/icons/icon-192.png", "sizes": "192x192" }]
     }
   ]
 }

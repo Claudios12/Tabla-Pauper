@@ -1,4 +1,4 @@
-const CACHE_NAME = 'pauper-deck-arena-v2';
+const CACHE_NAME = 'pauper-deck-arena-v4';
 const FONT_CACHE = 'pauper-fonts-v1';
 const CDN_CACHE = 'pauper-cdn-v1';
 
@@ -6,8 +6,14 @@ const ASSETS = [
   '/',
   '/index.html',
   '/manifest.json',
-  '/icon-192.png',
-  '/icon-512.png'
+  '/Imgs/icons/icon-192.png',
+  '/Imgs/icons/icon-512.png',
+  '/Imgs/logo.png',
+  '/Imgs/mana/W.png',
+  '/Imgs/mana/U.png',
+  '/Imgs/mana/B.png',
+  '/Imgs/mana/R.png',
+  '/Imgs/mana/G.png'
 ];
 
 self.addEventListener('install', (event) => {
