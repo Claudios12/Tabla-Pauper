@@ -1,0 +1,115 @@
+/* ------------------------------------------------------------------
+   Tokens: one ground, three tone steps, one ink, one accent.
+   Orange marks the primary action and the one thing to look at
+   (the lead deck, wins). Status hues are semantic only.
+   ------------------------------------------------------------------ */
+:root {
+  --bg-main: #0a0e14;
+  --surface-1: #111822;
+  --surface-2: #16202e;
+  --surface-3: #1c293c;
+  --rule: #1c293c;
+
+  --text-primary: #f0f6fc;
+  --text-secondary: #a6b3c4;
+  --text-muted: #8693a6;
+
+  --color-brand: #f97316;
+  --color-brand-hover: #fb8c3a;
+  --color-brand-press: #ea580c;
+  --brand-tint: rgb(249 115 22 / .16);
+
+  --color-good: #34d399;
+  --color-bad: #fb7185;
+
+  --pill-good-bg: #12332a;
+  --pill-good-ink: #6ee7b7;
+  --pill-avg-bg: #0f2f38;
+  --pill-avg-ink: #67e8f9;
+  --pill-bad-bg: #3a1a22;
+  --pill-bad-ink: #fda4af;
+
+  --radius-card: 12px;
+  --radius-sm: 8px;
+
+  --font-display: 'Outfit', 'Inter', -apple-system, 'Segoe UI', sans-serif;
+  --font-body: 'Inter', -apple-system, 'Segoe UI', Roboto, sans-serif;
+
+  --nav-h: 60px;
+  --topbar-h: calc(56px + env(safe-area-inset-top, 0px));
+  --gap: 16px;
+}
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+  -webkit-tap-highlight-color: transparent;
+}
+
+[hidden] { display: none !important; }
+
+html {
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
+  scroll-padding-block-start: 80px;
+  color-scheme: dark;
+}
+@media (pointer: fine) {
+  html { overscroll-behavior: none; }
+}
+
+body {
+  min-height: 100vh; /* taste-skill-ignore: fallback for browsers without dvh */
+  min-height: 100dvh;
+  font: 400 16px/1.5 var(--font-body);
+  color: var(--text-primary);
+  -webkit-font-smoothing: antialiased;
+  background-color: var(--bg-main);
+  touch-action: manipulation;
+}
+
+ul,
+ol {
+  list-style: none;
+}
+p,
+li {
+  text-wrap: pretty;
+}
+a { color: inherit; }
+button,
+select,
+input,
+textarea {
+  font: inherit;
+  color: inherit;
+}
+svg { display: block; }
+
+:focus-visible { outline: 2px solid var(--color-brand); outline-offset: 2px; }
+
+.visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px; /* taste-skill-ignore: visually hidden text, not a rule */
+  overflow: hidden;
+  white-space: nowrap;
+  clip-path: inset(50%);
+}
+.skip-link {
+  position: fixed;
+  inset-inline-start: 12px;
+  inset-block-start: -64px;
+  z-index: 300;
+  padding: 10px 14px;
+  color: var(--bg-main);
+  font-weight: 600;
+  text-decoration: none;
+  border-radius: var(--radius-sm);
+  background-color: var(--text-primary);
+}
+.skip-link:focus-visible { inset-block-start: calc(env(safe-area-inset-top, 0px) + 8px); }
+
+.muted { color: var(--text-muted); }
+.num { font-variant-numeric: tabular-nums; }

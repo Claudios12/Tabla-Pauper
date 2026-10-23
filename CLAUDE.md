@@ -1,6 +1,19 @@
 # Project: Pauper Deck Arena
 
-Pauper MTG deck tracker and tournament performance analyzer. Single-file PWA (index.html) with vanilla JS/CSS. Mobile-first, Spanish UI.
+Pauper MTG deck tracker and tournament performance analyzer. Static PWA with vanilla JS/CSS and no build step. Mobile-first, Spanish UI.
+
+## File layout
+
+- `index.html`: the page markup only. It links the stylesheets and scripts in order.
+- `css/`: one file per section (base, shell, controls, cards, deck-cards, analysis, log, forms, colour, views). The link order in `index.html` is the cascade order: keep it.
+- `js/`: plain scripts loaded in order with `defer`, sharing globals (not ES modules, because the markup uses inline `onclick="Arena.x()"`). Order: config, data, state, analytics, format, then `arena.js` (defines `Arena`) and the `arena-*.js` parts, which add methods with `Object.assign(Arena, { ... })`, then `main.js`.
+- Every JS file starts with a one-line description, a `/* global */` list of the names it takes from other files, and a `/* exported */` list of what it shares. Keep those lists current when you move or add a name.
+- `sw.js`: precaches every file listed in `SHELL` and fetches HTML, css, js and the manifest network-first, so a new page never runs old scripts. When you add, rename or remove a css or js file, update `SHELL` and bump `CACHE_NAME`.
+- Hosted on Vercel as a static site (`vercel.json` only sets headers). `main` is production and is updated by pull request from `testing_branch`.
+
+## CSS formatting (this project's exception to the Code Guide)
+
+The global Code Guide says one declaration per line. In this project a rule may sit on one line when it has up to 3 declarations and the line is at most 100 characters (for example `.btn-primary:hover { background-color: var(--color-brand-hover); }`). Anything longer, with more declarations, or with a comment on a declaration stays one declaration per line. Everything else in the Code Guide still applies: declaration order, logical properties, modern colour syntax, one selector per line when grouped.
 
 ## Design standard: tasteskill v2 house rules
 

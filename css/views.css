@@ -1,0 +1,31 @@
+/* ------------------------------------------------------------------
+   Layout per view
+   ------------------------------------------------------------------ */
+.cols { display: grid; gap: var(--gap); grid-template-columns: minmax(0, 1fr); }
+.cols > * { min-width: 0; }
+.cols.duo { margin-block-start: 28px; }
+@media (min-width: 1024px) {
+  .cols.duo { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); align-items: stretch; }
+  .cols.detail { grid-template-columns: 400px minmax(0, 1fr); align-items: start; }
+  .cols.logger { grid-template-columns: minmax(0, 1fr) 360px; align-items: start; }
+  .cols.logger .side-col {
+    position: sticky;
+    inset-block-start: 88px;
+    display: grid;
+    gap: var(--gap);
+    grid-column: 2;
+    grid-row: 1;
+  }
+  .cols.logger .form-col { grid-column: 1; grid-row: 1; }
+  .cols.hist { grid-template-columns: minmax(0, 1fr) 360px; align-items: start; }
+  .cols.hist .data-panel { position: sticky; inset-block-start: 88px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: .01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: .01ms !important;
+  }
+}

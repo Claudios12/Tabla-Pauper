@@ -1,0 +1,141 @@
+/* ------------------------------------------------------------------
+   Log rows (tournaments)
+   ------------------------------------------------------------------ */
+.log {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding-block-end: 8px;
+  padding-inline: 8px;
+}
+.log-preview {
+  padding-block-start: 12px;
+  padding-inline-end: 0;
+  padding-block-end: 0;
+  padding-inline-start: 0;
+}
+.log-preview .log { padding: 0; }
+.log-row {
+  display: grid;
+  grid-template-columns: 40px minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 8px;
+  min-height: 60px;
+  padding: 8px 12px;
+  border-radius: var(--radius-sm);
+  background-color: var(--surface-2);
+}
+.log-row.has-del { grid-template-columns: 40px minmax(0, 1fr) auto 44px; padding-inline-end: 4px; }
+.log-row.preview { background-color: var(--surface-3); }
+.tourney-rank {
+  text-align: center;
+  font-weight: 600;
+  font-size: 15px;
+  color: var(--text-muted);
+  font-variant-numeric: tabular-nums;
+}
+.tourney-rank.top4 { color: var(--text-primary); }
+.tourney-rank.top8 { color: var(--text-secondary); }
+.log-main { min-width: 0; }
+.log-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+  font-size: 15px;
+  font-weight: 500;
+}
+.log-title .title-text {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.log-sub {
+  margin-block-start: 2px;
+  overflow: hidden;
+  font-size: 13px;
+  color: var(--text-muted);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.log-fig { text-align: end; font-variant-numeric: tabular-nums; }
+.log-fig-value {
+  display: block;
+  font-size: 16px;
+  font-weight: 600;
+  line-height: 1.3;
+}
+.log-fig-detail { display: block; font-size: 12px; color: var(--text-muted); }
+.group-label {
+  padding: 12px 16px 6px;
+  font-size: 13px;
+  color: var(--text-muted);
+  font-weight: 500;
+}
+
+/* ------------------------------------------------------------------
+   Dossier
+   ------------------------------------------------------------------ */
+.dossier-name {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+  font: 600 22px/1.25 var(--font-display);
+  letter-spacing: -.01em;
+}
+.dossier-name .title-text { min-width: 0; overflow-wrap: anywhere; }
+.dossier-status {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-block-start: 10px;
+  font-size: 14px;
+  color: var(--text-secondary);
+}
+.dossier-wr {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 12px;
+  margin-block-start: 20px;
+}
+.dossier-wr-value {
+  display: block;
+  font: 600 36px/1 var(--font-body);
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -.02em;
+}
+.dossier-wr .caption { margin-block-end: 6px; font-size: 13px; color: var(--text-muted); }
+.dossier-wr .record {
+  text-align: end;
+  font-size: 14px;
+  color: var(--text-secondary);
+  font-variant-numeric: tabular-nums;
+}
+.dossier-wr .record-detail { display: block; font-size: 13px; color: var(--text-muted); }
+.dossier-wr .record .delta { display: block; }
+.wld-bar {
+  display: flex;
+  gap: 2px;
+  height: 10px;
+  margin-block-start: 16px;
+  overflow: hidden;
+  border-radius: 5px;
+  background-color: var(--surface-3);
+}
+.wld-segment { display: block; height: 100%; }
+.wld-legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 16px;
+  margin-block-start: 10px;
+  font-size: 13px;
+  color: var(--text-secondary);
+  font-variant-numeric: tabular-nums;
+}
+.wld-legend-item { display: inline-flex; align-items: center; gap: 6px; }
+.wld-legend-mark { width: 8px; height: 8px; border-radius: 50%; }
+.dossier-kpis { margin-block-start: 20px; }
