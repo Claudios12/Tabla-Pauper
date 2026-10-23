@@ -6,11 +6,7 @@
   display: flex;
   flex-direction: column;
 }
-#insights-container {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-}
+#insights-container { flex: 1; display: flex; flex-direction: column; }
 .findings {
   flex: 1;
   display: grid;
@@ -26,10 +22,7 @@
   background-color: var(--surface-2);
   border-radius: var(--radius-sm);
 }
-.finding-label {
-  font-size: 13px;
-  color: var(--text-muted);
-}
+.finding-label { font-size: 13px; color: var(--text-muted); }
 .finding-name {
   display: flex;
   align-items: center;
@@ -38,10 +31,7 @@
   min-width: 0;
   font: 600 16px/1.3 var(--font-display);
 }
-.finding-name .title-text {
-  min-width: 0;
-  overflow-wrap: anywhere;
-}
+.finding-name .title-text { min-width: 0; overflow-wrap: anywhere; }
 .finding-line {
   margin-block-start: 6px;
   font-size: 14px;
@@ -84,26 +74,11 @@
   background: none;
   border-block-start: 2px dashed var(--text-secondary);
 }
-.chart-legend {
-  padding-block-end: 12px;
-  padding-inline: 16px;
-}
-.chart-wrap {
-  padding-block-end: 16px;
-  padding-inline: 16px;
-}
-.chart {
-  width: 100%;
-  overflow: visible;
-}
-.ch-grid {
-  stroke: var(--surface-3);
-  stroke-width: 1;
-}
-.ch-base {
-  stroke: #34445c;
-  stroke-width: 1;
-}
+.chart-legend { padding-block-end: 12px; padding-inline: 16px; }
+.chart-wrap { padding-block-end: 16px; padding-inline: 16px; }
+.chart { width: 100%; overflow: visible; }
+.ch-grid { stroke: var(--surface-3); stroke-width: 1; }
+.ch-base { stroke: #34445c; stroke-width: 1; }
 .ch-ref {
   stroke: var(--text-secondary);
   stroke-width: 1;
@@ -133,11 +108,7 @@
   border-radius: var(--radius-card);
   background-color: var(--surface-1);
 }
-.table-hint {
-  margin-block-end: 8px;
-  font-size: 13px;
-  color: var(--text-muted);
-}
+.table-hint { margin-block-end: 8px; font-size: 13px; color: var(--text-muted); }
 @media (min-width: 1024px) {
   .table-hint { display: none; }
 }
@@ -185,14 +156,7 @@
   border-block-end: 0;
   border-block-start: 1px solid var(--rule);
 }
-.comp-table .deck-cell {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
+.comp-table .deck-cell { display: flex; align-items: center; gap: 8px; }
 .comp-table .key { font-weight: 600; }
-.comp-table .game-count {
-  color: var(--text-muted);
-  font-size: 12px;
-}
+.comp-table .game-count { color: var(--text-muted); font-size: 12px; }
 .matrix-row.lead .title-text { color: var(--color-brand); }

@@ -1,11 +1,7 @@
 /* ------------------------------------------------------------------
    Cards, KPI strip, pills
    ------------------------------------------------------------------ */
-.card {
-  min-width: 0;
-  background-color: var(--surface-1);
-  border-radius: var(--radius-card);
-}
+.card { min-width: 0; background-color: var(--surface-1); border-radius: var(--radius-card); }
 .card-pad { padding: 16px; }
 .card-head {
   display: flex;
@@ -23,16 +19,9 @@
   border-radius: var(--radius-card);
   background-color: var(--bg-main);
 }
-.kpi {
-  padding: 14px 14px 12px;
-  min-width: 0;
-  background-color: var(--surface-1);
-}
+.kpi { padding: 14px 14px 12px; min-width: 0; background-color: var(--surface-1); }
 .kpis.two { grid-template-columns: repeat(2, minmax(0, 1fr)) !important; }
-.kpi-label {
-  font-size: 13px;
-  color: var(--text-muted);
-}
+.kpi-label { font-size: 13px; color: var(--text-muted); }
 .kpi-value {
   margin-block-start: 4px;
   font: 600 24px/1.2 var(--font-body);
@@ -95,20 +84,10 @@
   white-space: nowrap;
   border-radius: 999px;
 }
-.pill.good {
-  color: var(--pill-good-ink);
-  background-color: var(--pill-good-bg);
-}
-.pill.insufficient {
-  color: var(--text-secondary);
-  background-color: var(--surface-3);
-}
+.pill.good { color: var(--pill-good-ink); background-color: var(--pill-good-bg); }
+.pill.insufficient { color: var(--text-secondary); background-color: var(--surface-3); }
 
-.pips {
-  display: inline-flex;
-  gap: 3px;
-  flex: none;
-}
+.pips { display: inline-flex; gap: 3px; flex: none; }
 .pip {
   --pip: 16px;
   position: relative;

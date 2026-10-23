@@ -1,11 +1,7 @@
 /* ------------------------------------------------------------------
    Deck cards: win rate against the 50% line
    ------------------------------------------------------------------ */
-.deck-grid {
-  display: grid;
-  gap: 12px;
-  grid-template-columns: minmax(0, 1fr);
-}
+.deck-grid { display: grid; gap: 12px; grid-template-columns: minmax(0, 1fr); }
 @media (min-width: 640px) {
 
   .deck-grid.cols-2 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
@@ -33,10 +29,7 @@
   content: "";
 }
 .deck-title:focus-visible { outline: none; }
-.deck-title:focus-visible::after {
-  outline: 2px solid var(--color-brand);
-  outline-offset: 2px;
-}
+.deck-title:focus-visible::after { outline: 2px solid var(--color-brand); outline-offset: 2px; }
 .deck-card:hover { background-color: var(--surface-2); }
 .deck-card:active { background-color: var(--surface-3); }
 .deck-head {
@@ -59,15 +52,8 @@
   cursor: pointer;
 }
 .deck-title .pips { --pip: 26px; }
-.deck-title .title-text {
-  min-width: 0;
-  overflow-wrap: anywhere;
-}
-.deck-body {
-  display: flex;
-  flex-direction: column;
-  gap: 16px;
-}
+.deck-title .title-text { min-width: 0; overflow-wrap: anywhere; }
+.deck-body { display: flex; flex-direction: column; gap: 16px; }
 .win-rate {
   display: flex;
   align-items: baseline;
@@ -85,11 +71,7 @@
   font-variant-numeric: tabular-nums;
   text-align: end;
 }
-.sort-note {
-  font-size: 13px;
-  font-weight: 500;
-  color: var(--text-primary);
-}
+.sort-note { font-size: 13px; font-weight: 500; color: var(--text-primary); }
 .meter {
   position: relative;
   height: 8px;
@@ -131,15 +113,8 @@
   flex-wrap: wrap;
   margin-block-start: 14px;
 }
-.form-label {
-  font-size: 13px;
-  color: var(--text-muted);
-}
-.form-pills {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 4px;
-}
+.form-label { font-size: 13px; color: var(--text-muted); }
+.form-pills { display: flex; flex-wrap: wrap; gap: 4px; }
 .form-pill {
   display: inline-flex;
   align-items: center;
@@ -150,37 +125,20 @@
   font-variant-numeric: tabular-nums;
   border-radius: 6px;
 }
-.form-pill.win {
-  color: var(--pill-good-ink);
-  background-color: var(--pill-good-bg);
-}
-.form-pill.loss {
-  color: var(--pill-bad-ink);
-  background-color: var(--pill-bad-bg);
-}
-.form-pill.draw {
-  color: var(--text-secondary);
-  background-color: var(--surface-3);
-}
+.form-pill.win { color: var(--pill-good-ink); background-color: var(--pill-good-bg); }
+.form-pill.loss { color: var(--pill-bad-ink); background-color: var(--pill-bad-bg); }
+.form-pill.draw { color: var(--text-secondary); background-color: var(--surface-3); }
 
 /* A card in a wide column (tablet, or one deck on its own) spreads into two columns instead of stretching. */
 @container (min-width: 520px) {
-  .deck-head {
-    flex-direction: row;
-    align-items: center;
-    justify-content: space-between;
-  }
+  .deck-head { flex-direction: row; align-items: center; justify-content: space-between; }
   .deck-body {
     display: grid;
     grid-template-columns: minmax(190px, .9fr) minmax(0, 1.3fr);
     gap: 32px;
     align-items: center;
   }
-  .win-rate {
-    flex-direction: column;
-    align-items: flex-start;
-    gap: 6px;
-  }
+  .win-rate { flex-direction: column; align-items: flex-start; gap: 6px; }
   .win-rate-detail {
     display: flex;
     flex-direction: column;

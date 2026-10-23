@@ -9,20 +9,14 @@
 }
 .detail-picker { max-width: 420px; }
 .form-title { margin-block-end: 16px; }
-.record-points {
-  margin-block-start: 16px;
-  margin-block-end: 0;
-}
+.record-points { margin-block-start: 16px; margin-block-end: 0; }
 .field-label,
 legend {
   font-size: 14px;
   font-weight: 500;
   color: var(--text-primary);
 }
-fieldset {
-  min-width: 0;
-  border: 0;
-}
+fieldset { min-width: 0; border: 0; }
 /* Date, deck and position share a row once there is room; the name of a new deck takes the full row below them. */
 @media (min-width: 640px) {
   .field-row {
@@ -32,14 +26,8 @@ fieldset {
   }
   .field-row > #custom-deck-group { grid-column: 1 / -1; }
 }
-legend {
-  padding: 0;
-  margin-block-end: 8px;
-}
-.hint {
-  font-size: 13px;
-  color: var(--text-muted);
-}
+legend { padding: 0; margin-block-end: 8px; }
+.hint { font-size: 13px; color: var(--text-muted); }
 .input-ctrl {
   width: 100%;
   min-height: 48px;
@@ -67,15 +55,8 @@ legend {
   background-repeat: no-repeat;
   background-position: right 12px center;
 }
-.input-ctrl-select option {
-  color: var(--text-primary);
-  background-color: var(--surface-1);
-}
-.input-ctrl-file {
-  padding: 7px;
-  color: var(--text-secondary);
-  font-size: 15px;
-}
+.input-ctrl-select option { color: var(--text-primary); background-color: var(--surface-1); }
+.input-ctrl-file { padding: 7px; color: var(--text-secondary); font-size: 15px; }
 .input-ctrl-file::file-selector-button {
   min-height: 32px;
   margin-inline-end: 12px;
@@ -87,21 +68,14 @@ legend {
   background-color: var(--surface-3);
   cursor: pointer;
 }
-.record-inputs-row {
-  display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 8px;
-}
+.record-inputs-row { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
 .record-input-label {
   display: block;
   margin-block-end: 6px;
   font-size: 13px;
   color: var(--text-secondary);
 }
-.record-inputs-row .input-ctrl {
-  text-align: center;
-  font-variant-numeric: tabular-nums;
-}
+.record-inputs-row .input-ctrl { text-align: center; font-variant-numeric: tabular-nums; }
 .preset-records {
   display: flex;
   flex-wrap: wrap;
@@ -121,10 +95,7 @@ legend {
   cursor: pointer;
   transition: background-color .15s, color .15s;
 }
-.preset-chip:hover {
-  color: var(--text-primary);
-  background-color: #26384f;
-}
+.preset-chip:hover { color: var(--text-primary); background-color: #26384f; }
 .preset-chip[aria-pressed="true"] {
   color: var(--text-primary);
   font-weight: 600;
@@ -135,10 +106,7 @@ legend {
   border: 1px solid #2c3b53; /* taste-skill-ignore: the outline says "opens more", unlike the filled record chips */
 }
 .preset-chip.more:hover { background-color: var(--surface-2); }
-.preset-chip:active {
-  color: var(--bg-main);
-  background-color: var(--color-brand);
-}
+.preset-chip:active { color: var(--bg-main); background-color: var(--color-brand); }
 
 #scan-status {
   min-height: 0;
@@ -178,15 +146,8 @@ legend {
   transition: transform .2s;
 }
 .acc-head[aria-expanded="true"] .chevron { transform: rotate(180deg); }
-.acc-body {
-  padding-block-start: 14px;
-  padding-inline: 2px;
-}
-.acc-body-text {
-  margin-block-end: 14px;
-  font-size: 14px;
-  color: var(--text-secondary);
-}
+.acc-body { padding-block-start: 14px; padding-inline: 2px; }
+.acc-body-text { margin-block-end: 14px; font-size: 14px; color: var(--text-secondary); }
 
 .toggle-row {
   display: flex;
@@ -202,11 +163,7 @@ legend {
   transition: background-color .15s;
 }
 .toggle-row:hover { background-color: var(--surface-3); }
-.toggle-title {
-  display: block;
-  font-size: 15px;
-  font-weight: 500;
-}
+.toggle-title { display: block; font-size: 15px; font-weight: 500; }
 .toggle-hint {
   display: block;
   margin-block-start: 2px;
@@ -239,11 +196,7 @@ legend {
 }
 .switch:checked { background-color: #10b981; }
 .switch:checked::after { transform: translateX(18px); }
-.panel-copy {
-  margin-block-start: 6px;
-  font-size: 15px;
-  color: var(--text-secondary);
-}
+.panel-copy { margin-block-start: 6px; font-size: 15px; color: var(--text-secondary); }
 
 .toast {
   position: fixed;
@@ -269,16 +222,8 @@ legend {
   pointer-events: none;
   transition: opacity .2s, transform .2s;
 }
-.toast.show {
-  opacity: 1;
-  transform: translateY(0);
-  pointer-events: auto;
-}
-#toast-text {
-  flex: 1;
-  min-width: 0;
-  overflow-wrap: anywhere;
-}
+.toast.show { opacity: 1; transform: translateY(0); pointer-events: auto; }
+#toast-text { flex: 1; min-width: 0; overflow-wrap: anywhere; }
 .toast-action {
   flex: none;
   min-height: 44px;
@@ -310,11 +255,7 @@ legend {
 .dialog::backdrop { background-color: rgb(10 14 20 / .72); }
 .dialog-in { padding: 20px; }
 .dialog-title { font: 600 18px/1.3 var(--font-display); }
-.dialog-body {
-  margin-block-start: 8px;
-  font-size: 15px;
-  color: var(--text-secondary);
-}
+.dialog-body { margin-block-start: 8px; font-size: 15px; color: var(--text-secondary); }
 .dialog-actions {
   display: grid;
   grid-template-columns: 1fr 1fr;
@@ -323,17 +264,10 @@ legend {
 }
 .dialog-field { margin-block-start: 16px; }
 .dialog-remove { margin-block-start: 8px; }
-.btn-danger-solid {
-  width: 100%;
-  color: var(--bg-main);
-  background-color: #fb7185;
-}
+.btn-danger-solid { width: 100%; color: var(--bg-main); background-color: #fb7185; }
 .btn-danger-solid:hover { background-color: #fda4af; }
 .btn-danger-solid:active { background-color: #f43f5e; }
 
 /* Inline field errors */
-.field-error {
-  font-size: 13px;
-  color: var(--color-bad);
-}
+.field-error { font-size: 13px; color: var(--color-bad); }
 .input-ctrl[aria-invalid="true"] { border-color: #fb7185; }
