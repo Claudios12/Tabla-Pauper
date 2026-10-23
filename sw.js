@@ -1,11 +1,16 @@
-const CACHE_NAME = 'pauper-deck-arena-v4';
+const CACHE_NAME = 'pauper-deck-arena-v5';
 const FONT_CACHE = 'pauper-fonts-v1';
 const CDN_CACHE = 'pauper-cdn-v1';
 
-const ASSETS = [
+// The app cannot start offline without these: if one fails, the new version does not install.
+const SHELL = [
   '/',
   '/index.html',
-  '/manifest.json',
+  '/manifest.json'
+];
+
+// Nice to have offline. A missing image must not block an update, so each is cached on its own.
+const ASSETS = [
   '/Imgs/icons/icon-192.png',
   '/Imgs/icons/icon-512.png',
   '/Imgs/logo.png',
@@ -19,7 +24,10 @@ const ASSETS = [
 self.addEventListener('install', (event) => {
   event.waitUntil(
     caches.open(CACHE_NAME)
-      .then((cache) => cache.addAll(ASSETS))
+      .then(async (cache) => {
+        await cache.addAll(SHELL);
+        await Promise.allSettled(ASSETS.map((asset) => cache.add(asset)));
+      })
       .then(() => self.skipWaiting())
   );
 });
@@ -108,23 +116,32 @@ self.addEventListener('fetch', (event) => {
           }
           return response;
         })
-        .catch(() => caches.match(event.request) || caches.match('/index.html'))
+        .catch(async () => {
+          // This page if it was saved, otherwise the app shell. '/' comes before '/index.html' because
+          // the host redirects the latter, and a redirected response cannot answer a page navigation.
+          return (await caches.match(event.request))
+            || (await caches.match('/'))
+            || caches.match('/index.html');
+        })
     );
   } else {
-    // Cache-first for same-origin assets
+    // Stale-while-revalidate for same-origin assets: answer from the cache at once and refresh it in the
+    // background. The images keep their file names when they change, so cache-first would show the old
+    // one until the next release.
     event.respondWith(
-      caches.match(event.request).then((cached) => {
-        if (cached) return cached;
-
-        return fetch(event.request)
-          .then((response) => {
-            if (response && response.status === 200 && response.type === 'basic') {
-              const responseClone = response.clone();
-              caches.open(CACHE_NAME).then((cache) => cache.put(event.request, responseClone));
-            }
-            return response;
-          })
-          .catch(() => caches.match('/index.html'));
+      caches.open(CACHE_NAME).then(async (cache) => {
+        const cached = await cache.match(event.request);
+        const refresh = fetch(event.request).then((response) => {
+          if (response && response.status === 200 && response.type === 'basic') {
+            event.waitUntil(cache.put(event.request, response.clone()));
+          }
+          return response;
+        });
+        if (cached) {
+          event.waitUntil(refresh.catch(() => {}));
+          return cached;
+        }
+        return refresh.catch(() => Response.error());
       })
     );
   }
