@@ -1,4 +1,4 @@
-const CACHE_NAME = 'pauper-deck-arena-v5';
+const CACHE_NAME = 'pauper-deck-arena-v6';
 const FONT_CACHE = 'pauper-fonts-v1';
 const CDN_CACHE = 'pauper-cdn-v1';
 
@@ -6,7 +6,32 @@ const CDN_CACHE = 'pauper-cdn-v1';
 const SHELL = [
   '/',
   '/index.html',
-  '/manifest.json'
+  '/manifest.json',
+  '/css/base.css',
+  '/css/shell.css',
+  '/css/controls.css',
+  '/css/cards.css',
+  '/css/deck-cards.css',
+  '/css/analysis.css',
+  '/css/log.css',
+  '/css/forms.css',
+  '/css/colour.css',
+  '/css/views.css',
+  '/js/register-sw.js',
+  '/js/config.js',
+  '/js/data.js',
+  '/js/state.js',
+  '/js/analytics.js',
+  '/js/format.js',
+  '/js/arena.js',
+  '/js/arena-insights.js',
+  '/js/arena-decks.js',
+  '/js/arena-history.js',
+  '/js/arena-logger.js',
+  '/js/arena-undo.js',
+  '/js/arena-shell.js',
+  '/js/arena-data.js',
+  '/js/main.js'
 ];
 
 // Nice to have offline. A missing image must not block an update, so each is cached on its own.
@@ -103,10 +128,11 @@ self.addEventListener('fetch', (event) => {
   // All other cross-origin requests pass through (e.g., Tesseract workers, traineddata)
   if (url.origin !== self.location.origin) return;
 
-  const isHtml = event.request.mode === 'navigate' || url.pathname.endsWith('.html') || url.pathname.endsWith('manifest.json');
+  // The page, its scripts and styles ship together, so they are always fetched as a set: a new page must never run old code.
+  const isHtml = event.request.mode === 'navigate' || /\.(html|js|css)$/.test(url.pathname) || url.pathname.endsWith('manifest.json');
 
   if (isHtml) {
-    // Network-first for HTML and manifest: always fetch fresh, fallback to cache
+    // Network-first for HTML, scripts, styles and manifest: always fetch fresh, fallback to cache
     event.respondWith(
       fetch(event.request)
         .then((response) => {

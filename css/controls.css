@@ -1,0 +1,78 @@
+/* ------------------------------------------------------------------
+   Controls
+   ------------------------------------------------------------------ */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-height: 48px;
+  padding-inline: 18px;
+  font: 600 15px/1.1 var(--font-body);
+  text-decoration: none;
+  border: 0;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  transition: background-color .15s, color .15s, transform .1s;
+}
+.btn:active { transform: scale(.98); }
+.btn-icon {
+  width: 18px;
+  height: 18px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.6;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+.btn-primary {
+  width: 100%;
+  color: var(--bg-main);
+  background-color: var(--color-brand);
+}
+.btn-primary:hover { background-color: var(--color-brand-hover); }
+.btn-primary:active { background-color: var(--color-brand-press); }
+.btn-secondary {
+  width: 100%;
+  color: var(--text-primary);
+  background-color: var(--surface-3);
+}
+.btn-secondary:hover { background-color: #26384f; }
+.btn-secondary:active { background-color: #14202f; }
+.btn-danger {
+  width: 100%;
+  color: var(--pill-bad-ink);
+  background-color: transparent;
+  border: 1px solid rgb(244 63 94 / .55); /* taste-skill-ignore: outline marks the quieter destructive action */
+}
+.btn-danger:hover { background-color: rgb(244 63 94 / .14); }
+.btn-danger:active { background-color: rgb(244 63 94 / .22); }
+.btn-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+  margin-block-start: 14px;
+}
+
+.btn-icon-del {
+  width: 44px;
+  height: 44px;
+  display: inline-grid;
+  place-items: center;
+  flex: none;
+  color: var(--text-muted);
+  border: 0;
+  border-radius: var(--radius-sm);
+  background-color: transparent;
+  cursor: pointer;
+  transition: background-color .15s, color .15s;
+}
+.row-delete-icon {
+  width: 18px;
+  height: 18px;
+}
+.btn-icon-del:hover {
+  color: var(--pill-bad-ink);
+  background-color: rgb(244 63 94 / .14);
+}
+.btn-icon-del:active { background-color: rgb(244 63 94 / .22); }
