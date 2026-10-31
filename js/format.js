@@ -3,7 +3,8 @@
 /* exported nf0, nf1, pct, plural, esc, MANA_NAME, deckInfo, pipsHtml, stripeHtml, deckNameHtml,
          shortDate, TRASH_ICON, logRowHtml, pickLead, deckExtremes, statusPillClass, deckPillHtml,
          deltaHtml, localIsoDate, seasonOf, SEASON_FORMAT, nextSeason, seasonEndBounds, isIsoDate,
-         cleanSeasonEnds, longDate */
+         cleanSeasonEnds, cleanSeasonTop, longDate, deckNameWithColours, weekdayName, cleanProfile,
+         PROFILE_NAME_MAX, isStoreNight, countEntries */
 
 // ══════════════════════════════════════════════════════════════════
 // DISPLAY HELPERS (formatting, deck names as mana pips)
@@ -33,6 +34,18 @@ function deckInfo(raw) {
   }
   const name = String(raw ?? '').replace(EMOJI_RE, '').replace(/\s{2,}/g, ' ').trim();
   return { name: name || String(raw ?? ''), pips };
+}
+
+const PIP_EMOJI = Object.fromEntries(Object.entries(PIP_MAP).map(([emoji, key]) => [key, emoji]));
+const PIP_ORDER = ['w', 'u', 'b', 'r', 'g'];
+
+// What is stored for a deck made from a name and the colours picked for it: the colour circles first, then the name, the same
+// way every deck here is written. A name that already carries its colours (typed as emoji) is kept as it is.
+function deckNameWithColours(name, colours) {
+  const clean = String(name ?? '').trim();
+  if (!clean || deckInfo(clean).pips.length) return clean;
+  const circles = PIP_ORDER.filter((key) => colours.includes(key)).map((key) => PIP_EMOJI[key]).join('');
+  return circles ? `${circles} ${clean}` : clean;
 }
 
 // The five symbols live in Imgs/mana/ (W, U, B, R, G). Each one sits on a colour dot that only shows if the image fails.
@@ -67,9 +80,21 @@ function rankClass(rankStr) {
   return '';
 }
 
+// A night made from the store's monthly table: nobody's tournament, only a table (see Monthly.create). It is told apart by both marks
+// (`source` alone is not enough: a backup edited by hand could put it on a real tournament, which must stay one).
+const isStoreNight = (item) => !!item && item.source === 'store' && item.deck === 'No participó';
+
+// "5 torneos y 3 noches de la liga": the nights made from the store's table are not tournaments, so they are counted apart.
+const countEntries = (entries) => {
+  const made = entries.filter(isStoreNight).length;
+  return plural(entries.length - made, 'torneo', 'torneos') + (made ? ` y ${plural(made, 'noche de la liga', 'noches de la liga')}` : '');
+};
+
 // One tournament as a row. mode "deck": the deck leads (history, preview).
 // mode "date": the date leads (the timeline inside a deck's dossier).
 function logRowHtml(item, opts = {}) {
+  // A night made from the store's monthly table is nobody's tournament: a night of the league, with its table.
+  const store = isStoreNight(item);
   const skipped = item.type === 'none' || item.deck === 'No participó';
   const mode = opts.mode || 'deck';
   const date = esc(item.date);
@@ -84,13 +109,13 @@ function logRowHtml(item, opts = {}) {
   }
   const pts = item.pts === '—' || item.pts === undefined || item.pts === null ? '—' : `${nf0.format(Number(item.pts))} pts`;
   const del = opts.delIdx !== undefined
-    ? `<button class="btn-icon-del js-delete-tournament" type="button" onclick="Arena.deleteTournament(${opts.delIdx}, this)" aria-label="Eliminar el torneo del ${date} con ${esc(deckInfo(item.deck).name)}">${TRASH_ICON.replace('<svg ', '<svg class="row-delete-icon" ')}</button>`
+    ? `<button class="btn-icon-del js-delete-tournament" type="button" onclick="Arena.deleteTournament(${opts.delIdx}, this)" aria-label="${store ? `Eliminar la noche del ${date} creada con la tabla de la tienda` : `Eliminar el torneo del ${date} con ${esc(deckInfo(item.deck).name)}`}">${TRASH_ICON.replace('<svg ', '<svg class="row-delete-icon" ')}</button>`
     : '';
   return `
     <li class="log-row js-log-row ${opts.delIdx !== undefined ? 'has-del' : ''} ${opts.preview ? 'preview' : ''} ${opts.fresh ? 'fresh' : ''}">
       <span class="tourney-rank ${rankClass(item.rank)}">${esc(item.rank || '—')}</span>
       <div class="log-main">
-        <div class="log-title">${skipped ? '<span class="title-text">No participó</span>' : title}</div>
+        <div class="log-title">${store ? '<span class="title-text">Noche de la liga</span>' : (skipped ? '<span class="title-text">No participó</span>' : title)}</div>
         <div class="log-sub">${sub}</div>
       </div>
       <div class="log-fig"><b class="log-fig-value ${item.type === 'good' ? 'good' : ''}">${pts}</b><small class="log-fig-detail">${esc(item.wl || '—')}</small></div>
@@ -145,6 +170,11 @@ function localIsoDate(d = new Date()) {
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
 }
 
+// The weekdays by their number (0 is Sunday), written the way the locale writes them: "domingo", "lunes"… (2023-01-01 was a Sunday).
+const WEEKDAYS = Array.from({ length: 7 }, (_, day) => new Intl.DateTimeFormat('es', { weekday: 'long' }).format(new Date(2023, 0, 1 + day)));
+// The weekday as it reads after a number: "1 jueves", "3 jueves", "2 sábados" (the ones that end in s do not change).
+const weekdayName = (day, n = 1) => (n === 1 || WEEKDAYS[day].endsWith('s') ? WEEKDAYS[day] : `${WEEKDAYS[day]}s`);
+
 // A year has two seasons: January to June is 1, July to December is 2. Month is 1 to 12.
 function seasonOf(year, month) {
   return `${year}-${month <= 6 ? 1 : 2}`;
@@ -170,7 +200,7 @@ function isIsoDate(text) {
   return date.getFullYear() === y && date.getMonth() === m - 1 && date.getDate() === d;
 }
 
-// Keeps only { "2026-2": "2026-11-29" } entries; anything else a file or an old save carries is dropped.
+// Keeps only { "2027-1": "2027-06-24" } entries (a season and a real date); anything else a file or an old save carries is dropped.
 // Returns null when there is no such object at all, so callers can tell "none" from "empty".
 function cleanSeasonEnds(raw) {
   if (!raw || typeof raw !== 'object' || Array.isArray(raw)) return null;
@@ -179,6 +209,29 @@ function cleanSeasonEnds(raw) {
     if (SEASON_FORMAT.test(season) && isIsoDate(date)) clean[season] = date;
   });
   return clean;
+}
+
+// Keeps only { "2026-2": 10 } entries (a whole number of places, from 1 up to the most there can be); anything else is dropped.
+// Returns null when there is no such object at all, as cleanSeasonEnds does.
+function cleanSeasonTop(raw) {
+  if (!raw || typeof raw !== 'object' || Array.isArray(raw)) return null;
+  const clean = {};
+  Object.entries(raw).forEach(([season, top]) => {
+    if (SEASON_FORMAT.test(season) && Number.isInteger(top) && top >= 1 && top <= CONFIG.LEAGUE.MAX_TOP) clean[season] = top;
+  });
+  return clean;
+}
+
+const PROFILE_NAME_MAX = 120;
+
+// What a person says about themselves, whatever a backup file put there: a name (as the standings screens show it; several
+// spellings may be separated by commas) and the weekday the league plays, 0 (Sunday) to 6, or null while they have not said.
+// Returns null when there is no such object at all, as cleanSeasonEnds does.
+function cleanProfile(raw) {
+  if (!raw || typeof raw !== 'object' || Array.isArray(raw)) return null;
+  const name = typeof raw.name === 'string' ? raw.name.replace(/\s+/g, ' ').trim().slice(0, PROFILE_NAME_MAX) : '';
+  const day = Number.isInteger(raw.leagueDay) && raw.leagueDay >= 0 && raw.leagueDay <= 6 ? raw.leagueDay : null;
+  return { name, leagueDay: day };
 }
 
 const longDate = (iso) => new Intl.DateTimeFormat('es', { day: 'numeric', month: 'long', year: 'numeric' }).format(Analytics.parseDate(iso));

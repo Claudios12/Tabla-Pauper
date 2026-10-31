@@ -107,6 +107,22 @@ legend { padding: 0; margin-block-end: 8px; }
 }
 .preset-chip.more:hover { background-color: var(--surface-2); }
 .preset-chip:active { color: var(--bg-main); background-color: var(--color-brand); }
+/* The colours of a new deck: the five mana symbols as toggles, the same chips as the record presets */
+.deck-colours {
+  min-width: 0;
+  margin-block-start: 14px;
+  margin-inline: 0;
+  padding: 0;
+  border: 0;
+}
+.colour-pick {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+.colour-pick .pip { --pip: 20px; flex: none; }
+.deck-colours .colour-picks { margin-block-start: 0; }
+.scan-identify { margin-block-start: 12px; }
 
 #scan-status {
   min-height: 0;
@@ -251,6 +267,7 @@ legend { padding: 0; margin-block-end: 8px; }
   border-radius: var(--radius-card);
   background-color: var(--surface-2);
   box-shadow: 0 16px 48px rgb(0 0 0 / .55); /* taste-skill-ignore: the dialog floats */
+  overscroll-behavior: contain;
 }
 .dialog::backdrop { background-color: rgb(10 14 20 / .72); }
 .dialog-in { padding: 20px; }

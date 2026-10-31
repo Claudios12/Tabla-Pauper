@@ -1,5 +1,5 @@
 // Arena: the Historial list and its deck filter.
-/* global State, Analytics, plural, esc, deckNameHtml, logRowHtml, Arena */
+/* global State, Analytics, plural, countEntries, esc, deckNameHtml, logRowHtml, isStoreNight, Arena */
 
 Object.assign(Arena, {
   // ─────────────────────────────────────────────────────────────
@@ -42,9 +42,10 @@ Object.assign(Arena, {
     const container = document.getElementById("full-history-list");
     const countBadge = document.getElementById("history-entry-count");
     if (countBadge) {
+      // The nights made from the store's table are nobody's tournaments: they are counted apart.
       countBadge.textContent = this.historyDeck === 'all'
-        ? plural(entries.length, 'torneo', 'torneos')
-        : `${entries.length} de ${plural(seasonEntries.length, 'torneo', 'torneos')}`;
+        ? countEntries(entries)
+        : `${entries.length} de ${plural(seasonEntries.filter(e => !isStoreNight(e)).length, 'torneo', 'torneos')}`;
     }
 
     if (!container) return;

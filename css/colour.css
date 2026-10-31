@@ -232,6 +232,10 @@
 .data-panel[open] .chevron { transform: rotate(180deg); }
 .data-body { padding: 4px 16px 18px; }
 .data-title { font-size: 15px; }
+.league-settings { margin-block-end: 28px; }
+/* The name is the person's own text, up to 120 characters: a long one wraps instead of pushing the panel sideways */
+.league-settings .panel-copy { overflow-wrap: anywhere; }
+.league-settings .btn { margin-block-start: 12px; }
 .data-body .toggle-row { margin-block-start: 20px; }
 .reset-block { margin-block-start: 32px; }
 .reset-block .panel-copy { margin-block-end: 14px; }

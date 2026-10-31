@@ -1,6 +1,6 @@
 // Arena: the Registrar form, its live preview and the OCR scan.
-/* global CONFIG, State, Analytics, pct, plural, deckInfo, logRowHtml, localIsoDate, seasonOf,
-         Arena */
+/* global CONFIG, State, Analytics, League, pct, plural, deckInfo, logRowHtml, localIsoDate, seasonOf,
+         isStoreNight, Arena */
 
 Object.assign(Arena, {
   // ─────────────────────────────────────────────────────────────
@@ -11,8 +11,7 @@ Object.assign(Arena, {
     if (!el) return;
     const val = (id) => (document.getElementById(id)?.value ?? '').trim();
 
-    let deck = val("log-deck");
-    if (deck === "other") deck = val("log-custom-deck");
+    const deck = this.formDeck();
 
     const dateVal = val("log-date");
     let date = '—';
@@ -43,8 +42,9 @@ Object.assign(Arena, {
     // What Save will store, in the bar that stays on screen while the form scrolls on a phone.
     const summary = document.getElementById("save-summary");
     if (summary) {
+      const table = this.scannedSummary();
       summary.textContent = (deck && hasRecord)
-        ? [deckInfo(deck).name, wl, `${pts} pts`, rank].filter(Boolean).join(' · ')
+        ? [deckInfo(deck).name, wl, `${pts} pts`, rank, table].filter(Boolean).join(' · ')
         : 'Elige un récord para poder guardar.';
     }
     const saveBtn = document.querySelector(".js-save-button");
@@ -73,6 +73,7 @@ Object.assign(Arena, {
       note.textContent = dup ? `Ya registraste ${deckInfo(dup.deck).name} el ${dup.date}. Si es otro torneo, guárdalo igual.` : '';
     }
 
+    this.renderSameDay();
     this.syncRecordUi();
   },
 
@@ -129,7 +130,24 @@ Object.assign(Arena, {
     return inputId;
   },
 
-  saveManualTournament() {
+  // Rows of the table that still need a look ask before the table is kept: the person goes back to them, or keeps them as
+  // they are. Resolves false when they go back (and takes them there).
+  async confirmDoubtfulRows() {
+    const doubtful = this._scanned.filter(row => row.flags.length).length;
+    if (!doubtful) return true;
+    const omitted = this._scanned.filter(row => !this.scannedRowIsComplete(row)).length;
+    const blank = omitted === 0 ? '' : (omitted === 1 ? ' La que no tiene puntos no se guardará.' : ` Las ${omitted} que no tienen puntos no se guardarán.`);
+    const ok = await this.confirmDialog({
+      title: "La tabla leída tiene filas por revisar",
+      body: `${plural(doubtful, 'fila tiene', 'filas tienen')} avisos.${blank} Si guardas así, la tabla de la liga puede salir con errores.`,
+      confirmLabel: "Guardar igual",
+      danger: false
+    });
+    if (!ok) this.openScanReview();
+    return ok;
+  },
+
+  async saveManualTournament() {
     const val = (id) => (document.getElementById(id)?.value ?? '').trim();
     this.clearFieldErrors();
     this.setStatus('');
@@ -144,8 +162,11 @@ Object.assign(Arena, {
     // Deck
     let selectedDeck = val("log-deck");
     if (selectedDeck === "other") {
-      selectedDeck = val("log-custom-deck");
-      if (!selectedDeck) fail("log-custom-deck", "Escribe el nombre del mazo.");
+      if (!val("log-custom-deck")) fail("log-custom-deck", "Escribe el nombre del mazo.");
+      selectedDeck = this.formDeck();
+      // A deck that reads the same in the lists as one already there is that deck: a second one would split its numbers.
+      const twin = selectedDeck && State.decksList.find(deck => deck !== selectedDeck && deckInfo(deck).name.toLowerCase() === deckInfo(selectedDeck).name.toLowerCase());
+      if (twin) fail("log-custom-deck", `Ya tienes un mazo llamado «${deckInfo(twin).name}»: elígelo en la lista «Mazo jugado».`);
     }
 
     // Rank: optional, but a number when present
@@ -191,6 +212,26 @@ Object.assign(Arena, {
       return;
     }
 
+    // The table the scan read goes with the tournament, but never on trust: rows that still need a look ask first, and a
+    // row without points cannot be added up, so it is left out (and the person is told).
+    const tableRows = this._scanned.filter(row => this.scannedRowIsComplete(row));
+    const omitted = this._scanned.length - tableRows.length;
+    if (!(await this.confirmDoubtfulRows())) return;
+    // Another picture of a table that is already saved is the same night, not another one: saved apart, the day would count twice.
+    const savedToday = tableRows.length ? this.sameDayTournament() : null;
+    if (savedToday && Array.isArray(savedToday.playerResults) && savedToday.playerResults.length) {
+      const ok = await this.confirmDialog({
+        title: "Ya hay una tabla de este día",
+        body: `El ${savedToday.date} ya tiene un torneo guardado con una tabla de ${plural(savedToday.playerResults.length, 'jugador', 'jugadores')}. Si estas capturas son otra parte de ese mismo torneo, cancela y usa «Sumar al torneo guardado»: guardadas aparte, ese día contaría dos veces en la liga. Si es otro torneo, guárdalo igual.`,
+        confirmLabel: "Guardar como otro torneo",
+        danger: false
+      });
+      if (!ok) {
+        this.openScanReview();
+        return;
+      }
+    }
+
     const [y, m, dayNum] = dateVal.split("-").map(Number);
     const entry = {
       date: `${dayNum} ${CONFIG.MONTHS_ABBR[m - 1]}`,
@@ -203,11 +244,25 @@ Object.assign(Arena, {
       type: ptsVal >= CONFIG.BENCHMARKS.TYPE_GOOD_PTS ? "good" : (ptsVal <= CONFIG.BENCHMARKS.TYPE_BAD_PTS ? "bad" : "normal"),
       notes: val("log-notes")
     };
+    // Only what the General tab adds up is stored: the name, the points and, when it was read cleanly, the record.
+    if (tableRows.length) entry.playerResults = tableRows.map(row => (row.wl ? { name: row.name, pts: row.pts, wl: row.wl } : { name: row.name, pts: row.pts }));
 
     const before = this.snapshot();
+    // A night made from the store's table for this day gives way to the person's own table, and brings what that one lacks: the
+    // store's retos and the players the scan missed (the person's own points stay).
+    const madeNight = tableRows.length ? State.historic.find(item => isStoreNight(item) && item.isoDate === dateVal) : null;
+    let absorbed = null;
+    if (madeNight) {
+      absorbed = League.absorb(entry.playerResults, madeNight.playerResults);
+      entry.playerResults = absorbed.rows;
+      State.historic.splice(State.historic.indexOf(madeNight), 1);
+    }
     State.historic.push(entry);
     State.syncDecksList();
     State.save();
+    // Undo takes the tournament out of the history, but the table took a while to check: it goes back to the form.
+    const keptScan = { rows: this._scanned.map(row => ({ ...row, flags: [...row.flags] })), notes: { ...this._scanNotes } };
+    this.clearScannedStandings();
 
     // Land where the new row can be found, even if the season filter would hide it.
     if (this.currentFilterSeason !== 'all' && this.currentFilterSeason !== entry.season) {
@@ -225,10 +280,11 @@ Object.assign(Arena, {
       const el = document.getElementById(id);
       if (el) el.value = "";
     });
+    this.clearDeckColours();
     this.toggleRecordExtra(false);
     this.renderLogPreview();
 
-    this.switchTab('pg-history', document.querySelectorAll('.js-nav-link')[3]);
+    this.switchTab('pg-history');
     const reduce = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
     requestAnimationFrame(() => {
       const row = document.querySelector(".js-log-row.fresh");
@@ -250,8 +306,22 @@ Object.assign(Arena, {
       else if (Analytics.roundPct(prev.winRate) === Analytics.roundPct(next.winRate)) effect = ` Su % de victorias en ${entry.season} se mantiene en ${pct(next.winRate)}.`;
       else effect = ` Su % de victorias en ${entry.season} pasa de ${pct(prev.winRate)} a ${pct(next.winRate)}.`;
     }
-    this.notify(`Torneo guardado: ${deckInfo(selectedDeck).name} · ${entry.wl} · ${ptsVal} pts.${effect}`, {
-      action: { label: 'Deshacer', run: () => { this.restoreSnapshot(before); this.notify('Torneo deshecho. Puedes registrarlo de nuevo cuando quieras.'); } }
+    const absorbedNote = absorbed ? ` La noche de ese día creada con la tabla de la tienda se juntó con tu tabla: ${plural(absorbed.retos, 'reto', 'retos')} y ${plural(absorbed.added, 'jugador', 'jugadores')} que tu captura no traía.` : '';
+    const tableNote = tableRows.length ? ` Tabla de ${plural(tableRows.length, 'jugador', 'jugadores')} guardada.${omitted ? ` ${omitted === 1 ? '1 fila sin puntos no se guardó' : `${omitted} filas sin puntos no se guardaron`}.` : ''}` : '';
+    this.notify(`Torneo guardado: ${deckInfo(selectedDeck).name} · ${entry.wl} · ${ptsVal} pts.${effect}${tableNote}${absorbedNote}`, {
+      action: {
+        label: 'Deshacer',
+        run: () => {
+          this.restoreSnapshot(before);
+          if (keptScan.rows.length) {
+            this._scanned = keptScan.rows;
+            this._scanNotes = keptScan.notes;
+            this.renderScanned();
+            this.renderLogPreview();
+          }
+          this.notify(keptScan.rows.length ? 'Torneo deshecho. La tabla leída sigue en Registrar por si lo guardas de nuevo.' : 'Torneo deshecho. Puedes registrarlo de nuevo cuando quieras.');
+        }
+      }
     });
   },
 });

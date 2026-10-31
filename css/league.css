@@ -1,0 +1,379 @@
+/* ------------------------------------------------------------------
+   General: the league table, and the review list for the table a scan read.
+   Your row is one tone step up; the cut line is a quiet rule, not a colour.
+   ------------------------------------------------------------------ */
+.league-board { margin-block-start: 28px; }
+/* On a narrow phone the season and player count drop under the title instead of squeezing it. */
+.board-card .card-head { flex-wrap: wrap; row-gap: 2px; }
+.board-note {
+  padding-block-end: 10px;
+  padding-inline: 16px;
+  font-size: 13px;
+  color: var(--text-muted);
+}
+.board {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding-block-end: 8px;
+  padding-inline: 8px;
+}
+/* Rows off screen are not laid out until they are near it, so a long season stays cheap without a virtual list */
+.board-row {
+  display: grid;
+  grid-template-columns: 44px minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 8px;
+  min-height: 56px;
+  content-visibility: auto;
+  contain-intrinsic-size: auto 56px;
+  padding: 8px 12px;
+  border-radius: var(--radius-sm);
+  background-color: var(--surface-2);
+}
+.board-row.is-me { background-color: var(--surface-3); }
+.board-rank {
+  text-align: center;
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--text-muted);
+  font-variant-numeric: tabular-nums;
+}
+.board.in-top .board-rank { color: var(--text-primary); }
+.board-main { min-width: 0; }
+/* A person's name is never cut short: on a narrow screen it wraps, and the "Tú" tag drops under it if it must. */
+.board-name {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 2px 8px;
+  min-width: 0;
+  font-size: 15px;
+  font-weight: 500;
+}
+.board-row.is-me .board-name { font-weight: 600; }
+.board-name .title-text {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+.board-name .pill {
+  min-height: 20px;
+  color: var(--text-primary);
+  background-color: var(--bg-main);
+}
+.board-sub {
+  margin-block-start: 2px;
+  font-size: 13px;
+  color: var(--text-muted);
+}
+.board-pts {
+  font-size: 16px;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+.board-unit { font-size: 12px; font-weight: 400; color: var(--text-muted); }
+.board-cut {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-block: 8px;
+  padding-inline: 20px;
+  font-size: 12px;
+  color: var(--text-muted);
+}
+.board-cut::before,
+.board-cut::after {
+  height: 1px;
+  flex: 1;
+  background-color: #2f3f57;
+  content: "";
+}
+
+/* Rows that are already decided, whichever way: green, and a word says which (colour alone would not say it).
+   The tag sits on a dark chip because the row is the same green as a tag would be. */
+.board-row.is-clinched,
+.board-row.is-out {
+  /* the muted grey is too faint on this green (4.4:1, and 3.3:1 on your own green row): the next one up reads at 4.9:1 or more */
+  --text-muted: var(--text-secondary);
+  background-color: var(--pill-good-bg);
+}
+.board-row.is-me.is-clinched,
+.board-row.is-me.is-out { background-color: #17483a; }
+.board-row.is-clinched .pill.good,
+.board-row.is-out .pill.good { background-color: var(--bg-main); }
+
+/* The chance of ending outside the top */
+.league-ask {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 16px;
+  margin-block-start: 16px;
+  padding: 14px 16px;
+  border-radius: var(--radius-card);
+  background-color: var(--surface-1);
+}
+.league-ask-text {
+  flex: 1 1 260px;
+  font-size: 14px;
+  color: var(--text-secondary);
+}
+.league-ask-button { width: auto; }
+.league-risk { margin-block-start: 16px; }
+.risk-body {
+  padding-block: 4px 16px;
+  padding-inline: 16px;
+}
+.risk-figure {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 4px 14px;
+}
+.risk-value {
+  font: 600 36px/1 var(--font-body);
+  letter-spacing: -.02em;
+  font-variant-numeric: tabular-nums;
+}
+.risk-value.is-low { color: var(--color-good); }
+.risk-value.is-high { color: var(--color-bad); }
+.risk-label { font-size: 15px; font-weight: 500; }
+.risk-bar {
+  height: 10px;
+  margin-block-start: 14px;
+  overflow: hidden;
+  border-radius: 5px;
+  background-color: var(--surface-3);
+}
+.risk-fill {
+  display: block;
+  width: var(--w);
+  height: 100%;
+  background-color: var(--text-muted);
+}
+.risk-fill.is-low { background-color: #10b981; }
+.risk-fill.is-high { background-color: #f43f5e; }
+.risk-note {
+  margin-block-start: 10px;
+  font-size: 14px;
+  color: var(--text-secondary);
+}
+.risk-button {
+  width: auto;
+  margin-block-start: 12px;
+}
+.risk-body .how-to {
+  margin-block-start: 8px;
+  margin-block-end: 0;
+}
+
+/* The store's monthly table: what was read, how it compares with the nights saved, and what can be done about it */
+.league-month { margin-block-start: 16px; }
+.month-body {
+  padding-block: 4px 16px;
+  padding-inline: 16px;
+}
+.month-body > .btn { width: auto; }
+.month-status {
+  margin-block-start: 12px;
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--color-brand);
+}
+.month-status:empty { display: none; }
+.month-status.is-bad { color: var(--color-bad); }
+.month-result { margin-block-start: 16px; }
+.month-title { font-size: 16px; }
+.month-summary {
+  margin-block: 8px 12px;
+  font-size: 15px;
+  overflow-wrap: anywhere;
+}
+.month-dates {
+  min-width: 0;
+  margin-block-end: 12px;
+  margin-inline: 0;
+  padding: 0;
+  border: 0;
+}
+.month-date-fields {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  gap: 8px;
+}
+.month-nights {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-block: 0 12px;
+  margin-inline: 0;
+  padding: 0;
+  list-style: none;
+  font-size: 14px;
+}
+.month-nights > li {
+  padding: 10px 12px;
+  overflow-wrap: anywhere;
+  border-radius: var(--radius-sm);
+  background-color: var(--surface-2);
+}
+.month-details {
+  margin-block: 6px 0;
+  margin-inline: 0;
+  padding-inline-start: 18px;
+  list-style: disc;
+  color: var(--text-secondary);
+}
+.month-near { color: var(--text-muted); }
+/* Sliding the table sideways must not hit the browser's own back-swipe at its edge */
+.month-table { margin-block: 12px; overscroll-behavior-inline: contain; }
+/* One compact table, not the deck matrix: the night's points with its reto under them, so five dates fit a phone. */
+.month-grid {
+  width: 100%;
+  font-size: 14px;
+  font-variant-numeric: tabular-nums;
+  border-collapse: collapse;
+}
+.month-grid caption {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+}
+.month-grid th,
+.month-grid td {
+  padding-block: 8px;
+  padding-inline: 4px;
+  text-align: center;
+  border-block-start: 1px solid var(--rule);
+}
+.month-grid thead th {
+  font-size: 12px;
+  font-weight: 500;
+  white-space: nowrap;
+  color: var(--text-muted);
+  border-block-start: 0;
+  border-block-end: 1px solid var(--rule);
+}
+.month-grid tbody th {
+  min-width: 88px;
+  padding-inline-start: 8px;
+  font-weight: 500;
+  text-align: start;
+}
+.month-grid th:first-child { text-align: start; }
+.month-grid .month-reto {
+  display: block;
+  font-size: 12px;
+  line-height: 1.1;
+  color: var(--text-muted);
+}
+.month-grid td.is-differs {
+  font-weight: 600;
+  color: var(--pill-avg-ink);
+}
+.month-grid td.is-differs .month-reto { color: var(--pill-avg-ink); }
+.month-grid tr.is-doubtful th { color: var(--pill-avg-ink); }
+.month-grid td:last-child { font-weight: 600; }
+.month-fix { margin-block-end: 12px; }
+.month-fixrow {
+  min-width: 0;
+  margin-block: 0 8px;
+  margin-inline: 0;
+  padding: 12px;
+  border: 0;
+  border-radius: var(--radius-sm);
+  background-color: var(--surface-3);
+}
+.month-fixrow legend {
+  padding-inline: 4px;
+  font-size: 14px;
+  font-weight: 600;
+}
+.month-fixgrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: 8px;
+  margin-block: 8px;
+}
+.month-pair {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  gap: 4px;
+}
+.month-fixnote {
+  margin-block-start: 8px;
+  font-size: 13px;
+  overflow-wrap: anywhere;
+  color: var(--pill-avg-ink);
+}
+/* The secondary button is the editor's own tone and would vanish there: it sits one tone down, like the fields beside it. */
+.month-yes {
+  margin-block-start: 8px;
+  background-color: var(--bg-main);
+}
+.month-actions { grid-template-columns: 1fr; }
+
+/* The table a scan read, in the Registrar form: short, scrollable, each row removable */
+.ocr-found { margin-block-start: 16px; }
+.ocr-review[open] .how-to-chevron { transform: rotate(180deg); }
+.ocr-help {
+  margin-block-end: 10px;
+  font-size: 14px;
+  color: var(--text-secondary);
+}
+.ocr-notes {
+  margin-block-end: 10px;
+  font-size: 13px;
+  color: var(--text-muted);
+}
+/* The day already has a saved tournament: the table may be the rest of it. One tone under the button's, so it still reads as one. */
+.ocr-same {
+  margin-block-end: 12px;
+  padding: 12px;
+  border-radius: var(--radius-sm);
+  background-color: var(--surface-2);
+}
+.ocr-same .ocr-help { margin-block-end: 10px; }
+.ocr-add-image { margin-block-end: 12px; }
+.ocr-list {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  max-height: 420px;
+  margin-block-end: 12px;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+.ocr-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 76px 44px;
+  align-items: center;
+  gap: 4px 8px;
+  padding-block: 6px;
+  padding-inline-start: 8px;
+  padding-inline-end: 2px;
+  border-radius: var(--radius-sm);
+  background-color: var(--surface-2);
+}
+/* A row with a warning is one tone step up, and says why underneath */
+.ocr-row.is-flagged { background-color: var(--surface-3); }
+/* Fields in a dense list: shorter than the form's, but never under 16px, or phones zoom in on focus */
+.ocr-row .ocr-input {
+  min-height: 44px;
+  padding: 6px 10px;
+}
+.ocr-row .ocr-input-pts {
+  text-align: end;
+  font-variant-numeric: tabular-nums;
+  -moz-appearance: textfield;
+}
+.ocr-row .ocr-input[aria-invalid="true"] { border-color: var(--color-bad); }
+.ocr-flag {
+  grid-column: 1 / -1;
+  padding-block-end: 2px;
+  padding-inline: 2px;
+  font-size: 13px;
+  color: var(--pill-avg-ink);
+}

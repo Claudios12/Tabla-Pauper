@@ -1,4 +1,4 @@
-const CACHE_NAME = 'pauper-deck-arena-v6';
+const CACHE_NAME = 'pauper-deck-arena-v10';
 const FONT_CACHE = 'pauper-fonts-v1';
 const CDN_CACHE = 'pauper-cdn-v1';
 
@@ -14,22 +14,30 @@ const SHELL = [
   '/css/deck-cards.css',
   '/css/analysis.css',
   '/css/log.css',
+  '/css/league.css',
   '/css/forms.css',
   '/css/colour.css',
   '/css/views.css',
   '/js/register-sw.js',
   '/js/config.js',
-  '/js/data.js',
   '/js/state.js',
   '/js/analytics.js',
   '/js/format.js',
+  '/js/league.js',
+  '/js/monthly.js',
+  '/js/outlook.js',
+  '/js/demo.js',
   '/js/arena.js',
   '/js/arena-insights.js',
   '/js/arena-decks.js',
   '/js/arena-history.js',
+  '/js/arena-league.js',
+  '/js/arena-monthly.js',
+  '/js/arena-outlook.js',
   '/js/arena-logger.js',
   '/js/arena-undo.js',
   '/js/arena-shell.js',
+  '/js/arena-profile.js',
   '/js/arena-data.js',
   '/js/main.js'
 ];
