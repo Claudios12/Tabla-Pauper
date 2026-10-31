@@ -6,22 +6,22 @@ Object.assign(Arena, {
   // NAVIGATION & TEST MODE
   // ─────────────────────────────────────────────────────────────
   activateTab(pageId) {
-    const ids = ['pg-decks', 'pg-detail', 'pg-logger', 'pg-history'];
-    const titles = ['Comparador de mazos', 'Detalle por mazo', 'Registrar torneo', 'Historial'];
-    const at = ids.indexOf(pageId);
-    if (at >= 0) {
+    const tab = this.TABS.find(t => t.id === pageId);
+    if (tab) {
       const h = document.getElementById('page-title');
-      if (h) h.textContent = titles[at];
-      document.title = titles[at] + ' · Pauper Deck Arena';
+      if (h) h.textContent = tab.title;
+      document.title = tab.title + ' · Pauper Deck Arena';
     }
     document.querySelectorAll('.js-tab-panel').forEach(p => p.classList.toggle('is-active', p.id === pageId));
-    document.querySelectorAll('.js-nav-link').forEach((b, i) => {
-      if (ids[i] === pageId) b.setAttribute('aria-current', 'page');
+    document.querySelectorAll('.js-nav-link').forEach(b => {
+      if (tab && b.dataset.tab === tab.slug) b.setAttribute('aria-current', 'page');
       else b.removeAttribute('aria-current');
     });
+    // The General tab is only built while it is shown (see renderLeague).
+    if (pageId === 'pg-league' && State.historic) this.renderLeague();
   },
 
-  switchTab(pageId, btnEl) {
+  switchTab(pageId) {
     this.activateTab(pageId);
     const reduce = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
     window.scrollTo({ top: 0, behavior: reduce ? 'auto' : 'smooth' });
@@ -38,10 +38,9 @@ Object.assign(Arena, {
 
   // Tab links keep working when opened in a new tab: they carry the tab and the season.
   updateNavLinks() {
-    const tabs = ['decks', 'detail', 'logger', 'history'];
-    document.querySelectorAll('.js-nav-link').forEach((a, i) => {
+    document.querySelectorAll('.js-nav-link').forEach(a => {
       const p = new URLSearchParams();
-      p.set('tab', tabs[i]);
+      p.set('tab', a.dataset.tab);
       if (this.currentFilterSeason !== 'all') p.set('season', this.currentFilterSeason);
       a.setAttribute('href', '#' + p.toString());
     });
@@ -62,9 +61,20 @@ Object.assign(Arena, {
       btn.onclick = null;
     }
     el.classList.add('show');
-    clearTimeout(this._toastTimer);
     // A toast with an action stays long enough to be read and used.
-    this._toastTimer = setTimeout(() => this.hideToast(), opts.action ? 10000 : 4500);
+    this._toastLife = opts.action ? 10000 : 4500;
+    this.armToast(this._toastLife);
+    // While the pointer rests on it or focus is inside it, it stays: the time to reach "Deshacer" is the person's, not the clock's.
+    if (!el.dataset.pausable) {
+      el.dataset.pausable = 'true';
+      ['mouseenter', 'focusin'].forEach(type => el.addEventListener(type, () => clearTimeout(this._toastTimer)));
+      ['mouseleave', 'focusout'].forEach(type => el.addEventListener(type, () => this.armToast(this._toastLife / 2)));
+    }
+  },
+
+  armToast(ms) {
+    clearTimeout(this._toastTimer);
+    this._toastTimer = setTimeout(() => this.hideToast(), ms);
   },
 
   hideToast() {
@@ -133,7 +143,8 @@ Object.assign(Arena, {
 
     const logger = document.getElementById("pg-logger");
     if (logger) logger.addEventListener("keydown", (e) => {
-      if (e.key === "Enter" && e.target.matches('input:not([type="file"])')) {
+      // Enter in the review list only commits the value being typed there; it must not save the tournament.
+      if (e.key === "Enter" && e.target.matches('input:not([type="file"]):not(.ocr-input)')) {
         e.preventDefault();
         this.saveManualTournament();
       }
@@ -145,42 +156,44 @@ Object.assign(Arena, {
     const banner = document.getElementById("test-mode-banner");
     const sel = document.getElementById("season-filter");
     CONFIG.isTestMode = toggle ? toggle.checked : false;
+    document.documentElement.classList.toggle('is-demo', CONFIG.isTestMode);
 
     if (CONFIG.isTestMode) {
       if (banner) banner.style.display = 'block';
-      State.resetToDefaults();
-      State.loadSeasonEnds();
-      State.save();
-      // The history that ships with the app belongs to season 2026-1: show every season so the page is not empty.
+      State.loadDemo();
+      // The sample's eight league nights can reach back into the previous season: show every season so the page is not empty.
       this._seasonBeforeTest = this.currentFilterSeason;
       if (sel && this.currentFilterSeason !== 'all') { sel.value = 'all'; this.handleSeasonFilterChange(); }
       State.writeFailed = false; // test data is throwaway: a refused write here must not colour the next real save
-      this.toast("Modo de prueba activado. Ves el historial inicial incluido con la app; tus datos reales no se tocan.");
+      this.toast("Modo de prueba activado. Ves una liga de ejemplo inventada; tus datos reales no se tocan.");
     } else {
       if (banner) banner.style.display = 'none';
-      localStorage.removeItem('pauper_test_arena_historic');
+      State.clearTestData();
       State.load();
       if (sel && this._seasonBeforeTest && sel.value !== this._seasonBeforeTest) { sel.value = this._seasonBeforeTest; this.handleSeasonFilterChange(); }
       this._seasonBeforeTest = null;
       this.toast("Modo de prueba desactivado. Vuelven tus datos reales.");
     }
+    // A month table read from a picture was set against the other league's nights: it goes with them, and so does a reading under way.
+    this.dropMonth();
     this.populateDeckPickers();
     this.refreshAll();
   },
 
-  async resetToDefaultsConfirm() {
+  // Leaves the app as if it had just been opened for the first time.
+  async wipeAllConfirm() {
     const ok = await this.confirmDialog({
-      title: "Restablecer a los datos iniciales",
-      body: `Tu historial actual (${plural(State.historic.length, 'torneo', 'torneos')}) se reemplazará por el que viene incluido con la app (temporada 2026-1). Podrás deshacerlo unos segundos después.`,
-      confirmLabel: "Restablecer datos"
+      title: "Borrar todos mis datos",
+      body: `Se borran de este dispositivo tus ${plural(State.historic.length, 'torneo', 'torneos')}, tus mazos, las fechas de temporada, tu nombre y el día de tu liga. Exporta una copia antes si quieres conservarlos. Podrás deshacerlo unos segundos después.`,
+      confirmLabel: "Borrar datos"
     });
     if (!ok) return;
     const before = this.snapshot();
-    State.resetToDefaults();
-    State.save();
+    State.wipeAll();
+    this.dropMonth();
     this.populateDeckPickers();
     this.refreshAll();
-    this.notify("Datos restablecidos al historial inicial.", {
+    this.notify("Datos borrados: la app quedó como recién abierta.", {
       action: { label: 'Deshacer', run: () => { this.restoreSnapshot(before); this.notify('Tus datos volvieron a como estaban.'); } }
     });
   },

@@ -103,6 +103,8 @@
    Matrix table
    ------------------------------------------------------------------ */
 .table-wrap {
+  /* Text hidden for screen readers is positioned absolutely: without this it escapes the scrolling box and widens the page. */
+  position: relative;
   overflow-x: auto;
   -webkit-overflow-scrolling: touch;
   border-radius: var(--radius-card);

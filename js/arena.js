@@ -1,5 +1,5 @@
 // The screen controller (Arena): start-up, season picker, deck pickers and cross-window sync.
-/* global CONFIG, State, Analytics, deckInfo, SEASON_FORMAT, ResizeObserver */
+/* global CONFIG, State, Analytics, deckInfo, deckNameWithColours, SEASON_FORMAT, ResizeObserver */
 /* exported Arena */
 
 // ══════════════════════════════════════════════════════════════════
@@ -8,6 +8,14 @@
 const Arena = {
   currentFilterSeason: CONFIG.CURRENT_SEASON,
   historyDeck: 'all',
+  // The tabs in the order of the nav. The slug is what #tab= carries and what the nav link is tagged with.
+  TABS: [
+    { id: 'pg-decks', slug: 'decks', title: 'Comparador de mazos' },
+    { id: 'pg-league', slug: 'league', title: 'General de la liga' },
+    { id: 'pg-detail', slug: 'detail', title: 'Detalle por mazo' },
+    { id: 'pg-logger', slug: 'logger', title: 'Registrar torneo' },
+    { id: 'pg-history', slug: 'history', title: 'Historial' }
+  ],
 
   init() {
     State.load();
@@ -17,7 +25,8 @@ const Arena = {
     if (params.get('deck')) this.historyDeck = params.get('deck');
     // A link can only pick a season the app knows; anything else keeps today's season.
     if (seasonParam === 'all' || this.knownSeasons().has(seasonParam)) this.currentFilterSeason = seasonParam;
-    if (['decks','detail','logger','history'].includes(tabParam)) this.activateTab('pg-' + tabParam);
+    const linked = this.TABS.find(tab => tab.slug === tabParam);
+    if (linked) this.activateTab(linked.id);
     this.initDatePicker();
     this.populateDeckPickers();
     this.refreshAll();
@@ -38,7 +47,7 @@ const Arena = {
   // Another window saved: take in what it stored, or this one would overwrite it on its next save.
   onStorageChange(e) {
     if (e.storageArea !== localStorage) return;
-    if (e.key !== null && ![State.historicKey(), State.deletedKey(), State.seasonEndsKey()].includes(e.key)) return;
+    if (e.key !== null && ![State.historicKey(), State.storeNightsKey(), State.deletedKey(), State.seasonEndsKey(), State.seasonTopKey(), State.profileKey()].includes(e.key)) return;
     clearTimeout(this._syncTimer);
     this._syncTimer = setTimeout(() => this.syncFromStorage(), 50);
   },
@@ -121,9 +130,12 @@ const Arena = {
 
   refreshAll() {
     this.populateSeasonFilter();
+    this.renderWelcome();
+    this.renderLeagueSettings();
     this.renderHeroMetrics();
     this.renderInsights();
     this.renderDeckComparison();
+    this.renderLeague();
     this.renderDeckDetail();
     this.renderFullHistory();
     this.renderPointsChart();
@@ -164,15 +176,41 @@ const Arena = {
         detailDeckSelect.value = currentDetailVal;
       }
     }
+    this.syncCustomDeckGroup();
+  },
+
+  // The new-deck fields show only while "+ Nuevo mazo…" is what the picker stands on (it is the only choice until there is a deck).
+  syncCustomDeckGroup() {
+    const select = document.getElementById("log-deck");
+    const customGroup = document.getElementById("custom-deck-group");
+    if (select && customGroup) customGroup.hidden = select.value !== "other";
   },
 
   handleDeckPickerChange() {
-    const select = document.getElementById("log-deck");
-    const customGroup = document.getElementById("custom-deck-group");
-    if (select && customGroup) {
-      customGroup.hidden = select.value !== "other";
-      this._deckPicked = true;
-    }
+    this.syncCustomDeckGroup();
+    this._deckPicked = true;
+  },
+
+  // The colours picked for the new deck, as keys: "w", "u", "b", "r", "g".
+  pickedColours() {
+    return [...document.querySelectorAll('.js-colour-pick[aria-pressed="true"]')].map(button => button.dataset.colour);
+  },
+
+  toggleDeckColour(button) {
+    button.setAttribute('aria-pressed', String(button.getAttribute('aria-pressed') !== 'true'));
+    this.renderLogPreview();
+  },
+
+  clearDeckColours() {
+    document.querySelectorAll('.js-colour-pick').forEach(button => button.setAttribute('aria-pressed', 'false'));
+  },
+
+  // The deck the form stands on: the one picked, or the new one typed, with the colours chosen for it written the way every
+  // deck here is written (colour circles, then the name).
+  formDeck() {
+    const val = (id) => (document.getElementById(id)?.value ?? '').trim();
+    const picked = val("log-deck");
+    return picked === "other" ? deckNameWithColours(val("log-custom-deck"), this.pickedColours()) : picked;
   },
 
   setRecordPreset(w, l, d) {

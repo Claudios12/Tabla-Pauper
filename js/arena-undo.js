@@ -1,12 +1,15 @@
 // Arena: confirmations, undo and deleting tournaments or decks.
-/* global CONFIG, State, Analytics, deckInfo, Arena, Tesseract */
+/* global CONFIG, State, Analytics, League, plural, deckInfo, isStoreNight, Arena, Tesseract, createImageBitmap */
 
 Object.assign(Arena, {
   // ─────────────────────────────────────────────────────────────
   // UNDO + CONFIRMATION
   // ─────────────────────────────────────────────────────────────
   snapshot() {
-    return { historic: JSON.parse(JSON.stringify(State.historic)), deleted: State.deletedDecks.slice(), seasonEnds: { ...State.seasonEnds } };
+    return {
+      historic: JSON.parse(JSON.stringify(State.historic)), deleted: State.deletedDecks.slice(),
+      seasonEnds: { ...State.seasonEnds }, seasonTop: { ...State.seasonTop }, profile: { ...State.profile }
+    };
   },
 
   restoreSnapshot(snap) {
@@ -14,6 +17,11 @@ Object.assign(Arena, {
     State.deletedDecks = snap.deleted;
     State.seasonEnds = snap.seasonEnds;
     State.saveSeasonEnds();
+    State.seasonTop = snap.seasonTop || {};
+    State.saveSeasonTop();
+    State.profile = snap.profile || State.profile;
+    State.saveProfile();
+    League.identify(State.profile.name);
     State.saveDeletedDecks();
     State.syncDecksList();
     State.save();
@@ -51,8 +59,9 @@ Object.assign(Arena, {
     State.save();
     this.refreshAll();
     this.refocusList(hostId, pos);
-    this.notify(`Torneo del ${item.date} con ${deckInfo(item.deck).name} eliminado.`, {
-      action: { label: 'Deshacer', run: () => { this.restoreSnapshot(before); this.refocusList(hostId, pos); this.notify('Torneo restaurado.'); } }
+    const store = isStoreNight(item);
+    this.notify(store ? `Noche del ${item.date} creada con la tabla de la tienda eliminada.` : `Torneo del ${item.date} con ${deckInfo(item.deck).name} eliminado.`, {
+      action: { label: 'Deshacer', run: () => { this.restoreSnapshot(before); this.refocusList(hostId, pos); this.notify(store ? 'Noche restaurada.' : 'Torneo restaurado.'); } }
     });
   },
 
@@ -90,7 +99,7 @@ Object.assign(Arena, {
     State.deleteDeck(deckName);
     this.populateDeckPickers();
     this.refreshAll();
-    this.switchTab('pg-decks', document.querySelectorAll('.js-nav-link')[0]);
+    this.switchTab('pg-decks');
     this.notify(`Mazo «${name}» eliminado.`, {
       action: { label: 'Deshacer', run: () => { this.restoreSnapshot(before); this.notify(`Mazo «${name}» restaurado.`); } }
     });
@@ -129,6 +138,101 @@ Object.assign(Arena, {
     return this._ocrLoading;
   },
 
+  // How much a picture is enlarged before it is read. A small one (a screenshot passed through a chat is) is brought to a short
+  // side of about CONFIG.OCR_TARGET_SIDE, never more than 3 times: the engine misreads small text. A bigger one is read as it
+  // is. Either way the long side never goes past CONFIG.OCR_MAX_SIDE, because a phone runs out of memory on a huge photo.
+  screenshotScale(width, height) {
+    const short = Math.min(width, height), long = Math.max(width, height);
+    const wanted = short >= CONFIG.OCR_SMALL_SIDE ? 1 : Math.min(3, CONFIG.OCR_TARGET_SIDE / short);
+    return Math.min(wanted, CONFIG.OCR_MAX_SIDE / long);
+  },
+
+  // The picture decoded the way it was taken (rotation included), or null when the browser cannot decode it.
+  async decodeScreenshot(file) {
+    try {
+      return await createImageBitmap(file, { imageOrientation: 'from-image' });
+    } catch (err) {
+      return null;
+    }
+  },
+
+  // A canvas of the stretch of the picture from sy for sh pixels (the whole picture by default), at the scale it is read at.
+  screenshotCanvas(bitmap, scale, sy = 0, sh = bitmap.height) {
+    const canvas = document.createElement('canvas');
+    canvas.width = Math.round(bitmap.width * scale);
+    canvas.height = Math.max(1, Math.round(sh * scale));
+    const ctx = canvas.getContext('2d');
+    ctx.imageSmoothingQuality = 'high';
+    ctx.drawImage(bitmap, 0, sy, bitmap.width, sh, 0, 0, canvas.width, canvas.height);
+    return canvas;
+  },
+
+  // One read of the picture. The whole page goes first; then, for every place that read skipped, just the stretch where that
+  // row sits is read alone: a row with a coloured band across it (the player's own, say) vanishes in the whole-page read but
+  // reads fine by itself. Returns the text in screen order and the places that were recovered.
+  async readStandings(worker, file) {
+    const bitmap = await this.decodeScreenshot(file);
+    if (!bitmap) return { text: (await worker.recognize(file)).data.text, recovered: [] };
+    // A decoded picture is held in memory until it is closed, so it is closed whatever happens to the reading.
+    try {
+      const scale = this.screenshotScale(bitmap.width, bitmap.height);
+      const page = (await worker.recognize(this.screenshotCanvas(bitmap, scale))).data;
+      const lines = (page.lines || []).map(line => ({ y0: line.bbox.y0, y1: line.bbox.y1, text: line.text.trim() })).filter(line => line.text);
+      lines.forEach(line => { line.row = League.parseLine(line.text); });
+      const recovered = [];
+      try {
+        for (const gap of League.gaps(lines)) {
+          this.setStatus("Buscando las filas que la primera lectura se saltó…", "var(--color-brand)");
+          const crop = this.screenshotCanvas(bitmap, scale, gap.y0 / scale, (gap.y1 - gap.y0) / scale);
+          // Only what reads as a player on one of the missing places is taken; anything else in the stretch is ignored.
+          const found = (await worker.recognize(crop)).data.text.split('\n').map(text => text.trim())
+            .map(text => ({ text, row: League.parseLine(text) }))
+            .filter(item => item.row && (item.row.rank === null || gap.places.includes(item.row.rank)));
+          found.slice(0, gap.places.length).forEach((item, i) => {
+            const place = item.row.rank === null ? gap.places[i] : item.row.rank;
+            lines.push({ y0: gap.y0 + i, y1: gap.y0 + i, text: item.row.rank === null ? `${place} ${item.text}` : item.text });
+            recovered.push(place);
+          });
+        }
+      } catch (err) {
+        console.warn("No se pudieron recuperar las filas que faltaban:", err);
+      }
+      lines.sort((a, b) => a.y0 - b.y0);
+      return { text: lines.map(line => line.text).join('\n'), recovered };
+    } finally {
+      bitmap.close();
+    }
+  },
+
+  // Reads one or more pictures as ONE table: each is read on its own (the page, then the gaps in it), and its rows are added to
+  // `rows`, what is already held (nothing at first), with League.extend. So two pictures of one night are one tournament:
+  // a player seen in both is one row, and points are never added up.
+  async readPictures(files, rows) {
+    await this.loadOcrEngine();
+    const worker = await Tesseract.createWorker('eng+spa', 1, {
+      logger: m => {
+        if (m.status === 'recognizing text') this.setStatus(`Escaneando imagen${this._ocrPart}… ${Math.round((m.progress || 0) * 100)}%`, "var(--color-brand)");
+      }
+    });
+    try {
+      const known = this.knownPlayers();
+      const recovered = [];
+      const total = { added: 0, same: 0, filled: 0, conflicts: 0 };
+      let scan = { rows };
+      for (let i = 0; i < files.length; i++) {
+        this._ocrPart = files.length > 1 ? ` ${i + 1} de ${files.length}` : '';
+        const read = await this.readStandings(worker, files[i]);
+        recovered.push(...read.recovered);
+        scan = League.extend(scan.rows, read.text, known);
+        for (const key of Object.keys(total)) total[key] += scan[key];
+      }
+      return { scan, recovered, images: files.length, ...total };
+    } finally {
+      this._ocrPart = '';
+      await worker.terminate().catch(() => {});
+    }
+  },
+
   async processOcrScreenshot() {
     if (this._ocrRunning) return;
     const fileInput = document.getElementById("ocr-file");
@@ -138,88 +242,156 @@ Object.assign(Arena, {
     }
 
     this._ocrRunning = true;
+    // Choosing another image, discarding the table or saving while this read runs makes its result out of date.
+    const run = ++this._scanRun;
     this.setStatus("Inicializando motor OCR…", "var(--color-brand)");
-    let worker = null;
     try {
-      await this.loadOcrEngine();
-      worker = await Tesseract.createWorker('eng+spa', 1, {
-        logger: m => {
-          if (m.status === 'recognizing text') {
-            const pct = Math.round((m.progress || 0) * 100);
-            this.setStatus(`Escaneando imagen… ${pct}%`, "var(--color-brand)");
-          }
-        }
-      });
-
-      const ret = await worker.recognize(fileInput.files[0]);
-      await worker.terminate();
-      worker = null;
-
-      const text = ret.data.text;
-      const extracted = this.extractMyRowFromText(text);
-
-      if (extracted) {
-        if (extracted.rank) document.getElementById("log-rank").value = extracted.rank;
-        if (extracted.w !== undefined) document.getElementById("log-w").value = extracted.w;
-        if (extracted.l !== undefined) document.getElementById("log-l").value = extracted.l;
-        if (extracted.d !== undefined) document.getElementById("log-d").value = extracted.d;
-        if (extracted.pts !== undefined) document.getElementById("log-pts").value = extracted.pts;
-        else this.autoCalculatePointsFromRecord();
-
-        const parts = [];
-        if (extracted.rank) parts.push(`Puesto ${extracted.rank}`);
-        if (extracted.w !== undefined) parts.push(`Récord ${extracted.w}-${extracted.l}-${extracted.d}`);
-        if (extracted.pts !== undefined) parts.push(`${extracted.pts} pts`);
-        const missing = [];
-        if (!extracted.rank) missing.push('posición');
-        if (extracted.w === undefined) missing.push('récord W-L-D');
-        const missingNote = missing.length ? ` · Ingresa manualmente: ${missing.join(', ')}.` : ' Verifica y guarda.';
-        this.setStatus(`Detectado: ${parts.join(', ')}.${missingNote}`, "var(--color-good)");
-        this.renderLogPreview();
-      } else {
-        this.setStatus("Texto leído pero no se detectó tu fila. Ingresa los valores manualmente.", "var(--text-secondary)");
+      const result = await this.readPictures([...fileInput.files], []);
+      if (run !== this._scanRun) {
+        this.setStatus("La imagen cambió mientras se leía, así que se descartó esa lectura. Pulsa «Leer imagen» otra vez.", "var(--text-secondary)");
+        return;
       }
+      this.applyScan(result.scan, result.recovered, { images: result.images });
     } catch (err) {
       console.error("Error OCR:", err);
       this.setStatus(`Error al procesar imagen: ${err.message}`, "var(--color-bad)");
-      if (worker) await worker.terminate().catch(() => {});
     } finally {
       this._ocrRunning = false;
     }
   },
 
-  extractMyRowFromText(rawText) {
-    const lines = rawText.split('\n');
-    const myAliases = ["christian", "cristian", "chris", "donado"];
-
-    for (const line of lines) {
-      const lower = line.toLowerCase();
-      const isMe = myAliases.some(alias => lower.includes(alias)) && !lower.includes("machado");
-      if (isMe) {
-        // Find rank
-        const rankMatch = line.match(/#?(\d{1,2})[\.\s°º\-:]+/);
-        const rank = rankMatch ? `${rankMatch[1]}°` : "";
-
-        // Find W-L-D — only include in result when actually matched
-        const wldMatch = line.match(/(\d{1,2})\s*[-–—:/]\s*(\d{1,2})\s*[-–—:/]\s*([0-9Oo])\b/);
-        const result = { rank };
-        if (wldMatch) {
-          result.w = parseInt(wldMatch[1], 10);
-          result.l = parseInt(wldMatch[2], 10);
-          result.d = parseInt(wldMatch[3].replace(/[Oo]/g, '0'), 10);
-          result.pts = Analytics.calculatePoints(result.w, result.d);
-        }
-
-        // Points override when explicitly labeled
-        const ptsMatch = line.match(/\b(\d{1,2})\s*(?:pts|puntos)\b/i);
-        if (ptsMatch) {
-          result.pts = parseInt(ptsMatch[1], 10);
-        }
-
-        return result;
+  // More pictures of the table already read (the second half of it, say), added to it as one table. What the person already
+  // checked and edited stays as it is; only what is new comes in.
+  async addScreenshots(input) {
+    const files = [...(input.files || [])];
+    input.value = '';
+    if (!files.length || this._ocrRunning || !this._scanned.length) return;
+    this._ocrRunning = true;
+    const run = ++this._scanRun;
+    this.setStatus("Inicializando motor OCR…", "var(--color-brand)");
+    try {
+      // A copy, so a read that fails or is dropped half way leaves the table exactly as it was.
+      const result = await this.readPictures(files, this._scanned.map(row => ({ ...row, flags: [...row.flags] })));
+      if (run !== this._scanRun) {
+        this.setStatus("La tabla cambió mientras se leía, así que se descartó esa lectura. Agrega la captura otra vez.", "var(--text-secondary)");
+        return;
       }
+      this.applyScan(result.scan, result.recovered, { ...result, adding: true });
+    } catch (err) {
+      console.error("Error OCR:", err);
+      this.setStatus(`Error al procesar imagen: ${err.message}`, "var(--color-bad)");
+    } finally {
+      this._ocrRunning = false;
     }
-    return null;
+  },
+
+  // What a scan gives the form (your own row) and the review list (everyone's). One reading feeds both, so the figures
+  // you save for yourself and the ones the league table adds up can never disagree. options: how many pictures there were,
+  // and, when they were added to a table already read (adding), what they brought (added, filled, conflicts).
+  applyScan(scan, recovered = [], options = {}) {
+    const { images = 1, adding = false, added = 0, filled = 0, conflicts = 0 } = options;
+    this.setScannedStandings(scan);
+    const rows = scan.rows;
+    if (!rows.length) {
+      this.setStatus("No pude leer ninguna fila de jugadores en la imagen. Prueba con una captura más nítida o ingresa tus datos a mano.", "var(--text-secondary)");
+      this.renderLogPreview();
+      return;
+    }
+    const doubtful = rows.filter(row => row.flags.length).length;
+    const places = scan.missingPlaces || [];
+    const startsAt = this.startsAt(rows, places);
+    let absent = '';
+    if (startsAt) absent = `; empieza en el puesto ${startsAt}: parece la segunda parte de una tabla, agrega la otra captura`;
+    else if (places.length) absent = `; ${places.length === 1 ? 'falta' : 'faltan'} ${this.describePlaces(places)}`;
+    else if (scan.missing) absent = `; parece que ${scan.missing === 1 ? 'falta 1 fila' : `faltan ${scan.missing} filas`}`;
+    const found = recovered.length ? ` Leí aparte ${this.describePlaces(recovered)}, que la primera lectura se había saltado.` : '';
+    const together = !adding && images > 1 ? ` Las ${images} capturas se leyeron juntas: cuentan como un solo torneo.` : '';
+    const plus = !adding ? '' : (added
+      ? ` Sumé ${plural(added, 'jugador', 'jugadores')} de ${images === 1 ? 'la captura' : `las ${images} capturas`}.`
+      : ' Esa captura no trae jugadores que la tabla no tuviera ya.')
+      + (filled ? ` Completé ${plural(filled, 'dato', 'datos')} que faltaban.` : '')
+      + (conflicts ? ` ${plural(conflicts, 'jugador tiene', 'jugadores tienen')} puntos distintos en otra captura: se dejó lo que ya había y quedó marcado.` : '');
+    const table = `${plus}${together} Tabla: ${plural(rows.length, 'jugador', 'jugadores')}${doubtful ? `, ${doubtful} por revisar` : ''}${absent}.${found}`;
+    // More than one row can look like the person's name (a lone first name beside the full one): the first is used, and the
+    // person is told, so a different player's row never fills the form without their knowing.
+    const mine = rows.filter(row => League.isMyName(row.name));
+    const me = mine[0];
+    if (!me) {
+      const unnamed = !State.profile.name;
+      this.setStatus(unnamed
+        ? `Aún no sé cuál de estas filas eres: dime tu nombre y la encuentro sola. Mientras, ingresa tus datos a mano.${table}`
+        : `No encontré tu fila. Revisa tu nombre o ingresa tus datos a mano.${table}`, "var(--text-secondary)");
+      this.toggleIdentify(true);
+      this.renderLogPreview();
+      return;
+    }
+    this.toggleIdentify(false);
+
+    const record = this.fillFormFromRow(me, adding);
+    const parts = this.myRowParts(me, record);
+    const missing = [];
+    if (!me.rank) missing.push('posición');
+    if (!record) missing.push('récord W-L-D');
+    if (me.pts === null) missing.push('puntos');
+    const closing = missing.length ? ` Ingresa a mano: ${missing.join(', ')}.` : ' Verifica y guarda.';
+    const alike = mine.length > 1 ? ` ${mine.length} filas podrían ser tuyas (${mine.map(row => row.name).join(', ')}): se usó la primera, revisa que sea la tuya.` : '';
+    const warn = (me.flags.length ? ' Tu fila tiene avisos: revísala en la lista.' : '') + alike;
+    this.setStatus(`Detectado: ${parts.join(', ') || 'tu fila'}.${table}${warn}${closing}`, doubtful ? "var(--text-primary)" : "var(--color-good)");
+    this.renderLogPreview();
+  },
+
+  // Puts the place, record and points of the person's own row in the form. Adding a picture never overwrites what is already
+  // there: it only fills what is empty. Returns the record, parsed, or null.
+  fillFormFromRow(me, adding = false) {
+    const put = (id, value) => {
+      const field = document.getElementById(id);
+      if (field && (!adding || field.value === '')) field.value = value;
+    };
+    const record = Analytics.parseWLD(me.wl);
+    if (me.rank) put("log-rank", me.rank);
+    if (record) {
+      put("log-w", record.w);
+      put("log-l", record.l);
+      put("log-d", record.d);
+    }
+    if (me.pts !== null) put("log-pts", me.pts);
+    else if (record && !adding) this.autoCalculatePointsFromRecord();
+    return record;
+  },
+
+  // What the row said, in words: "Puesto 8°", "Récord 3-2-0", "9 pts".
+  myRowParts(me, record) {
+    const parts = [];
+    if (me.rank) parts.push(`Puesto ${me.rank}°`);
+    if (record) parts.push(`Récord ${record.w}-${record.l}-${record.d}`);
+    if (me.pts !== null) parts.push(`${me.pts} pts`);
+    return parts;
+  },
+
+  // The person says who they are after a table was read: their row, if it is there, fills what the form still lacks.
+  fillFormFromScan() {
+    const me = this._scanned.find(row => League.isMyName(row.name));
+    this.toggleIdentify(!me && this._scanned.length > 0);
+    if (!me) {
+      if (this._scanned.length) {
+        this.setStatus(State.profile.name
+          ? 'No encontré tu fila con ese nombre. Revísalo o ingresa tus datos a mano.'
+          : 'Aún no sé cuál de estas filas eres: dime tu nombre y la encuentro sola. Mientras, ingresa tus datos a mano.', "var(--text-secondary)");
+      }
+      return false;
+    }
+    const record = this.fillFormFromRow(me, true);
+    this.setStatus(`Detectado: ${this.myRowParts(me, record).join(', ') || 'tu fila'}. Verifica y guarda.`, "var(--color-good)");
+    this.renderLogPreview();
+    return true;
+  },
+
+  // The button under the scan's status that opens "Tu liga", shown while the table read has no row the page knows as the person's.
+  toggleIdentify(show) {
+    const button = document.getElementById("scan-identify");
+    if (!button) return;
+    button.hidden = !show;
+    button.textContent = State.profile.name ? 'Revisar mi nombre' : 'Decir mi nombre';
   },
 
   setStatus(msg, color = 'var(--color-brand)') {

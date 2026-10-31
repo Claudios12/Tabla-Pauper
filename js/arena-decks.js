@@ -48,7 +48,9 @@ Object.assign(Arena, {
     const cardsContainer = document.getElementById("deck-cards-list");
     if (cardsContainer) {
       if (!anyPlayed) {
-        cardsContainer.innerHTML = `<div class="card card-pad first-run"><h3 class="first-run-title">Aún no hay torneos${esc(this.inSeason())}</h3><p class="first-run-text">Registra tu primer resultado y aquí verás qué mazo rinde mejor.</p><button class="btn btn-primary" type="button" onclick="Arena.switchTab('pg-logger', document.querySelectorAll('.js-nav-link')[2])">Registrar mi primer torneo</button></div>`;
+        // With nothing saved at all the welcome card above already carries this button.
+        const start = State.historic.length ? `<button class="btn btn-primary" type="button" onclick="Arena.switchTab('pg-logger')">Registrar mi primer torneo</button>` : '';
+        cardsContainer.innerHTML = `<div class="card card-pad first-run"><h3 class="first-run-title">Aún no hay torneos${esc(this.inSeason())}</h3><p class="first-run-text">Registra tu primer resultado y aquí verás qué mazo rinde mejor.</p>${start}</div>`;
       } else if (displayStats.length === 0) {
         cardsContainer.innerHTML = `<div class="card"><p class="empty empty-inset">No hay mazos registrados para esta temporada.</p></div>`;
       } else {
@@ -145,7 +147,7 @@ Object.assign(Arena, {
     if (select) {
       select.value = deckName;
     }
-    this.switchTab('pg-detail', document.querySelectorAll('.js-nav-link')[1]);
+    this.switchTab('pg-detail');
     this.renderDeckDetail();
   },
 

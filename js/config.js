@@ -1,15 +1,7 @@
-// Deck names and the app settings (CONFIG).
+// The app settings (CONFIG). Nothing here belongs to one person: names, decks, dates and the league night are the
+// person's own and live in what is saved on their device (see State).
 /* global seasonOf */
-/* exported DECK, CONFIG */
-
-// Deck strings are stored data (emoji = colour identity, also the matching key).
-// The UI shows the name plus mana pips; see deckInfo().
-const DECK = {
-  boros: "🐂⚪🔴 Torito Boros", // taste-skill-ignore
-  izzet: "🐧🔵🔴 Pingüinos Izzet", // taste-skill-ignore
-  rakdos: "🧙⚫🔴 Magitos Rakdos", // taste-skill-ignore
-  grixis: "🔵⚫🔴 Grixis" // taste-skill-ignore
-};
+/* exported CONFIG */
 
 // ══════════════════════════════════════════════════════════════════
 // CONFIGURATION
@@ -22,14 +14,29 @@ const CONFIG = {
     const today = new Date();
     return seasonOf(today.getFullYear(), today.getMonth() + 1);
   },
-  // Closing dates the app starts with. They are edited from the Fechas restantes card and saved per season.
-  DEFAULT_SEASON_ENDS: { '2026-2': '2026-11-29' },
+  // Pictures are enlarged before they are read when they are small (a screenshot shared through a chat is): a short side under
+  // OCR_SMALL_SIDE is brought to about OCR_TARGET_SIDE, never more than 3 times. A picture longer than OCR_MAX_SIDE is
+  // scaled down to fit it, whatever its size.
+  OCR_SMALL_SIDE: 1000,
+  OCR_TARGET_SIDE: 1500,
+  OCR_MAX_SIDE: 3200,
   // The OCR engine is fetched on first use: one pinned version, checked against this hash.
   OCR_ENGINE: {
     src: 'https://cdn.jsdelivr.net/npm/tesseract.js@5.1.1/dist/tesseract.min.js',
     integrity: 'sha384-GJqSu7vueQ9qN0E9yLPb3Wtpd7OrgK8KmYzC8T1IysG1bcvxvIO4qtYR/D3A991F'
   },
-  DEFAULT_DECKS: [DECK.boros, DECK.izzet, DECK.rakdos, DECK.grixis],
+  // The General tab: how many places qualify, and how the rest of a season is judged.
+  LEAGUE: {
+    // How many qualify in a season that has not said yet (each season says its own, in the season dialog; the page asks
+    // while it has not); the most that can.
+    TOP_CUTOFF: 10,
+    MAX_TOP: 99,
+    // The most points one night can give when no record shows more rounds (5 rounds of 3). What is left of the season is
+    // judged against it, so a bigger real figure seen in the results replaces it.
+    MAX_NIGHT_PTS: 15,
+    // How many times the rest of the season is played out to estimate the chance of missing the top.
+    RISK_RUNS: 3000
+  },
   // Standard MTG Benchmarks
   BENCHMARKS: {
     GOOD_WIN_RATE: 50.0,       // >= 50% Win Rate is positive

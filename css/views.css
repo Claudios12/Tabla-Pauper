@@ -20,6 +20,62 @@
   .cols.hist { grid-template-columns: minmax(0, 1fr) 360px; align-items: start; }
   .cols.hist .data-panel { position: sticky; inset-block-start: 88px; }
 }
+/* First visit: nothing is saved yet, so the home says where to start */
+.welcome { margin-block-end: 24px; }
+.welcome-lead {
+  max-width: 62ch;
+  margin-block-start: 6px;
+  color: var(--text-secondary);
+}
+.welcome-steps {
+  display: grid;
+  gap: 8px;
+  margin-block: 18px 0;
+  margin-inline: 0;
+  padding: 0;
+  list-style: none;
+  counter-reset: step;
+}
+.welcome-step {
+  display: grid;
+  grid-template-columns: 32px minmax(0, 1fr);
+  column-gap: 14px;
+  padding: 14px;
+  border-radius: var(--radius-sm);
+  background-color: var(--surface-2);
+  counter-increment: step;
+}
+.welcome-step::before {
+  display: grid;
+  place-items: center;
+  grid-row: 1 / span 3;
+  width: 32px;
+  height: 32px;
+  color: var(--text-primary);
+  font-weight: 600;
+  border-radius: 50%;
+  background-color: var(--surface-3);
+  content: counter(step);
+}
+.welcome-step h3 {
+  font-size: 16px;
+  text-wrap: balance;
+}
+.welcome-step p {
+  margin-block-start: 4px;
+  color: var(--text-secondary);
+  font-size: 14px;
+}
+.welcome-step .btn {
+  justify-self: start;
+  width: auto;
+  margin-block-start: 12px;
+}
+.welcome-demo {
+  margin-block-start: 16px;
+  color: var(--text-secondary);
+  font-size: 14px;
+}
 @media (prefers-reduced-motion: reduce) {
   *,
   *::before,

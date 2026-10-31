@@ -32,6 +32,7 @@
   <link rel="stylesheet" href="css/deck-cards.css">
   <link rel="stylesheet" href="css/analysis.css">
   <link rel="stylesheet" href="css/log.css">
+  <link rel="stylesheet" href="css/league.css">
   <link rel="stylesheet" href="css/forms.css">
   <link rel="stylesheet" href="css/colour.css">
   <link rel="stylesheet" href="css/views.css">
@@ -44,7 +45,7 @@
   <!-- HEADER: brand, tabs (desktop), season scope -->
   <header class="topbar">
     <div class="topbar-in js-topbar-inner">
-      <a class="brand" href="#tab=decks" onclick="event.preventDefault(); Arena.switchTab('pg-decks', document.querySelectorAll('.js-nav-link')[0])" aria-label="Pauper Deck Arena, ir al comparador">
+      <a class="brand" href="#tab=decks" onclick="event.preventDefault(); Arena.switchTab('pg-decks')" aria-label="Pauper Deck Arena, ir al comparador">
         <img class="mark" src="./Imgs/logo.png" width="40" height="40" alt="">
         <span class="brand-name" translate="no">Pauper Deck Arena</span>
       </a>
@@ -59,7 +60,8 @@
 
   <!-- TEST MODE BANNER -->
   <div id="test-mode-banner" role="status">
-    Modo de prueba: estás viendo el historial inicial incluido con la app. Tus datos reales siguen guardados y no se modifican.
+    Modo de prueba: ves una liga de ejemplo inventada. Tus datos reales siguen guardados y no se modifican.
+    <button class="banner-exit" type="button" onclick="Arena.stopDemo()">Salir del modo de prueba</button>
   </div>
 
   <main id="main-content">
@@ -68,6 +70,29 @@
 
     <!-- ═════════════════ TAB 1: COMPARADOR DE MAZOS ═════════════════ -->
     <section class="tab-panel js-tab-panel is-active" id="pg-decks" aria-label="Comparador de mazos">
+      <section class="card card-pad welcome" id="welcome" aria-labelledby="h-welcome" hidden>
+        <h2 id="h-welcome">Bienvenido a Pauper Deck Arena</h2>
+        <p class="welcome-lead">Registra tus torneos de Pauper y descubre qué mazo te funciona mejor. Todo se guarda solo en este dispositivo: no hay cuenta ni servidor.</p>
+        <ol class="welcome-steps" role="list">
+          <li class="welcome-step">
+            <h3>Cuéntale quién eres</h3>
+            <p>Tu nombre en la liga y el día en que se juega: así encuentra tu fila en las capturas y cuenta las fechas que quedan.</p>
+            <button class="btn btn-secondary" type="button" onclick="Arena.openLeagueDialog()">Escribir mi nombre y mi día</button>
+          </li>
+          <li class="welcome-step">
+            <h3>Registra tu primer torneo</h3>
+            <p>Crea tu mazo con sus colores, apunta tu resultado y, si quieres, sube una captura de la tabla.</p>
+            <button class="btn btn-primary" type="button" onclick="Arena.switchTab('pg-logger')">Registrar mi primer torneo</button>
+          </li>
+          <li class="welcome-step">
+            <h3>¿Ya usabas la app?</h3>
+            <p>Restaura tu copia de seguridad: el archivo JSON que exportaste desde Historial.</p>
+            <button class="btn btn-secondary" type="button" onclick="document.getElementById('import-file-input').click()">Importar mi copia</button>
+          </li>
+        </ol>
+        <p class="welcome-demo">¿Quieres ver cómo se ve con datos? <button class="btn-link" type="button" onclick="Arena.startDemo()">Mira una liga de ejemplo</button>: son datos inventados y no tocan los tuyos.</p>
+      </section>
+
       <p class="sub" id="cmp-sub"></p>
 
       <div class="kpis" id="hero-kpis"></div>
@@ -142,7 +167,36 @@
       </div>
     </section>
 
-    <!-- ═════════════════ TAB 2: DETALLE POR MAZO ═════════════════ -->
+    <!-- ═════════════════ TAB 2: GENERAL DE LA LIGA ═════════════════ -->
+    <section class="tab-panel js-tab-panel" id="pg-league" aria-label="General de la liga">
+      <p class="sub" id="league-sub"></p>
+
+      <div class="kpis" id="league-kpis"></div>
+
+      <div class="league-ask" id="league-ask" hidden></div>
+
+      <div class="league-risk" id="league-risk"></div>
+
+      <details class="card league-month" id="league-month">
+        <summary class="acc-head data-panel-toggle">
+          <span>Tabla del mes de la tienda (retos)</span>
+          <svg class="chevron" viewBox="0 0 24 24" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg>
+        </summary>
+        <div class="month-body">
+          <p class="ocr-help">Cada mes la tienda publica la tabla oficial, con los puntos de los retos, a menudo en varias capturas. Súbelas todas juntas, en el orden que quieras: se leen como una sola tabla. Los puntos de los retos se suman a tus tablas, se comprueba que los puntos que guardaste coinciden con los de la tienda, y las noches que no tengas guardadas se pueden crear con esa tabla, para que la liga tenga el mes completo.</p>
+          <input id="month-file" name="month-file" type="file" accept="image/*" multiple hidden onchange="Arena.readMonthFiles(this)" aria-label="Capturas de la tabla del mes de la tienda">
+          <input id="month-more-file" name="month-more-file" type="file" accept="image/*" multiple hidden onchange="Arena.readMonthFiles(this, true)" aria-label="Otras capturas de la misma tabla del mes">
+          <button class="btn btn-secondary" id="month-pick" type="button" onclick="document.getElementById('month-file').click()">Subir las capturas del mes</button>
+          <div class="month-status" id="month-status" role="status" aria-live="polite" aria-atomic="true"></div>
+          <div class="visually-hidden" id="month-announce" role="status" aria-live="polite" aria-atomic="true"></div>
+          <div class="month-result" id="month-result" hidden></div>
+        </div>
+      </details>
+
+      <div class="league-board" id="league-board"></div>
+    </section>
+
+    <!-- ═════════════════ TAB 3: DETALLE POR MAZO ═════════════════ -->
     <section class="tab-panel js-tab-panel" id="pg-detail" aria-label="Detalle por mazo">
       <p class="sub" id="detail-sub">Elige un mazo para ver su récord, su racha y cada torneo en que lo jugaste.</p>
 
@@ -154,7 +208,7 @@
       <div id="deck-detail-content"></div>
     </section>
 
-    <!-- ═════════════════ TAB 3: REGISTRAR FECHA ═════════════════ -->
+    <!-- ═════════════════ TAB 4: REGISTRAR FECHA ═════════════════ -->
     <section class="tab-panel js-tab-panel" id="pg-logger" aria-label="Registrar torneo">
       <p class="sub">Ingresa tu desempeño para actualizar las estadísticas de tu mazo al instante. Temporada <span id="logger-season-tag"></span>.</p>
 
@@ -193,6 +247,16 @@
               <label class="field-label" for="log-custom-deck">Nombre del nuevo mazo</label>
               <input class="input-ctrl" id="log-custom-deck" name="log-custom-deck" type="text" placeholder="Ej.: Bogles Hexproof" autocomplete="off" aria-describedby="err-log-custom-deck">
               <span class="field-error js-field-error" id="err-log-custom-deck" hidden></span>
+              <fieldset class="deck-colours">
+                <legend class="field-label">Colores del mazo (opcional)</legend>
+                <div class="preset-records colour-picks">
+                  <button class="preset-chip colour-pick js-colour-pick" data-colour="w" type="button" onclick="Arena.toggleDeckColour(this)" aria-pressed="false"><span class="pip mana-white"><img class="pip-image" src="./Imgs/mana/W.png" width="32" height="32" alt=""></span>Blanco</button>
+                  <button class="preset-chip colour-pick js-colour-pick" data-colour="u" type="button" onclick="Arena.toggleDeckColour(this)" aria-pressed="false"><span class="pip mana-blue"><img class="pip-image" src="./Imgs/mana/U.png" width="32" height="32" alt=""></span>Azul</button>
+                  <button class="preset-chip colour-pick js-colour-pick" data-colour="b" type="button" onclick="Arena.toggleDeckColour(this)" aria-pressed="false"><span class="pip mana-black"><img class="pip-image" src="./Imgs/mana/B.png" width="32" height="32" alt=""></span>Negro</button>
+                  <button class="preset-chip colour-pick js-colour-pick" data-colour="r" type="button" onclick="Arena.toggleDeckColour(this)" aria-pressed="false"><span class="pip mana-red"><img class="pip-image" src="./Imgs/mana/R.png" width="32" height="32" alt=""></span>Rojo</button>
+                  <button class="preset-chip colour-pick js-colour-pick" data-colour="g" type="button" onclick="Arena.toggleDeckColour(this)" aria-pressed="false"><span class="pip mana-green"><img class="pip-image" src="./Imgs/mana/G.png" width="32" height="32" alt=""></span>Verde</button>
+                </div>
+              </fieldset>
             </div>
 
             <div class="field">
@@ -252,6 +316,7 @@
           </div>
 
           <div id="scan-status" role="status" aria-live="polite" aria-atomic="true"></div>
+          <button class="btn btn-secondary scan-identify" id="scan-identify" type="button" onclick="Arena.openLeagueDialog()" hidden>Decir mi nombre</button>
 
           <div class="save-bar">
             <p class="save-summary" id="save-summary"></p>
@@ -265,21 +330,40 @@
             </button>
 
             <div class="acc-body" id="ocr-content" hidden>
-              <p class="acc-body-text">Sube la captura de la app del torneo o de Companion. El motor OCR busca tu fila y rellena posición, récord y puntaje para que los verifiques.</p>
+              <p class="acc-body-text">Sube la captura de la app del torneo o de Companion. El motor OCR busca tu fila y rellena posición, récord y puntaje para que los verifiques. También guarda la tabla de todos los jugadores con el torneo, para la pestaña General. Si la tabla no cabe en una captura, elige todas las del mismo torneo a la vez: se leen juntas y cuentan como un solo día.</p>
               <div class="field">
-                <label class="field-label" for="ocr-file">Archivo de imagen</label>
-                <input class="input-ctrl input-ctrl-file" id="ocr-file" name="ocr-file" type="file" accept="image/*">
+                <label class="field-label" for="ocr-file">Capturas de la tabla</label>
+                <input class="input-ctrl input-ctrl-file" id="ocr-file" name="ocr-file" type="file" accept="image/*" multiple onchange="Arena.clearScannedStandings('file')">
               </div>
-              <button class="btn btn-secondary" type="button" onclick="Arena.processOcrScreenshot()">Leer imagen y extraer mis datos</button>
+              <button class="btn btn-secondary" type="button" onclick="Arena.processOcrScreenshot()">Leer capturas y extraer datos</button>
+
+              <div class="ocr-found" id="ocr-found" hidden>
+                <details class="ocr-review" id="ocr-review">
+                  <summary class="how-to-toggle"><span id="ocr-found-title"></span><svg class="how-to-chevron" viewBox="0 0 24 24" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg></summary>
+                  <p class="ocr-help">Corrige el nombre o los puntos que se hayan leído mal y quita las filas que no sean jugadores. Lo que dejes aquí se guarda con el torneo.</p>
+                  <p class="ocr-notes" id="ocr-found-notes" hidden></p>
+                  <div class="ocr-same" id="ocr-same" hidden>
+                    <p class="ocr-help" id="ocr-same-text"></p>
+                    <button class="btn btn-secondary" type="button" onclick="Arena.mergeIntoSaved()">Sumar al torneo guardado</button>
+                  </div>
+                  <button class="btn btn-secondary ocr-add-image" type="button" onclick="document.getElementById('ocr-more').click()">Agregar otra captura de esta tabla</button>
+                  <input id="ocr-more" name="ocr-more" type="file" accept="image/*" multiple hidden onchange="Arena.addScreenshots(this)" aria-label="Otra captura de la misma tabla">
+                  <ul class="ocr-list" id="ocr-found-list"></ul>
+                  <div class="btn-row">
+                    <button class="btn btn-secondary" type="button" onclick="Arena.addScannedRow()">Agregar jugador</button>
+                    <button class="btn btn-danger" type="button" onclick="Arena.clearScannedStandings(true)">Descartar la tabla</button>
+                  </div>
+                </details>
+              </div>
             </div>
           </div>
         </section>
       </div>
     </section>
 
-    <!-- ═════════════════ TAB 4: HISTORIAL & BACKUP ═════════════════ -->
+    <!-- ═════════════════ TAB 5: HISTORIAL & BACKUP ═════════════════ -->
     <section class="tab-panel js-tab-panel" id="pg-history" aria-label="Historial">
-      <p class="sub">Todos tus torneos, del más reciente al más antiguo. Filtra por mazo; la copia de seguridad está en «Datos y copia de seguridad».</p>
+      <p class="sub">Todos tus torneos, del más reciente al más antiguo. Filtra por mazo; tu liga y la copia de seguridad están en «Tu liga y copia de seguridad».</p>
 
       <div class="cols hist">
         <section class="card" aria-labelledby="h-hlist">
@@ -293,10 +377,16 @@
 
         <details class="card data-panel" id="data-panel">
           <summary class="acc-head data-panel-toggle">
-            <span>Datos y copia de seguridad</span>
+            <span>Tu liga y copia de seguridad</span>
             <svg class="chevron" viewBox="0 0 24 24" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg>
           </summary>
           <div class="data-body">
+            <section class="league-settings" aria-labelledby="h-league">
+              <h2 class="data-title" id="h-league">Tu liga</h2>
+              <p class="panel-copy" id="league-summary"></p>
+              <button class="btn btn-secondary" type="button" onclick="Arena.openLeagueDialog()">Editar mi liga</button>
+            </section>
+
             <section aria-labelledby="h-backup">
               <h2 class="data-title" id="h-backup">Copia de seguridad</h2>
               <p class="panel-copy">Exporta tu historial en JSON o restáuralo desde un archivo.</p>
@@ -316,15 +406,15 @@
             <label class="toggle-row" for="test-mode-toggle">
               <span>
                 <b class="toggle-title">Modo de pruebas</b>
-                <span class="toggle-hint">Prueba la app con el historial inicial incluido; tus datos reales no se tocan.</span>
+                <span class="toggle-hint">Mira la app con una liga de ejemplo inventada; tus datos reales no se tocan.</span>
               </span>
               <input class="switch" id="test-mode-toggle" name="test-mode-toggle" type="checkbox" onchange="Arena.toggleTestMode()" role="switch">
             </label>
 
             <section class="reset-block" aria-labelledby="h-reset">
-              <h2 class="data-title" id="h-reset">Restablecer datos</h2>
-              <p class="panel-copy">Vuelves al historial que viene incluido con la app (temporada 2026-1). Se borran los torneos que registraste después.</p>
-              <button class="btn btn-danger" type="button" onclick="Arena.resetToDefaultsConfirm()">Restablecer a los datos iniciales</button>
+              <h2 class="data-title" id="h-reset">Borrar mis datos</h2>
+              <p class="panel-copy">Quita de este dispositivo todos tus torneos, mazos, fechas de temporada, tu nombre y el día de tu liga: la app queda como recién abierta. Exporta una copia antes si quieres conservarlos.</p>
+              <button class="btn btn-danger" type="button" onclick="Arena.wipeAllConfirm()">Borrar todos mis datos</button>
             </section>
           </div>
         </details>
@@ -336,19 +426,23 @@
 
   <!-- NAVIGATION: bottom bar on phones, tabs in the top bar on desktop -->
   <nav class="nav js-nav" aria-label="Principal">
-    <a class="nav-btn js-nav-link" href="#tab=decks" onclick="event.preventDefault(); Arena.switchTab('pg-decks', this)" aria-current="page">
+    <a class="nav-btn js-nav-link" data-tab="decks" href="#tab=decks" onclick="event.preventDefault(); Arena.switchTab('pg-decks')" aria-current="page">
       <svg class="nav-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 20V11M12 20V4M19 20v-6"/></svg>
       <span>Comparador</span>
     </a>
-    <a class="nav-btn js-nav-link" href="#tab=detail" onclick="event.preventDefault(); Arena.switchTab('pg-detail', this)">
+    <a class="nav-btn js-nav-link" data-tab="league" href="#tab=league" onclick="event.preventDefault(); Arena.switchTab('pg-league')">
+      <svg class="nav-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M8 4h8v5a4 4 0 0 1-8 0V4ZM8 6H5v1a3 3 0 0 0 3 3M16 6h3v1a3 3 0 0 1-3 3M12 13v4M9 20h6"/></svg>
+      <span>General</span>
+    </a>
+    <a class="nav-btn js-nav-link" data-tab="detail" href="#tab=detail" onclick="event.preventDefault(); Arena.switchTab('pg-detail')">
       <svg class="nav-icon" viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="6.5"/><path d="m20 20-4.2-4.2"/></svg>
       <span>Detalle Mazo</span>
     </a>
-    <a class="nav-btn js-nav-link" href="#tab=logger" onclick="event.preventDefault(); Arena.switchTab('pg-logger', this)">
+    <a class="nav-btn js-nav-link" data-tab="logger" href="#tab=logger" onclick="event.preventDefault(); Arena.switchTab('pg-logger')">
       <svg class="nav-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>
       <span>Registrar</span>
     </a>
-    <a class="nav-btn js-nav-link" href="#tab=history" onclick="event.preventDefault(); Arena.switchTab('pg-history', this)">
+    <a class="nav-btn js-nav-link" data-tab="history" href="#tab=history" onclick="event.preventDefault(); Arena.switchTab('pg-history')">
       <svg class="nav-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 12a8 8 0 1 0 2.4-5.7M4 5v4h4M12 8v4l3 2"/></svg>
       <span>Historial</span>
     </a>
@@ -369,8 +463,8 @@
 
   <dialog class="dialog" id="season-dialog" aria-labelledby="sd-title" aria-describedby="sd-body">
     <form class="dialog-in" id="season-form" novalidate onsubmit="Arena.saveSeasonEnd(event)">
-      <h2 class="dialog-title" id="sd-title">Fin de temporada</h2>
-      <p class="dialog-body" id="sd-body">Con esta fecha se cuentan los jueves que quedan en «Fechas restantes». Para empezar otra temporada, elígela y escribe cuándo termina.</p>
+      <h2 class="dialog-title" id="sd-title">Fin y clasificados de la temporada</h2>
+      <p class="dialog-body" id="sd-body">La fecha cuenta las fechas de tu liga que quedan en «Fechas restantes», y los clasificados marcan el top en la pestaña General. Para empezar otra temporada, elígela y completa los dos datos.</p>
 
       <div class="field dialog-field">
         <label class="field-label" for="sd-season">Temporada</label>
@@ -380,31 +474,70 @@
       <div class="field">
         <label class="field-label" for="sd-date">Termina el</label>
         <input class="input-ctrl" id="sd-date" name="sd-date" type="date" autocomplete="off" aria-describedby="sd-error sd-hint" autofocus>
-        <span class="field-error" id="sd-error" hidden></span>
+        <span class="field-error" id="sd-error" role="alert" hidden></span>
         <span class="hint" id="sd-hint"></span>
+      </div>
+
+      <div class="field">
+        <label class="field-label" for="sd-top">¿Cuántos clasifican?</label>
+        <input class="input-ctrl" id="sd-top" name="sd-top" type="number" min="1" max="99" inputmode="numeric" autocomplete="off" aria-describedby="sd-top-error sd-top-hint">
+        <span class="field-error" id="sd-top-error" role="alert" hidden></span>
+        <span class="hint" id="sd-top-hint"></span>
       </div>
 
       <div class="dialog-actions">
         <button class="btn btn-secondary" type="button" onclick="this.closest('dialog').close()">Cancelar</button>
-        <button class="btn btn-primary" type="submit">Guardar fecha</button>
+        <button class="btn btn-primary" type="submit">Guardar temporada</button>
       </div>
       <button class="btn btn-danger dialog-remove" id="sd-remove" type="button" onclick="Arena.removeSeasonEnd()" hidden>Quitar la fecha de esta temporada</button>
     </form>
   </dialog>
 
+  <dialog class="dialog" id="league-dialog" aria-labelledby="lg-title" aria-describedby="lg-body">
+    <form class="dialog-in" id="league-form" novalidate onsubmit="Arena.saveLeague(event)">
+      <h2 class="dialog-title" id="lg-title">Tu liga</h2>
+      <p class="dialog-body" id="lg-body">Se guarda solo en este dispositivo. Sirve para encontrar tu fila en las capturas de la tabla y para contar las fechas que quedan.</p>
+
+      <div class="field dialog-field">
+        <label class="field-label" for="lg-name">Tu nombre en la liga</label>
+        <input class="input-ctrl" id="lg-name" name="lg-name" type="text" maxlength="120" placeholder="Ej.: Ana Pérez" autocomplete="off" spellcheck="false" aria-describedby="lg-name-error lg-name-hint" autofocus>
+        <span class="field-error" id="lg-name-error" role="alert" hidden></span>
+        <span class="hint" id="lg-name-hint">Escríbelo como aparece en la tabla de posiciones. Si sale de otras formas (un apodo, una letra distinta), añádelas separadas por comas: «Ana Pérez, Anita Pérez».</span>
+      </div>
+
+      <div class="field">
+        <label class="field-label" for="lg-day">Día en que juega tu liga</label>
+        <select class="input-ctrl input-ctrl-select" id="lg-day" name="lg-day" onchange="Arena.syncLeagueDayHint()" aria-describedby="lg-day-hint"></select>
+        <span class="hint" id="lg-day-hint"></span>
+      </div>
+
+      <div class="dialog-actions">
+        <button class="btn btn-secondary" type="button" onclick="this.closest('dialog').close()">Cancelar</button>
+        <button class="btn btn-primary" type="submit">Guardar mi liga</button>
+      </div>
+    </form>
+  </dialog>
+
   <script src="js/register-sw.js" defer></script>
   <script src="js/config.js" defer></script>
-  <script src="js/data.js" defer></script>
   <script src="js/state.js" defer></script>
   <script src="js/analytics.js" defer></script>
   <script src="js/format.js" defer></script>
+  <script src="js/league.js" defer></script>
+  <script src="js/monthly.js" defer></script>
+  <script src="js/outlook.js" defer></script>
+  <script src="js/demo.js" defer></script>
   <script src="js/arena.js" defer></script>
   <script src="js/arena-insights.js" defer></script>
   <script src="js/arena-decks.js" defer></script>
   <script src="js/arena-history.js" defer></script>
+  <script src="js/arena-league.js" defer></script>
+  <script src="js/arena-monthly.js" defer></script>
+  <script src="js/arena-outlook.js" defer></script>
   <script src="js/arena-logger.js" defer></script>
   <script src="js/arena-undo.js" defer></script>
   <script src="js/arena-shell.js" defer></script>
+  <script src="js/arena-profile.js" defer></script>
   <script src="js/arena-data.js" defer></script>
   <script src="js/main.js" defer></script>
 </body>

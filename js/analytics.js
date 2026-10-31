@@ -45,20 +45,22 @@ const Analytics = {
     return (!isNaN(num) && num > 0) ? num : null;
   },
 
-  // Thursdays after today (or baseDate) up to and including endIso, a YYYY-MM-DD date.
-  getRemainingDates(endIso, baseDate = new Date()) {
+  // The league nights after today (or baseDate) up to and including endIso, a YYYY-MM-DD date. weekday is the day the league
+  // plays, 0 (Sunday) to 6. Null when the weekday is not known: the nights cannot be counted without it.
+  getRemainingDates(endIso, baseDate = new Date(), weekday = null) {
+    if (!Number.isInteger(weekday) || weekday < 0 || weekday > 6) return null;
     const endDate = this.parseDate(endIso);
-    let nextThursday = new Date(baseDate.getFullYear(), baseDate.getMonth(), baseDate.getDate());
-    nextThursday.setDate(nextThursday.getDate() + 1);
+    let nextNight = new Date(baseDate.getFullYear(), baseDate.getMonth(), baseDate.getDate());
+    nextNight.setDate(nextNight.getDate() + 1);
     let safety = 0;
-    while (nextThursday.getDay() !== 4 && safety < 7) {
-      nextThursday.setDate(nextThursday.getDate() + 1);
+    while (nextNight.getDay() !== weekday && safety < 7) {
+      nextNight.setDate(nextNight.getDate() + 1);
       safety++;
     }
     let count = 0;
-    while (nextThursday <= endDate && count < 52) {
+    while (nextNight <= endDate && count < 52) {
       count++;
-      nextThursday.setDate(nextThursday.getDate() + 7);
+      nextNight.setDate(nextNight.getDate() + 7);
     }
     return Math.max(0, count);
   },
@@ -81,7 +83,7 @@ const Analytics = {
       const monthKey = match[2].toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").substring(0, 3);
       const month = CONFIG.MONTHS_MAP[monthKey] !== undefined ? CONFIG.MONTHS_MAP[monthKey] : 0;
       
-      let year = 2026;
+      let year = new Date().getFullYear();
       if (seasonStr) {
         const seasonYearMatch = String(seasonStr).match(/^(\d{4})/);
         if (seasonYearMatch) year = parseInt(seasonYearMatch[1], 10);

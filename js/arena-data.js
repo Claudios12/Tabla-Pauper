@@ -1,12 +1,13 @@
-// Arena: season end dates and the backup export and import.
-/* global CONFIG, State, plural, localIsoDate, nextSeason, seasonEndBounds, isIsoDate,
-         cleanSeasonEnds, longDate, Arena */
+// Arena: season end dates and places that qualify, and the backup export and import.
+/* global CONFIG, State, League, countEntries, isStoreNight, localIsoDate, nextSeason, seasonEndBounds, isIsoDate,
+         cleanSeasonEnds, cleanSeasonTop, cleanProfile, longDate, weekdayName, Arena */
 
 Object.assign(Arena, {
   // ─────────────────────────────────────────────────────────────
   // SEASON END (the date the Fechas restantes card counts down to)
   // ─────────────────────────────────────────────────────────────
-  openSeasonDialog() {
+  // season: open on this one (the General tab asks for the places that qualify in the season it shows).
+  openSeasonDialog(season) {
     const dialog = document.getElementById("season-dialog");
     const select = document.getElementById("sd-season");
     if (!dialog || !select || typeof dialog.showModal !== 'function') return;
@@ -23,13 +24,17 @@ Object.assign(Arena, {
     // Opens on the season being counted down; with none ahead, on the first of this and the next that has no date yet.
     const today = localIsoDate();
     const ahead = Object.entries(State.seasonEnds).filter(([, date]) => date >= today).sort((a, b) => a[1].localeCompare(b[1]))[0];
-    select.value = ahead ? ahead[0] : ([current, next].find(season => !State.seasonEnds[season]) || current);
+    select.value = ahead ? ahead[0] : ([current, next].find(candidate => !State.seasonEnds[candidate]) || current);
+    if (season && seasons.has(season)) select.value = season;
     this.syncSeasonDialog();
     dialog.showModal();
   },
 
-  // The date field follows the chosen season: its saved date, the range it accepts, and whether there is one to remove.
+  // The fields follow the chosen season: its saved date and the range it accepts, whether there is one to remove, and how
+  // many qualify. A season that has not said how many asks: the last answer is only a hint, never filled in for the person.
   syncSeasonDialog() {
+    const weekday = State.leagueDay();
+    document.getElementById("sd-body").textContent = `La fecha cuenta ${weekday === null ? 'las fechas de tu liga' : `los ${weekdayName(weekday, 2)}`} que quedan en «Fechas restantes», y los clasificados marcan el top en la pestaña General. Para empezar otra temporada, elígela y completa los dos datos.`;
     const season = document.getElementById("sd-season").value;
     const input = document.getElementById("sd-date");
     const [min, max] = seasonEndBounds(season);
@@ -37,9 +42,22 @@ Object.assign(Arena, {
     input.max = max;
     input.value = State.seasonEnds[season] || '';
     input.removeAttribute("aria-invalid");
+    // Hidden is not empty: the fields point at these texts, so errors left from an earlier try would still be read out.
+    ["sd-error", "sd-top-error"].forEach(id => { document.getElementById(id).textContent = ''; });
     document.getElementById("sd-error").hidden = true;
     document.getElementById("sd-hint").textContent = `Entre el ${longDate(min)} y el ${longDate(max)}.`;
     document.getElementById("sd-remove").hidden = !State.seasonEnds[season];
+
+    const top = document.getElementById("sd-top");
+    const saved = State.seasonTop[season];
+    const last = Object.keys(State.seasonTop).filter(other => other < season).sort().pop();
+    top.value = saved || '';
+    top.placeholder = String(last ? State.seasonTop[last] : State.topFor(season));
+    top.removeAttribute("aria-invalid");
+    document.getElementById("sd-top-error").hidden = true;
+    document.getElementById("sd-top-hint").textContent = saved
+      ? 'Los primeros puestos que pasan al cierre. Cada temporada puede clasificar una cantidad distinta.'
+      : `Aún no lo defines para esta temporada${last ? `; en la ${last} clasificaron ${State.seasonTop[last]}` : ''}. Cada temporada puede clasificar una cantidad distinta.`;
   },
 
   saveSeasonEnd(event) {
@@ -52,18 +70,30 @@ Object.assign(Arena, {
     if (!date) problem = 'Escribe la fecha en que termina la temporada.';
     else if (!isIsoDate(date)) problem = 'Esa fecha no existe. Revisa el día y el mes.';
     else if (date < min || date > max) problem = `Esa fecha queda fuera del rango de la temporada ${season}, que se indica abajo.`;
-    const error = document.getElementById("sd-error");
-    if (problem) {
-      input.setAttribute("aria-invalid", "true");
-      error.textContent = problem;
-      error.hidden = false;
-      input.focus();
+    const topInput = document.getElementById("sd-top");
+    const topText = topInput.value.trim();
+    const top = Number(topText);
+    let topProblem = '';
+    if (!(topText !== '' && Number.isInteger(top) && top >= 1 && top <= CONFIG.LEAGUE.MAX_TOP)) topProblem = `Escribe cuántos clasifican: un número entero de 1 a ${CONFIG.LEAGUE.MAX_TOP}.`;
+    const show = (field, errorId, message) => {
+      const error = document.getElementById(errorId);
+      error.hidden = !message;
+      error.textContent = message;
+      if (message) field.setAttribute("aria-invalid", "true");
+      else field.removeAttribute("aria-invalid");
+    };
+    show(input, "sd-error", problem);
+    show(topInput, "sd-top-error", topProblem);
+    if (problem || topProblem) {
+      (problem ? input : topInput).focus();
       return;
     }
     const before = this.snapshot();
     State.seasonEnds[season] = date;
     State.saveSeasonEnds();
-    this.finishSeasonEdit(`Temporada ${season}: termina el ${longDate(date)}.`, before);
+    State.seasonTop[season] = top;
+    State.saveSeasonTop();
+    this.finishSeasonEdit(`Temporada ${season}: termina el ${longDate(date)} y clasifican ${top}.`, before);
   },
 
   removeSeasonEnd() {
@@ -79,10 +109,10 @@ Object.assign(Arena, {
   finishSeasonEdit(message, before) {
     document.getElementById("season-dialog").close();
     this.refreshAll();
-    const card = document.querySelector(".js-season-end");
+    const card = document.querySelector(".js-tab-panel.is-active .js-season-end");
     if (card) card.focus({ preventScroll: true });
     this.notify(message, {
-      action: { label: 'Deshacer', run: () => { this.restoreSnapshot(before); this.notify('Fecha anterior restaurada.'); } }
+      action: { label: 'Deshacer', run: () => { this.restoreSnapshot(before); this.notify('Valores anteriores restaurados.'); } }
     });
   },
 
@@ -90,17 +120,22 @@ Object.assign(Arena, {
   // BACKUP IMPORT / EXPORT
   // ─────────────────────────────────────────────────────────────
   exportJSON() {
+    // The nights made from the store's table travel in a field of their own, as they are saved: a copy read by an older release of the
+    // app (the page rolled back to it) then brings tournaments only, and this release puts the nights back.
     const exportData = {
       version: CONFIG.DATA_VERSION,
       exportDate: new Date().toISOString(),
-      historic: State.historic,
+      historic: State.historic.filter(item => !isStoreNight(item)),
+      storeNights: State.historic.filter(isStoreNight),
       decksList: State.decksList,
       deletedDecks: State.deletedDecks,
-      seasonEnds: State.seasonEnds
+      seasonEnds: State.seasonEnds,
+      seasonTop: State.seasonTop,
+      profile: State.profile
     };
     const fileName = `pauper_decks_backup_${localIsoDate()}.json`;
     this.saveAsFile(JSON.stringify(exportData, null, 2), fileName);
-    this.toast(`Copia exportada: ${plural(State.historic.length, 'torneo', 'torneos')} en ${fileName}.`);
+    this.toast(`Copia exportada: ${countEntries(State.historic)} en ${fileName}.`);
   },
 
   importJSON(event) {
@@ -124,7 +159,10 @@ Object.assign(Arena, {
         this.toast(`«${file.name}» no parece una copia de Pauper Deck Arena: no trae el historial. Exporta una copia desde Historial y vuelve a intentarlo.`);
         return;
       }
-      if (list.some(x => !x || typeof x !== 'object' || !('deck' in x))) {
+      // The nights made from the store's table come in their own field (older copies have them among the tournaments, or none).
+      const nights = Array.isArray(data.storeNights) ? data.storeNights : [];
+      const everything = list.concat(nights);
+      if (everything.some(x => !x || typeof x !== 'object' || !('deck' in x))) {
         this.toast(`«${file.name}» tiene registros dañados y no se importó. Tus datos siguen intactos.`);
         return;
       }
@@ -133,7 +171,7 @@ Object.assign(Arena, {
       const exportedText = exported && !isNaN(exported) ? ` (exportada el ${new Intl.DateTimeFormat('es', { day: 'numeric', month: 'long', year: 'numeric' }).format(exported)})` : '';
       const ok = await this.confirmDialog({
         title: "Reemplazar tus datos con esta copia",
-        body: `Ahora tienes ${plural(State.historic.length, 'torneo', 'torneos')} y la copia trae ${plural(list.length, 'torneo', 'torneos')}${exportedText}. Se reemplazará todo lo que hay ahora. Podrás deshacerlo unos segundos después.`,
+        body: `Ahora tienes ${countEntries(State.historic)} y la copia trae ${countEntries(everything)}${exportedText}. Se reemplazará todo lo que hay ahora. Podrás deshacerlo unos segundos después.`,
         confirmLabel: "Reemplazar datos"
       });
       if (!ok) return;
@@ -149,12 +187,25 @@ Object.assign(Arena, {
         State.seasonEnds = importedEnds;
         State.saveSeasonEnds();
       }
-      State.historic = list;
+      const importedTop = cleanSeasonTop(data.seasonTop);
+      if (importedTop) {
+        State.seasonTop = importedTop;
+        State.saveSeasonTop();
+      }
+      // Older copies carry no name or league day: the ones set here stay.
+      const importedProfile = cleanProfile(data.profile);
+      if (importedProfile) {
+        State.profile = importedProfile;
+        State.saveProfile();
+        League.identify(State.profile.name);
+      }
+      State.historic = State.fillIsoDates(everything);
       State.syncDecksList();
       State.save();
+      this.dropMonth();
       this.populateDeckPickers();
       this.refreshAll();
-      this.notify(`Copia restaurada: ${plural(list.length, 'torneo', 'torneos')}.`, {
+      this.notify(`Copia restaurada: ${countEntries(everything)}.`, {
         action: { label: 'Deshacer', run: () => { this.restoreSnapshot(before); this.notify('Tus datos anteriores volvieron.'); } }
       });
     };

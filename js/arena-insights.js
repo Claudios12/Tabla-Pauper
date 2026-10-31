@@ -1,6 +1,6 @@
 // Arena: the hero numbers and the findings on the Comparador.
 /* global CONFIG, State, Analytics, nf0, nf1, pct, plural, esc, MANA_NAME, deckInfo, pipsHtml,
-         deckNameHtml, shortDate, deckExtremes, localIsoDate, Arena */
+         deckNameHtml, shortDate, deckExtremes, localIsoDate, weekdayName, isStoreNight, Arena */
 
 Object.assign(Arena, {
   // ─────────────────────────────────────────────────────────────
@@ -15,29 +15,37 @@ Object.assign(Arena, {
     return this.currentFilterSeason === 'all' ? '' : ` en ${this.currentFilterSeason}`;
   },
 
-  // Thursdays left until the next closing date, whichever season it belongs to. With none ahead, the card
-  // says so and asks for the next one. The card is a button: it opens the dialog that sets the date.
+  // League nights left until the next closing date, whichever season it belongs to, counted on the weekday the league plays.
+  // With no date ahead, the card says so and asks for the next one; with a date but no weekday, it asks for the weekday.
+  // The card is a button: it opens the dialog that sets what is missing.
   seasonCountdownCard() {
     const today = localIsoDate();
     const dates = Object.values(State.seasonEnds).sort();
     const upcoming = dates.find(date => date >= today);
     const lastEnd = dates.filter(date => date < today).pop();
     const day = (iso) => new Intl.DateTimeFormat('es', { day: 'numeric', month: 'long' }).format(Analytics.parseDate(iso));
+    const weekday = State.leagueDay();
 
     let value = '—', note = 'Define cuándo termina la temporada.', cls = 'dash';
-    if (upcoming) {
-      const remaining = Analytics.getRemainingDates(upcoming);
+    let opens = 'Arena.openSeasonDialog()', hidden = 'Editar el fin de temporada';
+    if (upcoming && weekday === null) {
+      note = 'Falta saber qué día juega tu liga.';
+      opens = 'Arena.openLeagueDialog()';
+      hidden = 'Elegir el día de tu liga';
+    } else if (upcoming) {
+      const remaining = Analytics.getRemainingDates(upcoming, new Date(), weekday);
+      const name = weekdayName(weekday, remaining || 2);
       value = nf0.format(remaining);
-      note = remaining ? `jueves hasta el ${day(upcoming)}` : `no quedan jueves hasta el ${day(upcoming)}`;
+      note = remaining ? `${name} hasta el ${day(upcoming)}` : `no quedan ${name} hasta el ${day(upcoming)}`;
       cls = '';
     } else if (lastEnd) {
       note = `Cerró el ${day(lastEnd)}. Define la próxima.`;
     }
-    return `<button class="kpi kpi-action js-season-end" type="button" onclick="Arena.openSeasonDialog()">`
+    return `<button class="kpi kpi-action js-season-end" type="button" onclick="${opens}">`
       + `<span class="kpi-label">Fechas restantes<svg class="kpi-edit" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 20h9M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg></span>`
       + `<span class="kpi-value ${cls}">${value}</span>`
       + `<span class="kpi-note">${note}</span>`
-      + `<span class="visually-hidden">Editar el fin de temporada</span></button>`;
+      + `<span class="visually-hidden">${hidden}</span></button>`;
   },
 
   renderHeroMetrics() {
@@ -142,7 +150,8 @@ Object.assign(Arena, {
     const W = wrap.clientWidth;
     if (!W) return;
 
-    const rows = [...this.getFilteredEntries()]
+    // The nights made from the store's table are nobody's tournament: they take no column.
+    const rows = [...this.getFilteredEntries()].filter(item => !isStoreNight(item))
       .sort((a, b) => Analytics.parseDate(a.date, a.season, a) - Analytics.parseDate(b.date, b.season, b))
       .map(item => {
         const played = item.deck && item.deck !== "No participó" && item.pts !== "—" && Number.isFinite(Number(item.pts));

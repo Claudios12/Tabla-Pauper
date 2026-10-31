@@ -39,6 +39,19 @@
 }
 .btn-danger:hover { background-color: rgb(244 63 94 / .14); }
 .btn-danger:active { background-color: rgb(244 63 94 / .22); }
+/* A text-only action inside a sentence */
+.btn-link {
+  padding: 0;
+  color: var(--text-primary);
+  font: inherit;
+  font-weight: 600;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  border: 0;
+  background: none;
+  cursor: pointer;
+}
+.btn-link:hover { color: var(--color-brand); }
 .btn-row {
   display: grid;
   grid-template-columns: 1fr 1fr;
