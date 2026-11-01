@@ -1,5 +1,5 @@
 // Arena: the Historial list and its deck filter.
-/* global State, Analytics, plural, countEntries, esc, deckNameHtml, logRowHtml, isStoreNight, Arena */
+/* global State, Analytics, League, plural, countEntries, esc, deckInfo, deckNameHtml, logRowHtml, isStoreNight, isIsoDate, Arena */
 
 Object.assign(Arena, {
   // ─────────────────────────────────────────────────────────────
@@ -35,7 +35,64 @@ Object.assign(Arena, {
     if (again) again.focus({ preventScroll: true });
   },
 
+  // Tournaments saved twice: the same day, deck, place, record and points. A scanned table left one behind when it was saved as
+  // another tournament instead of being added to the one already saved. Only tournaments of the person count; the nights made from
+  // the store's table and the days they skipped are not tournaments.
+  repeatedTournaments() {
+    const groups = new Map();
+    State.historic.forEach(item => {
+      if (!item || !item.deck || item.deck === "No participó" || isStoreNight(item) || !isIsoDate(item.isoDate)) return;
+      const key = [item.isoDate, item.deck.trim().toLowerCase(), item.rank, item.pts, item.wl].join('|');
+      if (!groups.has(key)) groups.set(key, []);
+      groups.get(key).push(item);
+    });
+    return [...groups.values()].filter(group => group.length > 1);
+  },
+
+  // Says so above the list, with the way out. It shows for the whole history, whatever the season filter says.
+  renderRepeated() {
+    const box = document.getElementById("history-repeated");
+    if (!box) return;
+    const groups = this.repeatedTournaments();
+    box.hidden = groups.length === 0;
+    if (!groups.length) return;
+    const first = groups[0][0];
+    const what = `${first.date} (${deckInfo(first.deck).name}${/^\d/.test(String(first.rank)) ? `, ${first.rank}` : ''}, ${first.pts} pts)`;
+    document.getElementById("history-repeated-text").textContent = groups.length === 1
+      ? `El torneo del ${what} está guardado ${groups[0].length} veces. Pasa cuando la captura de la tabla se guarda como otro torneo en vez de sumarse al que ya tenías. Al unirlos queda uno solo, con la tabla y tus notas.`
+      : `Hay ${groups.length} torneos guardados más de una vez, por ejemplo el del ${what}. Pasa cuando la captura de la tabla se guarda como otro torneo en vez de sumarse al que ya tenías. Al unirlos queda cada uno una sola vez, con su tabla y tus notas.`;
+  },
+
+  // Joins each repeated tournament into one: the one with the biggest table stays (the first saved when they tie), takes in the
+  // players and the notes of the others, and the others go. Undoable.
+  mergeRepeated() {
+    const groups = this.repeatedTournaments();
+    if (!groups.length) return;
+    const before = this.snapshot();
+    const size = (item) => (Array.isArray(item.playerResults) ? item.playerResults.length : 0);
+    let removed = 0;
+    groups.forEach(group => {
+      const keeper = group.reduce((best, item) => (size(item) > size(best) ? item : best), group[0]);
+      group.filter(item => item !== keeper).forEach(extra => {
+        if (size(extra)) keeper.playerResults = League.mergeStored(keeper.playerResults || [], extra.playerResults).rows;
+        if (extra.notes && extra.notes !== keeper.notes) keeper.notes = [keeper.notes, extra.notes].filter(Boolean).join(' · ');
+        State.historic.splice(State.historic.indexOf(extra), 1);
+        removed++;
+      });
+    });
+    State.syncDecksList();
+    State.save();
+    this.refreshAll();
+    this.notify(`${plural(removed, 'torneo repetido se unió', 'torneos repetidos se unieron')} a su original: cada uno queda una sola vez, con su tabla.`, {
+      action: { label: 'Deshacer', run: () => { this.restoreSnapshot(before); this.notify('Los torneos repetidos volvieron.'); } }
+    });
+    // The button that was pressed goes with the notice: focus lands on the page heading instead of falling to the page.
+    const heading = document.getElementById("page-title");
+    if (heading) heading.focus({ preventScroll: true });
+  },
+
   renderFullHistory() {
+    this.renderRepeated();
     const seasonEntries = this.getFilteredEntries();
     this.renderHistoryFilter(seasonEntries);
     const entries = this.historyDeck === 'all' ? seasonEntries : seasonEntries.filter(e => e.deck && e.deck.trim() === this.historyDeck);

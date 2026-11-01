@@ -34,21 +34,29 @@ Object.assign(Arena, {
     const season = dateVal ? seasonOf(Number(dateVal.slice(0, 4)), Number(dateVal.slice(5, 7))) : CONFIG.CURRENT_SEASON;
     const seasonTag = document.getElementById("logger-season-tag");
     if (seasonTag) seasonTag.textContent = season;
-    el.innerHTML = `<ul class="log">` + logRowHtml({
-      date, season, deck: deck || 'Elige un mazo', rank: rank || '—',
-      wl, pts: pts === '' ? '—' : pts, notes: val("log-notes")
-    }, { mode: 'deck', preview: true, showSeason: true }) + `</ul>`;
+    // A table that goes to a tournament already saved adds no tournament: the preview shows the saved one, which does not change.
+    const target = this.scanTarget();
+    el.innerHTML = target
+      ? `<ul class="log">` + logRowHtml(target, { mode: 'deck', preview: true, showSeason: true }) + `</ul><p class="hint">Tu torneo ya guardado no cambia y no se agrega otro: la tabla solo trae a los demás jugadores.</p>`
+      : `<ul class="log">` + logRowHtml({
+        date, season, deck: deck || 'Elige un mazo', rank: rank || '—',
+        wl, pts: pts === '' ? '—' : pts, notes: val("log-notes")
+      }, { mode: 'deck', preview: true, showSeason: true }) + `</ul>`;
 
     // What Save will store, in the bar that stays on screen while the form scrolls on a phone.
     const summary = document.getElementById("save-summary");
     if (summary) {
       const table = this.scannedSummary();
-      summary.textContent = (deck && hasRecord)
+      if (target) summary.textContent = `Se suma a tu torneo del ${target.date}: ${table}. No se agrega otro torneo.`;
+      else summary.textContent = (deck && hasRecord)
         ? [deckInfo(deck).name, wl, `${pts} pts`, rank, table].filter(Boolean).join(' · ')
         : 'Elige un récord para poder guardar.';
     }
     const saveBtn = document.querySelector(".js-save-button");
-    if (saveBtn) saveBtn.classList.toggle("is-idle", !(deck && hasRecord));
+    if (saveBtn) {
+      saveBtn.classList.toggle("is-idle", !target && !(deck && hasRecord));
+      saveBtn.textContent = target ? 'Sumar la tabla al torneo' : 'Guardar torneo';
+    }
 
     // Desktop side column: the chosen deck's latest results, so the entry is made with its trend in view.
     const recent = document.getElementById("log-recent");
@@ -149,6 +157,12 @@ Object.assign(Arena, {
 
   async saveManualTournament() {
     const val = (id) => (document.getElementById(id)?.value ?? '').trim();
+    // A table for a tournament the person already saved is added to it and nothing else: no form to fill, no second copy of the tournament.
+    const saved = this.scanTarget();
+    if (saved) {
+      await this.mergeIntoSaved(saved);
+      return;
+    }
     this.clearFieldErrors();
     this.setStatus('');
     const errors = [];
@@ -217,21 +231,6 @@ Object.assign(Arena, {
     const tableRows = this._scanned.filter(row => this.scannedRowIsComplete(row));
     const omitted = this._scanned.length - tableRows.length;
     if (!(await this.confirmDoubtfulRows())) return;
-    // Another picture of a table that is already saved is the same night, not another one: saved apart, the day would count twice.
-    const savedToday = tableRows.length ? this.sameDayTournament() : null;
-    if (savedToday && Array.isArray(savedToday.playerResults) && savedToday.playerResults.length) {
-      const ok = await this.confirmDialog({
-        title: "Ya hay una tabla de este día",
-        body: `El ${savedToday.date} ya tiene un torneo guardado con una tabla de ${plural(savedToday.playerResults.length, 'jugador', 'jugadores')}. Si estas capturas son otra parte de ese mismo torneo, cancela y usa «Sumar al torneo guardado»: guardadas aparte, ese día contaría dos veces en la liga. Si es otro torneo, guárdalo igual.`,
-        confirmLabel: "Guardar como otro torneo",
-        danger: false
-      });
-      if (!ok) {
-        this.openScanReview();
-        return;
-      }
-    }
-
     const [y, m, dayNum] = dateVal.split("-").map(Number);
     const entry = {
       date: `${dayNum} ${CONFIG.MONTHS_ABBR[m - 1]}`,

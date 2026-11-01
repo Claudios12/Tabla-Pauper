@@ -1,5 +1,5 @@
 // Arena: the General tab (how the league is going and where you stand) and the table the scan reads.
-/* global CONFIG, State, Analytics, League, nf0, nf1, plural, esc, seasonOf, deckInfo, isStoreNight, TRASH_ICON, Arena */
+/* global CONFIG, State, Analytics, League, nf0, nf1, plural, esc, seasonOf, deckInfo, isStoreNight, isIsoDate, TRASH_ICON, Arena */
 
 Object.assign(Arena, {
   // The standings the scan read, held until the tournament is saved: [{ name, pts, wl, flags }], and what it noted about them.
@@ -7,6 +7,9 @@ Object.assign(Arena, {
   _scanNotes: { missing: 0, places: [] },
   // Counts every time the scan is dropped or replaced, so a read that finishes late can tell it is out of date.
   _scanRun: 0,
+  // Where the person sent the table in the list "¿De qué torneo es esta tabla?": a saved tournament, 'new', or nothing yet (then the
+  // page makes it out, see scanTarget).
+  _scanChoice: undefined,
   // Which picture is being read when there are several (" 1 de 2"), for the progress line.
   _ocrPart: '',
 
@@ -212,6 +215,7 @@ Object.assign(Arena, {
   // keeps its own copy (saving the tournament, adding the table to a saved one).
   clearScannedStandings(reason) {
     this._scanRun++;
+    this._scanChoice = undefined;
     this.toggleIdentify(false);
     if (!this._scanned.length) return;
     const kept = reason ? this.keepScanned() : null;
@@ -357,21 +361,113 @@ Object.assign(Arena, {
     return same.find(item => Array.isArray(item.playerResults) && item.playerResults.length) || same[0] || null;
   },
 
-  // Says so in the review list when the day already has a saved tournament, and offers to add the table to it.
+  // The tournaments of the person a table could belong to, newest first: the latest ones, and the one on the form's day.
+  scanCandidates() {
+    const own = State.historic
+      .filter(item => item && item.deck && item.deck !== "No participó" && !isStoreNight(item))
+      .sort((a, b) => String(b.isoDate || '').localeCompare(String(a.isoDate || '')))
+      .slice(0, 10);
+    const day = this.sameDayTournament();
+    if (day && !own.includes(day)) own.push(day);
+    return own;
+  },
+
+  // The saved tournament the table read most likely belongs to, or null when it is a new one. First the tournament of the form's
+  // day. Failing that, the one tournament of the last two weeks that has no table yet and that the person's own row in the picture
+  // matches (the same points, and the same place when both say one): the picture is often shared days after the tournament, when the
+  // form's date is no longer its day.
+  defaultScanTarget() {
+    const day = this.sameDayTournament();
+    if (day) return day;
+    const me = this._scanned.find(row => League.isMyName(row.name));
+    const iso = document.getElementById("log-date")?.value ?? '';
+    if (!me || me.pts === null || !isIsoDate(iso)) return null;
+    const at = (value) => Date.parse(`${value}T12:00:00Z`);
+    const alike = State.historic.filter(item => item && item.deck && item.deck !== "No participó" && !isStoreNight(item)
+      && !(Array.isArray(item.playerResults) && item.playerResults.length)
+      && isIsoDate(item.isoDate) && item.isoDate <= iso && at(iso) - at(item.isoDate) <= 14 * 86400000
+      && Number(item.pts) === me.pts
+      && (!me.rank || !/^\d/.test(String(item.rank)) || parseInt(item.rank, 10) === me.rank));
+    return alike.length === 1 ? alike[0] : null;
+  },
+
+  // Where the table goes: the tournament the person chose in the list, or else the one the page makes out. Null is a new
+  // tournament, saved with the result in the form. A table read for a tournament that is already saved must not become a second
+  // copy of it: its stats are counted once, and the picture only brings the other players.
+  scanTarget() {
+    if (!this._scanned.length || this._scanChoice === 'new') return null;
+    if (this._scanChoice && State.historic.includes(this._scanChoice)) return this._scanChoice;
+    return this.defaultScanTarget();
+  },
+
+  scanOptionLabel(item) {
+    const n = Array.isArray(item.playerResults) ? item.playerResults.length : 0;
+    const place = /^\d/.test(String(item.rank)) ? ` · ${item.rank}` : '';
+    return `${item.date} · ${deckInfo(item.deck).name}${place} · ${n ? `con tabla de ${plural(n, 'jugador', 'jugadores')}` : 'sin tabla'}`;
+  },
+
+  // The person picked a tournament (or "nuevo") in the list. A new tournament takes the person's row into the form; a saved one
+  // keeps the form clear of it, because nothing of it is saved.
+  chooseScanTarget(select) {
+    const was = this.scanTarget();
+    this._scanChoice = select.value === 'new' ? 'new' : State.historic[Number(select.value)];
+    const target = this.scanTarget();
+    if (!target) this.fillFormFromScan();
+    else {
+      if (!was) this.clearFormScanFill();
+      this.setStatus(`Esta tabla se suma a tu torneo del ${target.date}, que ya tienes guardado: tus números no cambian y no se agrega otro torneo.`, "var(--text-secondary)");
+    }
+    this.renderLogPreview();
+  },
+
+  // The form holds what the scan read for the person's own row; when the table goes to a saved tournament none of it is kept.
+  clearFormScanFill() {
+    const me = this._scanned.find(row => League.isMyName(row.name));
+    if (!me) return;
+    const record = Analytics.parseWLD(me.wl);
+    const wipe = (id, value) => {
+      const field = document.getElementById(id);
+      if (field && field.value !== '' && String(field.value) === String(value)) field.value = '';
+    };
+    if (me.rank) wipe("log-rank", me.rank);
+    if (record) { wipe("log-w", record.w); wipe("log-l", record.l); wipe("log-d", record.d); }
+    if (me.pts !== null) wipe("log-pts", me.pts);
+  },
+
+  // Says which tournament the table goes to, and lets the person change it. The list is rebuilt only when it would change, so a
+  // redraw while the person is choosing does not take the choice away.
   renderSameDay() {
     const box = document.getElementById("ocr-same");
     if (!box) return;
-    const entry = this._scanned.length ? this.sameDayTournament() : null;
-    box.hidden = !entry;
-    if (!entry) return;
-    const n = Array.isArray(entry.playerResults) ? entry.playerResults.length : 0;
-    document.getElementById("ocr-same-text").textContent = `Ya guardaste un torneo el ${entry.date} (${deckInfo(entry.deck).name}${n ? `, con una tabla de ${plural(n, 'jugador', 'jugadores')}` : ', sin tabla'}). Si estas capturas son parte de ese mismo torneo, súmalas a él: así el día cuenta una sola vez. Si son de otro torneo, guárdalo como uno nuevo.`;
+    const target = this.scanTarget();
+    const candidates = this._scanned.length ? this.scanCandidates() : [];
+    if (target && !candidates.includes(target)) candidates.push(target);
+    box.hidden = candidates.length === 0;
+    if (box.hidden) return;
+    const select = document.getElementById("ocr-target");
+    const options = candidates.map(item => ({ value: String(State.historic.indexOf(item)), label: this.scanOptionLabel(item) }))
+      .concat({ value: 'new', label: 'Es un torneo nuevo: se guarda con tu resultado de arriba' });
+    const key = JSON.stringify(options);
+    if (select.dataset.key !== key) {
+      select.innerHTML = options.map(option => `<option value="${esc(option.value)}">${esc(option.label)}</option>`).join('');
+      select.dataset.key = key;
+    }
+    select.value = target ? String(State.historic.indexOf(target)) : 'new';
+    const text = document.getElementById("ocr-same-text");
+    if (target) {
+      text.textContent = `Tu torneo del ${target.date} ya está guardado. La tabla se suma a él: tus números no cambian y no se agrega otro torneo.`;
+    } else {
+      const day = this.sameDayTournament();
+      text.textContent = day
+        ? `Ojo: ya guardaste un torneo el ${day.date}. Si esta tabla es de ese torneo, elígelo arriba; si no, se guardará como uno nuevo.`
+        : 'Se guardará como un torneo nuevo, con tu resultado de arriba y esta tabla.';
+    }
+    document.getElementById("ocr-same-merge").hidden = !target;
   },
 
-  // Adds the table read to the tournament already saved for that day, as one night: a player who is already there is not
-  // added again, and nothing is added up. It is a tournament of its own only if the person saves it as one.
-  async mergeIntoSaved() {
-    const entry = this.sameDayTournament();
+  // Adds the table read to a tournament already saved, as one night: a player who is already there is not added again, and
+  // nothing is added up. Nothing of the person's own result changes (place, record, points, deck): the picture brings the others.
+  async mergeIntoSaved(entry = this.scanTarget()) {
     if (!entry || !this._scanned.length) return;
     if (!(await this.confirmDoubtfulRows())) return;
     const incoming = this._scanned.filter(row => this.scannedRowIsComplete(row)).map(row => (row.wl ? { name: row.name, pts: row.pts, wl: row.wl } : { name: row.name, pts: row.pts }));
@@ -394,7 +490,11 @@ Object.assign(Arena, {
     this.refreshAll();
     const moved = merged.added ? `Se sumaron ${plural(merged.added, 'jugador', 'jugadores')} al torneo del ${entry.date}` : `Esas filas ya estaban en el torneo del ${entry.date}`;
     const clash = merged.conflicts ? ` ${plural(merged.conflicts, 'jugador tenía', 'jugadores tenían')} otros puntos y se dejó lo guardado.` : '';
-    this.notify(`${moved}; su tabla ahora tiene ${plural(merged.rows.length, 'jugador', 'jugadores')}.${clash}`, {
+    // The person's own result is not touched, but if the picture says something else about it they should know.
+    const mine = incoming.find(row => League.isMyName(row.name));
+    const apart = mine && Number.isFinite(Number(entry.pts)) && mine.pts !== Number(entry.pts)
+      ? ` La captura te da ${mine.pts} pts y tu torneo dice ${entry.pts}: tus números no cambiaron.` : '';
+    this.notify(`${moved}; su tabla ahora tiene ${plural(merged.rows.length, 'jugador', 'jugadores')}. Tu torneo no se duplicó.${clash}${apart}`, {
       action: {
         label: 'Deshacer',
         run: () => {

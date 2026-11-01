@@ -318,6 +318,13 @@ Object.assign(Arena, {
     const me = mine[0];
     if (!me) {
       const unnamed = !State.profile.name;
+      const saved = this.scanTarget();
+      if (saved) {
+        this.setStatus(`Esta tabla se suma a tu torneo del ${saved.date}, que ya tienes guardado: no se agrega otro torneo.${table}${unnamed ? ' Dime tu nombre para que encuentre tu fila.' : ' No encontré tu fila: revisa tu nombre.'}`, "var(--text-secondary)");
+        this.toggleIdentify(true);
+        this.renderLogPreview();
+        return;
+      }
       this.setStatus(unnamed
         ? `Aún no sé cuál de estas filas eres: dime tu nombre y la encuentro sola. Mientras, ingresa tus datos a mano.${table}`
         : `No encontré tu fila. Revisa tu nombre o ingresa tus datos a mano.${table}`, "var(--text-secondary)");
@@ -327,6 +334,17 @@ Object.assign(Arena, {
     }
     this.toggleIdentify(false);
 
+    // A table for a tournament the person already saved is not a result to save again: the form stays as it is, and the table is
+    // added to that tournament (their own place, record and points are not read into anything).
+    const alike = mine.length > 1 ? ` ${mine.length} filas podrían ser tuyas (${mine.map(row => row.name).join(', ')}): se usó la primera, revisa que sea la tuya.` : '';
+    const target = this.scanTarget();
+    if (target) {
+      const warn = (me.flags.length ? ' Tu fila tiene avisos: revísala en la lista.' : '') + alike;
+      this.setStatus(`Esta tabla se suma a tu torneo del ${target.date}, que ya tienes guardado: tus números no cambian y no se agrega otro torneo.${table}${warn} Pulsa «Sumar la tabla al torneo».`, doubtful ? "var(--text-primary)" : "var(--color-good)");
+      this.renderLogPreview();
+      return;
+    }
+
     const record = this.fillFormFromRow(me, adding);
     const parts = this.myRowParts(me, record);
     const missing = [];
@@ -334,7 +352,6 @@ Object.assign(Arena, {
     if (!record) missing.push('récord W-L-D');
     if (me.pts === null) missing.push('puntos');
     const closing = missing.length ? ` Ingresa a mano: ${missing.join(', ')}.` : ' Verifica y guarda.';
-    const alike = mine.length > 1 ? ` ${mine.length} filas podrían ser tuyas (${mine.map(row => row.name).join(', ')}): se usó la primera, revisa que sea la tuya.` : '';
     const warn = (me.flags.length ? ' Tu fila tiene avisos: revísala en la lista.' : '') + alike;
     this.setStatus(`Detectado: ${parts.join(', ') || 'tu fila'}.${table}${warn}${closing}`, doubtful ? "var(--text-primary)" : "var(--color-good)");
     this.renderLogPreview();
@@ -379,6 +396,11 @@ Object.assign(Arena, {
           : 'Aún no sé cuál de estas filas eres: dime tu nombre y la encuentro sola. Mientras, ingresa tus datos a mano.', "var(--text-secondary)");
       }
       return false;
+    }
+    // The table belongs to a tournament already saved: its row is not read into the form.
+    if (this.scanTarget()) {
+      this.renderLogPreview();
+      return true;
     }
     const record = this.fillFormFromRow(me, true);
     this.setStatus(`Detectado: ${this.myRowParts(me, record).join(', ') || 'tu fila'}. Verifica y guarda.`, "var(--color-good)");

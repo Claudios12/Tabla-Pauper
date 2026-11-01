@@ -329,13 +329,16 @@
   color: var(--text-muted);
 }
 /* The day already has a saved tournament: the table may be the rest of it. One tone under the button's, so it still reads as one. */
-.ocr-same {
+.ocr-same,
+.repeated-note {
   margin-block-end: 12px;
   padding: 12px;
   border-radius: var(--radius-sm);
   background-color: var(--surface-2);
 }
-.ocr-same .ocr-help { margin-block-end: 10px; }
+.ocr-same .field { margin-block-end: 10px; }
+.ocr-same .ocr-help,
+.repeated-note .ocr-help { margin-block-end: 10px; }
 .ocr-add-image { margin-block-end: 12px; }
 .ocr-list {
   display: flex;
