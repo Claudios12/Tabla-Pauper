@@ -33,7 +33,8 @@ const Arena = {
     this.updateNavLinks();
     const form = document.getElementById('pg-logger');
     if (form) {
-      form.addEventListener('input', () => this.renderLogPreview());
+      // The list that says where a scanned table goes is read when it changes: a redraw on its "input" event would put the old choice back first.
+      form.addEventListener('input', (e) => { if (e.target.id !== 'ocr-target') this.renderLogPreview(); });
       form.addEventListener('change', () => this.renderLogPreview());
     }
     const wrap = document.getElementById('points-chart');

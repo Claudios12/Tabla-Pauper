@@ -330,7 +330,7 @@
             </button>
 
             <div class="acc-body" id="ocr-content" hidden>
-              <p class="acc-body-text">Sube la captura de la app del torneo o de Companion. El motor OCR busca tu fila y rellena posición, récord y puntaje para que los verifiques. También guarda la tabla de todos los jugadores con el torneo, para la pestaña General. Si la tabla no cabe en una captura, elige todas las del mismo torneo a la vez: se leen juntas y cuentan como un solo día.</p>
+              <p class="acc-body-text">Sube la captura de la app del torneo o de Companion. El motor OCR busca tu fila y rellena posición, récord y puntaje para que los verifiques. También guarda la tabla de todos los jugadores con el torneo, para la pestaña General. Si ya guardaste ese torneo, la tabla se suma a él: tus números no cambian y no se duplica. Si la tabla no cabe en una captura, elige todas las del mismo torneo a la vez: se leen juntas y cuentan como un solo día.</p>
               <div class="field">
                 <label class="field-label" for="ocr-file">Capturas de la tabla</label>
                 <input class="input-ctrl input-ctrl-file" id="ocr-file" name="ocr-file" type="file" accept="image/*" multiple onchange="Arena.clearScannedStandings('file')">
@@ -338,14 +338,18 @@
               <button class="btn btn-secondary" type="button" onclick="Arena.processOcrScreenshot()">Leer capturas y extraer datos</button>
 
               <div class="ocr-found" id="ocr-found" hidden>
+                <div class="ocr-same" id="ocr-same" hidden>
+                  <div class="field">
+                    <label class="field-label" for="ocr-target">¿De qué torneo es esta tabla?</label>
+                    <select class="input-ctrl input-ctrl-select" id="ocr-target" name="ocr-target" onchange="Arena.chooseScanTarget(this)"></select>
+                  </div>
+                  <p class="ocr-help" id="ocr-same-text" aria-live="polite"></p>
+                  <button class="btn btn-secondary" id="ocr-same-merge" type="button" onclick="Arena.mergeIntoSaved()" hidden>Sumar la tabla a ese torneo</button>
+                </div>
                 <details class="ocr-review" id="ocr-review">
                   <summary class="how-to-toggle"><span id="ocr-found-title"></span><svg class="how-to-chevron" viewBox="0 0 24 24" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg></summary>
                   <p class="ocr-help">Corrige el nombre o los puntos que se hayan leído mal y quita las filas que no sean jugadores. Lo que dejes aquí se guarda con el torneo.</p>
                   <p class="ocr-notes" id="ocr-found-notes" hidden></p>
-                  <div class="ocr-same" id="ocr-same" hidden>
-                    <p class="ocr-help" id="ocr-same-text"></p>
-                    <button class="btn btn-secondary" type="button" onclick="Arena.mergeIntoSaved()">Sumar al torneo guardado</button>
-                  </div>
                   <button class="btn btn-secondary ocr-add-image" type="button" onclick="document.getElementById('ocr-more').click()">Agregar otra captura de esta tabla</button>
                   <input id="ocr-more" name="ocr-more" type="file" accept="image/*" multiple hidden onchange="Arena.addScreenshots(this)" aria-label="Otra captura de la misma tabla">
                   <ul class="ocr-list" id="ocr-found-list"></ul>
@@ -370,6 +374,10 @@
           <div class="card-head">
             <h2 id="h-hlist">Historial cronológico</h2>
             <span class="sec-meta" id="history-entry-count">0 torneos</span>
+          </div>
+          <div class="repeated-note" id="history-repeated" role="status" hidden>
+            <p class="ocr-help" id="history-repeated-text"></p>
+            <button class="btn btn-secondary" type="button" onclick="Arena.mergeRepeated()">Unir en un solo torneo</button>
           </div>
           <div class="chip-row" id="history-deck-filter" hidden role="group" aria-label="Filtrar por mazo"></div>
           <div id="full-history-list"></div>
