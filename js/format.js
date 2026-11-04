@@ -1,7 +1,7 @@
 // Display helpers: number and date formats, deck names as mana pips, row and card pieces.
 /* global CONFIG, Analytics */
 /* exported nf0, nf1, pct, plural, esc, MANA_NAME, deckInfo, pipsHtml, stripeHtml, deckNameHtml,
-         shortDate, TRASH_ICON, logRowHtml, pickLead, deckExtremes, statusPillClass, deckPillHtml,
+         shortDate, TRASH_ICON, EDIT_ICON, logRowHtml, pickLead, deckExtremes, statusPillClass, deckPillHtml,
          deltaHtml, localIsoDate, seasonOf, SEASON_FORMAT, nextSeason, seasonEndBounds, isIsoDate,
          cleanSeasonEnds, cleanSeasonTop, longDate, deckNameWithColours, weekdayName, cleanProfile,
          PROFILE_NAME_MAX, isStoreNight, countEntries */
@@ -71,6 +71,7 @@ function deckNameHtml(raw) {
 // "6 Jun Paupergedón" -> "6 Jun"
 const shortDate = (date) => (String(date).match(/^\d{1,2}\s+\S+/) || [String(date)])[0];
 
+const EDIT_ICON = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 20h4L19 9l-4-4L4 16v4ZM13.5 6.5l4 4"/></svg>';
 const TRASH_ICON = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 7h14M10 7V5h4v2M7 7l1 12h8l1-12M10 11v5M14 11v5"/></svg>';
 
 function rankClass(rankStr) {
@@ -108,18 +109,21 @@ function logRowHtml(item, opts = {}) {
     sub = [date, opts.showSeason ? esc(item.season || '') : '', notes].filter(Boolean).join(' · ');
   }
   const pts = item.pts === '—' || item.pts === undefined || item.pts === null ? '—' : `${nf0.format(Number(item.pts))} pts`;
+  const pencil = opts.delIdx !== undefined && !store
+    ? `<button class="btn-icon-edit js-edit-tournament" type="button" onclick="Arena.editTournament(${opts.delIdx}, this)" aria-label="Editar el torneo del ${date} con ${esc(deckInfo(item.deck).name)}">${EDIT_ICON.replace('<svg ', '<svg class="row-delete-icon" ')}</button>`
+    : '';
   const del = opts.delIdx !== undefined
     ? `<button class="btn-icon-del js-delete-tournament" type="button" onclick="Arena.deleteTournament(${opts.delIdx}, this)" aria-label="${store ? `Eliminar la noche del ${date} creada con la tabla de la tienda` : `Eliminar el torneo del ${date} con ${esc(deckInfo(item.deck).name)}`}">${TRASH_ICON.replace('<svg ', '<svg class="row-delete-icon" ')}</button>`
     : '';
   return `
-    <li class="log-row js-log-row ${opts.delIdx !== undefined ? 'has-del' : ''} ${opts.preview ? 'preview' : ''} ${opts.fresh ? 'fresh' : ''}">
+    <li class="log-row js-log-row ${opts.delIdx !== undefined ? 'has-del' : ''} ${pencil ? 'has-edit' : ''} ${opts.preview ? 'preview' : ''} ${opts.fresh ? 'fresh' : ''}">
       <span class="tourney-rank ${rankClass(item.rank)}">${esc(item.rank || '—')}</span>
       <div class="log-main">
         <div class="log-title">${store ? '<span class="title-text">Noche de la liga</span>' : (skipped ? '<span class="title-text">No participó</span>' : title)}</div>
         <div class="log-sub">${sub}</div>
       </div>
       <div class="log-fig"><b class="log-fig-value ${item.type === 'good' ? 'good' : ''}">${pts}</b><small class="log-fig-detail">${esc(item.wl || '—')}</small></div>
-      ${del}
+      ${pencil}${del}
     </li>`;
 }
 

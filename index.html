@@ -501,6 +501,59 @@
     </form>
   </dialog>
 
+  <dialog class="dialog" id="edit-dialog" aria-labelledby="ed-title" aria-describedby="ed-body">
+    <form class="dialog-in" id="edit-form" novalidate onsubmit="Arena.saveEdit(event)">
+      <h2 class="dialog-title" id="ed-title">Editar torneo</h2>
+      <p class="dialog-body" id="ed-body"></p>
+
+      <div class="field dialog-field">
+        <label class="field-label" for="ed-deck">Mazo jugado</label>
+        <select class="input-ctrl input-ctrl-select" id="ed-deck" name="ed-deck"></select>
+      </div>
+      <div class="field">
+        <label class="field-label" for="ed-rank">Puesto final</label>
+        <input class="input-ctrl" id="ed-rank" name="ed-rank" type="text" inputmode="numeric" placeholder="Ej.: 3" autocomplete="off" aria-describedby="ed-error">
+      </div>
+      <fieldset class="field">
+        <legend class="field-label">Récord de partidas</legend>
+        <div class="edit-record">
+          <div>
+            <label class="record-input-label" for="ed-w"><i class="dot win"></i>Victorias</label>
+            <input class="input-ctrl" id="ed-w" name="ed-w" type="number" min="0" max="20" inputmode="numeric" autocomplete="off" oninput="Arena.syncEditPoints()" aria-describedby="ed-error">
+          </div>
+          <div>
+            <label class="record-input-label" for="ed-l"><i class="dot loss"></i>Derrotas</label>
+            <input class="input-ctrl" id="ed-l" name="ed-l" type="number" min="0" max="20" inputmode="numeric" autocomplete="off" oninput="Arena.syncEditPoints()" aria-describedby="ed-error">
+          </div>
+          <div>
+            <label class="record-input-label" for="ed-d"><i class="dot draw"></i>Empates</label>
+            <input class="input-ctrl" id="ed-d" name="ed-d" type="number" min="0" max="20" inputmode="numeric" autocomplete="off" oninput="Arena.syncEditPoints()" aria-describedby="ed-error">
+          </div>
+        </div>
+      </fieldset>
+      <div class="field">
+        <label class="field-label" for="ed-pts">Puntos oficiales del torneo</label>
+        <input class="input-ctrl" id="ed-pts" name="ed-pts" type="number" min="0" max="60" inputmode="numeric" autocomplete="off" aria-describedby="ed-error ed-pts-hint">
+        <span class="hint" id="ed-pts-hint">Se calculan solos al cambiar el récord. Cámbialos si hubo byes o puntuación especial.</span>
+      </div>
+      <div class="field">
+        <label class="field-label" for="ed-notes">Notas de matchups (opcional)</label>
+        <input class="input-ctrl" id="ed-notes" name="ed-notes" type="text" autocomplete="off">
+      </div>
+      <p class="field-error" id="ed-error" role="alert" hidden></p>
+
+      <div class="edit-table" id="ed-table" hidden>
+        <span class="hint" id="ed-table-text"></span>
+        <button class="btn btn-danger" type="button" onclick="Arena.removeTable()">Quitar la tabla de este día</button>
+      </div>
+
+      <div class="dialog-actions">
+        <button class="btn btn-secondary" type="button" onclick="this.closest('dialog').close()">Cancelar</button>
+        <button class="btn btn-primary" type="submit">Guardar cambios</button>
+      </div>
+    </form>
+  </dialog>
+
   <dialog class="dialog" id="league-dialog" aria-labelledby="lg-title" aria-describedby="lg-body">
     <form class="dialog-in" id="league-form" novalidate onsubmit="Arena.saveLeague(event)">
       <h2 class="dialog-title" id="lg-title">Tu liga</h2>

@@ -281,6 +281,9 @@ legend { padding: 0; margin-block-end: 8px; }
 }
 .dialog-field { margin-block-start: 16px; }
 .dialog-remove { margin-block-start: 8px; }
+.edit-record { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
+.edit-table { margin-block-start: 16px; padding: 12px; border-radius: var(--radius-sm); background-color: var(--surface-2); }
+.edit-table .hint { display: block; margin-block-end: 10px; }
 .btn-danger-solid { width: 100%; color: var(--bg-main); background-color: #fb7185; }
 .btn-danger-solid:hover { background-color: #fda4af; }
 .btn-danger-solid:active { background-color: #f43f5e; }
