@@ -544,7 +544,13 @@
 
       <div class="edit-table" id="ed-table" hidden>
         <span class="hint" id="ed-table-text"></span>
-        <button class="btn btn-danger" type="button" onclick="Arena.removeTable()">Quitar la tabla de este día</button>
+        <details class="edit-players">
+          <summary class="how-to-toggle"><span>Corregir jugadores de la tabla</span><svg class="how-to-chevron" viewBox="0 0 24 24" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg></summary>
+          <p class="hint">Corrige un nombre o unos puntos mal leídos, quita a quien no sea un jugador o agrega a quien falte. Se guarda con «Guardar cambios».</p>
+          <ul class="ocr-list" id="ed-players"></ul>
+          <button class="btn btn-secondary" type="button" onclick="Arena.addEditPlayer()">Agregar jugador</button>
+        </details>
+        <button class="btn btn-danger dialog-remove" type="button" onclick="Arena.removeTable()">Quitar la tabla de este día</button>
       </div>
 
       <div class="dialog-actions">

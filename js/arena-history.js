@@ -1,5 +1,5 @@
 // Arena: the Historial list and its deck filter.
-/* global CONFIG, State, Analytics, League, plural, countEntries, esc, deckInfo, deckNameHtml, logRowHtml, isStoreNight, isIsoDate, Arena */
+/* global CONFIG, State, Analytics, League, plural, countEntries, esc, TRASH_ICON, deckInfo, deckNameHtml, logRowHtml, isStoreNight, isIsoDate, Arena */
 
 Object.assign(Arena, {
   // ─────────────────────────────────────────────────────────────
@@ -61,8 +61,66 @@ Object.assign(Arena, {
     this.showEditError('');
     const n = Array.isArray(item.playerResults) ? item.playerResults.length : 0;
     document.getElementById("ed-table").hidden = !n;
-    document.getElementById("ed-table-text").textContent = `Este día tiene una tabla de ${plural(n, 'jugador', 'jugadores')} (la de la pestaña General). Si la captura se leyó mal, quítala: tu torneo se queda como está y puedes subir la captura otra vez.`;
+    document.getElementById("ed-table-text").textContent = `Este día tiene una tabla de ${plural(n, 'jugador', 'jugadores')} (la de la pestaña General). Corrige a los jugadores mal leídos o, si la captura salió muy mal, quítala entera: tu torneo se queda como está y puedes subir la captura otra vez.`;
+    document.getElementById("ed-players").innerHTML = '';
+    (item.playerResults || []).forEach((row, i) => this.addEditPlayer(row, i));
+    dialog.querySelector(".edit-players").open = false;
     dialog.showModal();
+  },
+
+  // One player of the table in the dialog: `index` is where the player sits in the saved table (-1 for one added now).
+  addEditPlayer(row, index) {
+    const list = document.getElementById("ed-players");
+    const isNew = !row || typeof row.name !== 'string';
+    const li = document.createElement("li");
+    li.className = "ocr-row";
+    li.dataset.index = isNew ? -1 : index;
+    const n = list.children.length + 1;
+    li.innerHTML = `<input class="input-ctrl ocr-input" type="text" name="ed-pname-${n}" value="${isNew ? '' : esc(row.name)}" placeholder="Nombre" maxlength="60" autocomplete="off" spellcheck="false" aria-label="Nombre del jugador ${n}">`
+      + `<input class="input-ctrl ocr-input ocr-input-pts" type="number" name="ed-ppts-${n}" value="${isNew ? '' : row.pts}" min="0" max="${League.MAX_PTS}" inputmode="numeric" autocomplete="off" aria-label="Puntos del jugador ${n}">`
+      + `<button class="btn-icon-del" type="button" onclick="Arena.removeEditPlayer(this)" aria-label="Quitar al jugador ${n} de la tabla">${TRASH_ICON.replace('<svg ', '<svg class="row-delete-icon" ')}</button>`;
+    list.append(li);
+    if (isNew) {
+      document.querySelector("#edit-dialog .edit-players").open = true;
+      li.querySelector("input").focus();
+    }
+  },
+
+  removeEditPlayer(button) {
+    const li = button.closest("li");
+    const next = li.nextElementSibling || li.previousElementSibling;
+    li.remove();
+    // The names announced by a screen reader count the rows again.
+    [...document.querySelectorAll("#ed-players li")].forEach((row, i) => {
+      const inputs = row.querySelectorAll("input");
+      inputs[0].setAttribute("aria-label", `Nombre del jugador ${i + 1}`);
+      inputs[1].setAttribute("aria-label", `Puntos del jugador ${i + 1}`);
+      row.querySelector("button").setAttribute("aria-label", `Quitar al jugador ${i + 1} de la tabla`);
+    });
+    (next ? next.querySelector("input") : document.querySelector("#edit-dialog .edit-players summary")).focus();
+  },
+
+  // The table as the dialog now shows it: what each saved row had besides name and points (record, reto) stays with its player.
+  // Returns the rows, or a message and the field that needs a look.
+  editedTable(item) {
+    const rows = [];
+    const seen = new Set();
+    for (const li of document.querySelectorAll("#ed-players li")) {
+      const [nameInput, ptsInput] = li.querySelectorAll("input");
+      const name = nameInput.value.trim();
+      if (!name && ptsInput.value === '') continue;
+      if (!name) return { error: "Escribe el nombre de este jugador o quítalo.", field: nameInput };
+      const pts = Number(ptsInput.value);
+      if (ptsInput.value === '' || !Number.isInteger(pts) || pts < 0 || pts > League.MAX_PTS) return { error: `Los puntos de ${name} van de 0 a ${League.MAX_PTS}.`, field: ptsInput };
+      const key = League.nameKey(name);
+      if (seen.has(key)) return { error: `${name} está dos veces en la tabla.`, field: nameInput };
+      seen.add(key);
+      const old = (item.playerResults || [])[Number(li.dataset.index)];
+      // The row keeps its reto, and its record while the points are the ones it was read with: a corrected name is the same player.
+      const kept = { name, pts, ...(old && old.reto !== undefined ? { reto: old.reto } : {}), ...(old && old.wl && old.pts === pts ? { wl: old.wl } : {}) };
+      rows.push(kept);
+    }
+    return { rows };
   },
 
   // The points follow the record while they still hold what the record gave; typed points stay as typed.
@@ -74,12 +132,12 @@ Object.assign(Arena, {
     this._editCalc = calc;
   },
 
-  showEditError(message, fieldId) {
+  showEditError(message, fieldId, element) {
     const error = document.getElementById("ed-error");
     error.textContent = message;
     error.hidden = !message;
     document.querySelectorAll("#edit-form [aria-invalid]").forEach(el => el.removeAttribute("aria-invalid"));
-    const field = fieldId && document.getElementById(fieldId);
+    const field = element || (fieldId && document.getElementById(fieldId));
     if (field) { field.setAttribute("aria-invalid", "true"); field.focus(); }
   },
 
@@ -109,7 +167,15 @@ Object.assign(Arena, {
       pts = Number(val("ed-pts"));
       if (!Number.isInteger(pts) || pts < 0 || pts > 60) return this.showEditError("Los puntos van de 0 a 60.", "ed-pts");
     }
+    const hadTable = Array.isArray(item.playerResults) && item.playerResults.length > 0;
+    const table = hadTable ? this.editedTable(item) : null;
+    if (table && table.error) {
+      document.querySelector("#edit-dialog .edit-players").open = true;
+      return this.showEditError(table.error, null, table.field);
+    }
     const before = this.snapshot();
+    if (table && table.rows.length) item.playerResults = table.rows;
+    else if (table) delete item.playerResults;
     item.deck = document.getElementById("ed-deck").value;
     item.rank = rankRaw ? `${parseInt(rankRaw, 10)}°` : "—";
     item.wl = `${w}-${l}-${d}`;
