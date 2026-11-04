@@ -26,6 +26,7 @@
   background-color: var(--surface-2);
 }
 .log-row.has-del { grid-template-columns: 40px minmax(0, 1fr) auto 44px; padding-inline-end: 4px; }
+.log-row.has-edit { grid-template-columns: 40px minmax(0, 1fr) auto 44px 44px; }
 .log-row.preview { background-color: var(--surface-3); }
 .tourney-rank {
   text-align: center;
