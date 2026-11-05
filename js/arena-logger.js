@@ -140,14 +140,25 @@ Object.assign(Arena, {
 
   // Rows of the table that still need a look ask before the table is kept: the person goes back to them, or keeps them as
   // they are. Resolves false when they go back (and takes them there).
-  async confirmDoubtfulRows() {
+  // It asks too when the table lacks places (a row the reader missed: the first one, under the title of the picture, is the usual): those
+  // players would never reach the league, and the only sign was a note. `complement` is true when the table is added to a tournament
+  // that already has one: what this picture lacks is then most likely there already.
+  async confirmDoubtfulRows(complement = false) {
     const doubtful = this._scanned.filter(row => row.flags.length).length;
-    if (!doubtful) return true;
+    const places = complement ? [] : (this._scanNotes.places || []);
+    // A player the person added by hand (no place, with a name and points) covers one of the missing ones.
+    const byHand = this._scanned.filter(row => row.rank === null && this.scannedRowIsComplete(row)).length;
+    const absent = Math.max(0, (places.length || (complement ? 0 : (this._scanNotes.missing || 0))) - byHand);
+    if (!doubtful && !absent) return true;
     const omitted = this._scanned.filter(row => !this.scannedRowIsComplete(row)).length;
     const blank = omitted === 0 ? '' : (omitted === 1 ? ' La que no tiene puntos no se guardará.' : ` Las ${omitted} que no tienen puntos no se guardarán.`);
+    const parts = [];
+    if (doubtful) parts.push(`${plural(doubtful, 'fila tiene', 'filas tienen')} avisos.${blank}`);
+    if (absent && places.length && absent === places.length) parts.push(`Faltan ${this.describePlaces(places)} en la tabla: esos jugadores no contarán en la liga.`);
+    else if (absent) parts.push(`Parece que ${absent === 1 ? 'falta 1 fila' : `faltan ${absent} filas`}: esos jugadores no contarán en la liga.`);
     const ok = await this.confirmDialog({
-      title: "La tabla leída tiene filas por revisar",
-      body: `${plural(doubtful, 'fila tiene', 'filas tienen')} avisos.${blank} Si guardas así, la tabla de la liga puede salir con errores.`,
+      title: doubtful ? (absent ? "La tabla leída está incompleta y tiene filas por revisar" : "La tabla leída tiene filas por revisar") : "A la tabla leída le faltan jugadores",
+      body: `${parts.join(' ')} ${absent ? 'Vuelve y agrégalos con «Agregar jugador» o con otra captura, o guarda así.' : 'Si guardas así, la tabla de la liga puede salir con errores.'}`,
       confirmLabel: "Guardar igual",
       danger: false
     });
