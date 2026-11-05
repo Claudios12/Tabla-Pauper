@@ -350,6 +350,12 @@ Object.assign(Arena, {
     document.getElementById("pl-other-field").hidden = rest.length === 0;
     document.getElementById("pl-typed").value = '';
     this.showPlayerError('');
+    this.showNotice('');
+    const mine = new Set(player.members.map(m => m.key));
+    const present = new Set(table.players.flatMap(p => p.members.map(m => m.key)));
+    const pending = [...new Set(State.nameLinks.same.map(([x, y]) => (mine.has(x) && !present.has(y) ? y : (mine.has(y) && !present.has(x) ? x : null))).filter(Boolean))];
+    document.getElementById("pl-pending-box").hidden = pending.length === 0;
+    document.getElementById("pl-pending").innerHTML = pending.map(key => `<li><span>${esc(League.prettyName(key))} <small>aún no sale en ninguna tabla</small></span><button class="btn btn-secondary" type="button" data-key="${esc(key)}" onclick="Arena.removePending(this.dataset.key)" aria-label="Quitar el nombre ${esc(League.prettyName(key))} de ${esc(player.name)}">Quitar</button></li>`).join('');
   },
 
   showPlayerError(message) {
@@ -397,7 +403,32 @@ Object.assign(Arena, {
     const player = this.playerOf(this._playerKey);
     const other = this.playerOf(otherKey);
     if (!player || !other) return;
+    // Two names in the same night's table are two rows: they cannot be joined by name, only put together as rows, and only when it is
+    // the same person written twice (the same points on every shared night). Saying "joined" for a link that does nothing was a lie.
+    const shared = player.nightIdx.filter(i => other.nightIdx.includes(i));
+    if (shared.length) {
+      if (League.repeats(this._board.table.players, player).includes(other)) return this.mergeRepeatedRows(otherKey);
+      const apart = shared.filter(i => player.nightBase[player.nightIdx.indexOf(i)] !== other.nightBase[other.nightIdx.indexOf(i)]).length;
+      return this.showNotice(apart
+        ? `${other.name} y ${player.name} salen en la misma noche con puntos distintos en ${plural(apart, 'noche', 'noches')}: en una misma tabla son dos jugadores. Si una fila está mal, corrígela con el lápiz del torneo.`
+        : `${other.name} y ${player.name} salen en las mismas noches y sus nombres no se parecen lo bastante para juntarlos solos. Corrige el nombre en esas noches con el lápiz del torneo.`);
+    }
     this.linkNames(player.members[0].key, other.members.map(m => m.key), `${other.name} se unió a ${player.name}: sus ${plural(other.nights, 'noche', 'noches')} ya guardadas y sus puntos se cuentan juntos.`);
+  },
+
+  showNotice(message) {
+    const el = document.getElementById("pl-notice");
+    el.textContent = message;
+    el.hidden = !message;
+  },
+
+  // A name added by hand that no table holds yet: it waits, and the card says so (it used to vanish, and the person could not tell it was kept).
+  removePending(key) {
+    const player = this.playerOf(this._playerKey);
+    if (!player) return;
+    const keys = new Set(player.members.map(m => m.key));
+    this.changeLinks(links => { links.same = links.same.filter(([x, y]) => !((keys.has(x) && y === key) || (keys.has(y) && x === key))); },
+      `«${League.prettyName(key)}» ya no se cuenta con ${player.name}.`);
   },
 
   // The same player written two ways inside the same nights: the rows of `dropKey` go into this player's: its reto passes to his row
@@ -441,7 +472,7 @@ Object.assign(Arena, {
     if (player.members.some(m => m.key === key)) return this.showPlayerError("Ese nombre ya está entre los suyos.");
     const owner = this.playerOf(key);
     if (owner) return this.joinPlayer(key);
-    this.linkNames(player.members[0].key, [key], `Agregado: cuando salga «${document.getElementById("pl-typed").value.trim()}» en una tabla, se contará con ${player.name}.`);
+    this.linkNames(player.members[0].key, [key], `Guardado: cuando salga «${document.getElementById("pl-typed").value.trim()}» en una tabla, se contará con ${player.name}. Lo ves en su ficha, en «Nombres que aún no han salido».`);
   },
 
   // Takes one name out of the player, and keeps the page from joining it back.
