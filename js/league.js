@@ -639,6 +639,24 @@ const League = {
     return this.prettyName(this.bestForm(forms));
   },
 
+  // The shorter of two names is the longer one with words left out, or a word cut short with the dots lost: "sergio" for "sergio
+  // buitrago", "ruben morea" for "ruben dario morea", "cristhian mach" for "cristhian machado". The first name must be the same.
+  covers(a, b) {
+    const words = (key) => key.split(' ').filter(Boolean);
+    const within = (short, long) => {
+      if (short.join('').length < 4 || !(long[0] === short[0] || (short[0].length >= 3 && long[0].startsWith(short[0])))) return false;
+      let at = 0;
+      for (const word of short) {
+        while (at < long.length && !(long[at] === word || (word.length >= 3 && long[at].startsWith(word)))) at++;
+        if (at === long.length) return false;
+        at++;
+      }
+      return true;
+    };
+    const x = words(a), y = words(b);
+    return a !== b && (x.length < y.length ? within(x, y) : (y.length < x.length ? within(y, x) : within(x, y) || within(y, x)));
+  },
+
   // The players written another way in the SAME nights as `player`, with the same points on each of them: two rows of one person (a
   // spelling the month's poster brought that was saved another way added him twice), not two people, who rarely tie every night.
   // The page cannot join them by name, since two names of one night are two people; the rows are what has to be put together.
@@ -646,7 +664,7 @@ const League = {
     return players.filter(other => {
       if (other === player) return false;
       const shared = player.nightIdx.filter(i => other.nightIdx.includes(i));
-      if (!shared.length || !player.members.some(m => other.members.some(n => this.isNearDuplicate(m.key, n.key)))) return false;
+      if (!shared.length || !player.members.some(m => other.members.some(n => this.isNearDuplicate(m.key, n.key) || this.covers(m.key, n.key)))) return false;
       return shared.every(i => player.nightBase[player.nightIdx.indexOf(i)] === other.nightBase[other.nightIdx.indexOf(i)]);
     });
   },
@@ -663,8 +681,11 @@ const League = {
       return this.editDistance(a, b, room) <= room || sorted(a) === sorted(b);
     };
     const first = (key) => key.split(' ')[0];
+    // Words left out or cut short (see covers) count as a lookalike; a first name alone only in the loose list, since it fits many.
+    const words = (key) => key.split(' ').filter(Boolean).length;
+    const fewer = (a, b) => this.covers(a, b) && (loose || Math.min(words(a), words(b)) >= 2);
     return players.filter(other => other !== player && !other.nightIdx.some(i => mine.has(i)) && player.members.some(m => other.members.some(n =>
-      close(m.key, n.key)
+      close(m.key, n.key) || fewer(m.key, n.key)
       || (loose && first(m.key).length >= 4 && first(m.key) === first(n.key) && (this.isTruncated(m.name) || this.isTruncated(n.name))))));
   },
 
