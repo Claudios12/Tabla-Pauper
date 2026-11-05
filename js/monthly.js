@@ -432,7 +432,7 @@ const Monthly = {
     tables.slice(1).forEach((table, k) => {
       const from = first + k;
       const before = rows.slice();
-      const claims = table.rows.map(row => League.matchPlayer(row.name, before));
+      const claims = table.rows.map(row => League.matchPlayer(row.name, before, { close: false }));
       const claimants = new Map();
       claims.forEach((claim, i) => { if (claim.at >= 0) claimants.set(claim.at, [...(claimants.get(claim.at) || []), i]); });
       // incoming row -> the held row it is the same player as, when that is clear
@@ -682,9 +682,9 @@ const Monthly = {
             }
           }
         } else if (check.kind === 'absent' && points) {
-          // Two rows of the poster that came out with one name are one player, not two.
-          const key = League.nameKey(store.name);
-          if (rows.some(other => other && typeof other.name === 'string' && League.nameKey(other.name) === key)) return;
+          // Two rows of the poster that came out with one name are one player, not two; and a name the night already holds in a way
+          // the league counts as the same player is not added again.
+          if (League.matchPlayer(store.name, rows).at !== -1) return;
           const row = { name: store.name, pts: store.nights[n] };
           if (reto > 0) row.reto = reto;
           rows.push(row);
