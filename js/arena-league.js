@@ -469,7 +469,7 @@ Object.assign(Arena, {
   // nothing is added up. Nothing of the person's own result changes (place, record, points, deck): the picture brings the others.
   async mergeIntoSaved(entry = this.scanTarget()) {
     if (!entry || !this._scanned.length) return;
-    if (!(await this.confirmDoubtfulRows())) return;
+    if (!(await this.confirmDoubtfulRows(Array.isArray(entry.playerResults) && entry.playerResults.length > 0))) return;
     const incoming = this._scanned.filter(row => this.scannedRowIsComplete(row)).map(row => (row.wl ? { name: row.name, pts: row.pts, wl: row.wl } : { name: row.name, pts: row.pts }));
     if (!incoming.length) {
       this.setStatus("No hay filas con nombre y puntos para sumar.", "var(--color-bad)");
