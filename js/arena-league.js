@@ -331,7 +331,7 @@ Object.assign(Arena, {
     const player = this.playerOf(this._playerKey);
     if (!player) { document.getElementById("player-dialog").close(); return; }
     document.getElementById("pl-title").textContent = player.name;
-    document.getElementById("pl-body").textContent = `${plural(player.nights, 'torneo', 'torneos')} · ${nf0.format(player.pts)} pts en ${this._board.season}. Si la tienda escribió mal un nombre, únelo aquí y se cuenta con este jugador, hoy y en las capturas que vengan.`;
+    document.getElementById("pl-body").textContent = `${plural(player.nights, 'torneo', 'torneos')} · ${nf0.format(player.pts)} pts en ${this._board.season}. Si la tienda escribió mal un nombre, únelo aquí y se cuenta con este jugador en todas las noches, las que ya guardaste y las que vengan.`;
     const names = document.getElementById("pl-names");
     names.innerHTML = player.members.map(m => `<li><span>${esc(m.name)} <small>${plural(m.nights, 'noche', 'noches')}</small></span>`
       + (player.members.length > 1 ? `<button class="btn btn-secondary" type="button" data-key="${esc(m.key)}" onclick="Arena.separateName(this.dataset.key)" aria-label="Separar «${esc(m.name)}» de ${esc(player.name)}">Separar</button>` : '')
@@ -397,7 +397,7 @@ Object.assign(Arena, {
     const player = this.playerOf(this._playerKey);
     const other = this.playerOf(otherKey);
     if (!player || !other) return;
-    this.linkNames(player.members[0].key, other.members.map(m => m.key), `${other.name} se unió a ${player.name}: sus ${plural(other.nights, 'noche', 'noches')} y puntos se cuentan juntos.`);
+    this.linkNames(player.members[0].key, other.members.map(m => m.key), `${other.name} se unió a ${player.name}: sus ${plural(other.nights, 'noche', 'noches')} ya guardadas y sus puntos se cuentan juntos.`);
   },
 
   // The same player written two ways inside the same nights: the rows of `dropKey` go into this player's: its reto passes to his row
