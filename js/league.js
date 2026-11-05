@@ -27,8 +27,10 @@ const League = {
 
   // How a name is shown, whatever way the screen printed it: "camilo mora" is "Camilo Mora", "Sebastian GUE…" is "Sebastian Gue…".
   prettyName(raw) {
+    const small = ['de', 'del', 'la', 'las', 'los', 'y', 'da', 'van', 'von'];
     return String(raw ?? '').replace(/\s+/g, ' ').trim().toLocaleLowerCase('es')
-      .replace(/(^|[\s'’-])(\p{L})/gu, (all, edge, letter) => edge + letter.toLocaleUpperCase('es'));
+      .replace(/(^|[\s'’-])(\p{L})/gu, (all, edge, letter) => edge + letter.toLocaleUpperCase('es'))
+      .split(' ').map((word, i) => (i > 0 && small.includes(word.toLowerCase()) ? word.toLowerCase() : word)).join(' ');
   },
 
   // What the person decided about names (State.nameLinks), as pairs of name keys: spellings that are ONE player although the page
@@ -479,11 +481,12 @@ const League = {
   //   exact  the same name, case, accents and punctuation aside
   //   near   one letter off, in a long name (a misreading)
   //   cut    the spelling this one starts, when the screen cut it off
+  //   close  what the league table joins by itself (two letters off, swapped letters, a stray letter at the end)
   // at is the row's index; -1 when nobody is; -2 when more than one could be.
-  matchPlayer(name, rows) {
+  matchPlayer(name, rows, { close = true } = {}) {
     const key = this.nameKey(name);
     if (!key || !Array.isArray(rows)) return { at: -1, how: null };
-    const found = { exact: [], near: [], cut: [] };
+    const found = { exact: [], near: [], cut: [], close: [] };
     rows.forEach((row, i) => {
       if (!row || typeof row.name !== 'string') return;
       const other = this.nameKey(row.name);
@@ -491,8 +494,11 @@ const League = {
       if (other === key) found.exact.push(i);
       else if (Math.min(other.length, key.length) >= 10 && other[0] === key[0] && this.editDistance(other, key, 1) <= 1) found.near.push(i);
       else if ((this.isTruncated(row.name) && key.startsWith(other)) || (this.isTruncated(name) && other.startsWith(key))) found.cut.push(i);
+      // What the table of the league joins by itself (isNearDuplicate), so the month's poster and the league never disagree on who a
+      // name is: a spelling the league counts as one player is not "absent" from the night. Not used to join the pictures of one poster.
+      else if (close && this.isNearDuplicate(other, key)) found.close.push(i);
     });
-    for (const how of ['exact', 'near', 'cut']) {
+    for (const how of ['exact', 'near', 'cut', 'close']) {
       if (found[how].length) return { at: found[how].length === 1 ? found[how][0] : -2, how };
     }
     return { at: -1, how: null };
@@ -529,9 +535,18 @@ const League = {
 
   // Two keys a letter apart are the same person read twice, once they are long enough for that to be rare. Two letters
   // apart is still one person when the name is long and a whole word of it agrees.
+  // Two letters next to each other written the other way round ("Loiaza" for "Loaiza"): the commonest slip of a typist.
+  isSwap(a, b) {
+    if (a.length !== b.length) return false;
+    let i = 0;
+    while (i < a.length && a[i] === b[i]) i++;
+    return i < a.length - 1 && a[i] === b[i + 1] && a[i + 1] === b[i] && a.slice(i + 2) === b.slice(i + 2);
+  },
+
   isNearDuplicate(a, b) {
     const shortest = Math.min(a.length, b.length);
     if (shortest < 10 || a[0] !== b[0]) return false;
+    if (this.isSwap(a, b)) return true;
     // A stray letter or two stuck on the end of an otherwise whole name.
     if ((a.startsWith(b) || b.startsWith(a)) && Math.abs(a.length - b.length) <= 2) return true;
     const edits = this.editDistance(a, b, 2);
@@ -624,6 +639,18 @@ const League = {
     return this.prettyName(this.bestForm(forms));
   },
 
+  // The players written another way in the SAME nights as `player`, with the same points on each of them: two rows of one person (a
+  // spelling the month's poster brought that was saved another way added him twice), not two people, who rarely tie every night.
+  // The page cannot join them by name, since two names of one night are two people; the rows are what has to be put together.
+  repeats(players, player) {
+    return players.filter(other => {
+      if (other === player) return false;
+      const shared = player.nightIdx.filter(i => other.nightIdx.includes(i));
+      if (!shared.length || !player.members.some(m => other.members.some(n => this.isNearDuplicate(m.key, n.key)))) return false;
+      return shared.every(i => player.nightBase[player.nightIdx.indexOf(i)] === other.nightBase[other.nightIdx.indexOf(i)]);
+    });
+  },
+
   // The players that could be the same person as `player` and that the page did not join: names a few letters apart, the same words
   // in another order and, when `loose`, the same first name with a surname cut short. Never one that shares a night with `player`
   // (two names in one night's table are two people).
@@ -682,7 +709,7 @@ const League = {
     });
 
     const { groups, groupOf } = this.groupPlayers(nights);
-    const totals = new Map(groups.map(group => [group, { name: this.displayName(group), members: group.members.map(m => ({ key: m.key, name: this.prettyName(this.bestForm(m.forms)), nights: m.nights.size })), nightIdx: [], pts: 0, retoPts: 0, storePts: 0, storeNights: 0, w: 0, l: 0, d: 0, withRecord: 0, nights: 0, nightPts: [], isMe: group.members.some(spelling => this.spellingIsMine(spelling)) }]));
+    const totals = new Map(groups.map(group => [group, { name: this.displayName(group), members: group.members.map(m => ({ key: m.key, name: this.prettyName(this.bestForm(m.forms)), nights: m.nights.size })), nightIdx: [], nightBase: [], pts: 0, retoPts: 0, storePts: 0, storeNights: 0, w: 0, l: 0, d: 0, withRecord: 0, nights: 0, nightPts: [], isMe: group.members.some(spelling => this.spellingIsMine(spelling)) }]));
     nights.forEach((rows, n) => {
       const counted = new Set();
       rows.forEach(row => {
@@ -697,6 +724,7 @@ const League = {
         if (storeOnly.has(rows)) { total.storePts += row.pts; total.storeNights++; }
         total.nights++;
         total.nightIdx.push(n);
+        total.nightBase.push(row.pts);
         total.nightPts.push(night);
         maxNightPts = Math.max(maxNightPts, night);
         if (row.w !== undefined) {

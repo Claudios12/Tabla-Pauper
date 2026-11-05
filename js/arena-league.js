@@ -124,7 +124,7 @@ Object.assign(Arena, {
       const sub = [plural(p.nights, 'torneo', 'torneos'), p.withRecord ? `${p.w}-${p.l}-${p.d}` : '', p.retoPts ? `${nf0.format(p.retoPts)} de retos` : ''].filter(Boolean).join(' · ');
       const decided = p.mark === 'in' ? '<span class="pill good">Clasificado</span>' : (p.mark === 'out' ? '<span class="pill good">Eliminado</span>' : '');
       // A player seen on one night whose name looks like another's: the place to look for a name that was written wrong.
-      const maybe = p.nights <= 1 && League.similar(table.players, p).length ? '<span class="pill">¿Repetido?</span>' : '';
+      const maybe = (p.nights <= 1 && League.similar(table.players, p).length) || League.repeats(table.players, p).length ? '<span class="pill">¿Repetido?</span>' : '';
       return `<li class="board-row js-board-row ${p.isMe ? 'is-me' : ''} ${p.mark === 'in' ? 'is-clinched' : (p.mark === 'out' ? 'is-out' : '')}"${p.isMe ? ' aria-current="true"' : ''}>`
         + `<span class="board-rank">${p.rank}°</span>`
         + `<button class="board-main js-open-player" type="button" data-key="${esc(p.members[0].key)}" onclick="Arena.openPlayer(this.dataset.key, this)" aria-haspopup="dialog"><span class="board-name"><span class="title-text">${esc(p.name)}</span>${p.isMe ? '<span class="pill">Tú</span>' : ''}${maybe}${decided}</span><span class="board-sub">${sub}</span><span class="visually-hidden">. Abre sus nombres para corregirlos.</span></button>`
@@ -339,6 +339,9 @@ Object.assign(Arena, {
     const free = table.players.filter(p => p !== player && !p.nightIdx.some(i => player.nightIdx.includes(i)));
     const similar = League.similar(table.players, player, true);
     const li = (p) => `<li><span>${esc(p.name)} <small>${plural(p.nights, 'noche', 'noches')} · ${nf0.format(p.pts)} pts</small></span><button class="btn btn-secondary" type="button" data-key="${esc(p.members[0].key)}" onclick="Arena.joinPlayer(this.dataset.key)" aria-label="Unir a ${esc(p.name)} con ${esc(player.name)}">Unir</button></li>`;
+    const repeats = League.repeats(table.players, player);
+    document.getElementById("pl-repeats-box").hidden = repeats.length === 0;
+    document.getElementById("pl-repeats").innerHTML = repeats.map(p => `<li><span>${esc(p.name)} <small>${plural(p.nights, 'noche', 'noches')} · ${nf0.format(p.pts)} pts</small></span><button class="btn btn-secondary" type="button" data-key="${esc(p.members[0].key)}" onclick="Arena.mergeRepeatedRows(this.dataset.key)" aria-label="Juntar a ${esc(p.name)} con ${esc(player.name)} y quitar la fila repetida">Juntar</button></li>`).join('');
     document.getElementById("pl-similar-box").hidden = similar.length === 0;
     document.getElementById("pl-similar").innerHTML = similar.map(li).join('');
     const rest = free.slice().sort((a, b) => (similar.includes(b) - similar.includes(a)) || a.name.localeCompare(b.name, 'es'));
@@ -395,6 +398,35 @@ Object.assign(Arena, {
     const other = this.playerOf(otherKey);
     if (!player || !other) return;
     this.linkNames(player.members[0].key, other.members.map(m => m.key), `${other.name} se unió a ${player.name}: sus ${plural(other.nights, 'noche', 'noches')} y puntos se cuentan juntos.`);
+  },
+
+  // The same player written two ways inside the same nights: the rows of `dropKey` go into this player's: its reto passes to his row
+  // when his has none, a night where only the other spelling had a row takes his name, and the repeated row goes. Undoable.
+  mergeRepeatedRows(dropKey) {
+    const keep = this.playerOf(this._playerKey);
+    const drop = this.playerOf(dropKey);
+    if (!keep || !drop || keep === drop) return;
+    const keepKeys = new Set(keep.members.map(m => m.key)), dropKeys = new Set(drop.members.map(m => m.key));
+    const before = this.snapshot();
+    let removed = 0;
+    State.historic.forEach(entry => {
+      const list = Array.isArray(entry.playerResults) ? entry.playerResults : null;
+      if (!list) return;
+      const mine = list.find(row => keepKeys.has(League.nameKey(row.name)));
+      list.filter(row => dropKeys.has(League.nameKey(row.name))).forEach(row => {
+        if (!mine) { row.name = keep.name; return; }
+        if (row.reto && !mine.reto) mine.reto = row.reto;
+        list.splice(list.indexOf(row), 1);
+        removed++;
+      });
+    });
+    State.save();
+    document.getElementById("player-dialog").close();
+    this.refreshAll();
+    this.refocusPlayer();
+    this.notify(`${drop.name} se juntó con ${keep.name}: ${plural(removed, 'fila repetida se quitó', 'filas repetidas se quitaron')} y sus retos pasaron a ${keep.name}.`, {
+      action: { label: 'Deshacer', run: () => { this.restoreSnapshot(before); this.refocusPlayer(); this.notify('Las filas volvieron a como estaban.'); } }
+    });
   },
 
   joinSelected() {
