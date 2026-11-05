@@ -113,6 +113,7 @@ Object.assign(Arena, {
   renderLeagueBoard(season, table) {
     const el = document.getElementById("league-board");
     if (!el) return;
+    this._board = { season, table };
     if (!table.players.length) {
       el.innerHTML = `<div class="card card-pad first-run"><h2 class="first-run-title">Aún no hay tabla en ${esc(season)}</h2><p class="first-run-text">En Registrar, abre «Opcional: escanear captura de standings» y sube la captura del torneo, o sube las capturas de la tabla del mes de la tienda en la tarjeta de arriba. La app guarda los puntos de todos los jugadores y los suma por temporada.</p><button class="btn btn-primary" type="button" onclick="Arena.switchTab('pg-logger')">Registrar un torneo</button></div>`;
       return;
@@ -122,9 +123,11 @@ Object.assign(Arena, {
     const row = (p) => {
       const sub = [plural(p.nights, 'torneo', 'torneos'), p.withRecord ? `${p.w}-${p.l}-${p.d}` : '', p.retoPts ? `${nf0.format(p.retoPts)} de retos` : ''].filter(Boolean).join(' · ');
       const decided = p.mark === 'in' ? '<span class="pill good">Clasificado</span>' : (p.mark === 'out' ? '<span class="pill good">Eliminado</span>' : '');
+      // A player seen on one night whose name looks like another's: the place to look for a name that was written wrong.
+      const maybe = p.nights <= 1 && League.similar(table.players, p).length ? '<span class="pill">¿Repetido?</span>' : '';
       return `<li class="board-row js-board-row ${p.isMe ? 'is-me' : ''} ${p.mark === 'in' ? 'is-clinched' : (p.mark === 'out' ? 'is-out' : '')}"${p.isMe ? ' aria-current="true"' : ''}>`
         + `<span class="board-rank">${p.rank}°</span>`
-        + `<div class="board-main"><div class="board-name"><span class="title-text">${esc(p.name)}</span>${p.isMe ? '<span class="pill">Tú</span>' : ''}${decided}</div><div class="board-sub">${sub}</div></div>`
+        + `<button class="board-main js-open-player" type="button" data-key="${esc(p.members[0].key)}" onclick="Arena.openPlayer(this.dataset.key, this)" aria-haspopup="dialog"><span class="board-name"><span class="title-text">${esc(p.name)}</span>${p.isMe ? '<span class="pill">Tú</span>' : ''}${maybe}${decided}</span><span class="board-sub">${sub}</span><span class="visually-hidden">. Abre sus nombres para corregirlos.</span></button>`
         + `<b class="board-pts">${nf0.format(p.pts)}<small class="board-unit"> pts</small></b></li>`;
     };
     const list = (players, cls = '') => `<ol class="board ${cls}">${players.map(row).join('')}</ol>`;
@@ -303,6 +306,124 @@ Object.assign(Arena, {
       added.scrollIntoView({ block: 'center' });
       added.focus({ preventScroll: true });
     }
+  },
+
+  // ─────────────────────────────────────────────────────────────
+  // THE PLAYER'S CARD: the names a player counts, joined or separated by the person
+  // ─────────────────────────────────────────────────────────────
+  playerOf(key) {
+    const table = this._board && this._board.table;
+    return table ? table.players.find(p => p.members.some(m => m.key === key)) || null : null;
+  },
+
+  openPlayer(key, opener) {
+    const dialog = document.getElementById("player-dialog");
+    if (!dialog || typeof dialog.showModal !== 'function' || !this.playerOf(key)) return;
+    this._playerOpener = opener || document.activeElement;
+    this._playerKey = key;
+    this.renderPlayer();
+    dialog.showModal();
+  },
+
+  // The card, drawn from the table as it is now.
+  renderPlayer() {
+    const table = this._board.table;
+    const player = this.playerOf(this._playerKey);
+    if (!player) { document.getElementById("player-dialog").close(); return; }
+    document.getElementById("pl-title").textContent = player.name;
+    document.getElementById("pl-body").textContent = `${plural(player.nights, 'torneo', 'torneos')} · ${nf0.format(player.pts)} pts en ${this._board.season}. Si la tienda escribió mal un nombre, únelo aquí y se cuenta con este jugador, hoy y en las capturas que vengan.`;
+    const names = document.getElementById("pl-names");
+    names.innerHTML = player.members.map(m => `<li><span>${esc(m.name)} <small>${plural(m.nights, 'noche', 'noches')}</small></span>`
+      + (player.members.length > 1 ? `<button class="btn btn-secondary" type="button" data-key="${esc(m.key)}" onclick="Arena.separateName(this.dataset.key)" aria-label="Separar «${esc(m.name)}» de ${esc(player.name)}">Separar</button>` : '')
+      + `</li>`).join('');
+    const free = table.players.filter(p => p !== player && !p.nightIdx.some(i => player.nightIdx.includes(i)));
+    const similar = League.similar(table.players, player, true);
+    const li = (p) => `<li><span>${esc(p.name)} <small>${plural(p.nights, 'noche', 'noches')} · ${nf0.format(p.pts)} pts</small></span><button class="btn btn-secondary" type="button" data-key="${esc(p.members[0].key)}" onclick="Arena.joinPlayer(this.dataset.key)" aria-label="Unir a ${esc(p.name)} con ${esc(player.name)}">Unir</button></li>`;
+    document.getElementById("pl-similar-box").hidden = similar.length === 0;
+    document.getElementById("pl-similar").innerHTML = similar.map(li).join('');
+    const rest = free.slice().sort((a, b) => (similar.includes(b) - similar.includes(a)) || a.name.localeCompare(b.name, 'es'));
+    const select = document.getElementById("pl-other");
+    select.innerHTML = rest.map(p => `<option value="${esc(p.members[0].key)}">${esc(p.name)} · ${plural(p.nights, 'noche', 'noches')} · ${nf0.format(p.pts)} pts</option>`).join('');
+    document.getElementById("pl-other-field").hidden = rest.length === 0;
+    document.getElementById("pl-typed").value = '';
+    this.showPlayerError('');
+  },
+
+  showPlayerError(message) {
+    const error = document.getElementById("pl-error");
+    error.textContent = message;
+    error.hidden = !message;
+    const input = document.getElementById("pl-typed");
+    if (message) { input.setAttribute("aria-invalid", "true"); input.focus(); } else input.removeAttribute("aria-invalid");
+  },
+
+  // Saves what the person decided, draws the table again with it and says what happened, with the way back.
+  changeLinks(change, message) {
+    const before = this.snapshot();
+    change(State.nameLinks);
+    State.saveNameLinks();
+    document.getElementById("player-dialog").close();
+    this.refreshAll();
+    this.refocusPlayer();
+    this.notify(message, {
+      action: { label: 'Deshacer', run: () => { this.restoreSnapshot(before); this.refocusPlayer(); this.notify('Los nombres volvieron a como estaban.'); } }
+    });
+  },
+
+  // The table is drawn again after a change: focus goes back to the button of the same player, or to the page heading.
+  refocusPlayer() {
+    const now = this.playerOf(this._playerKey);
+    const target = now && [...document.querySelectorAll(".js-open-player")].find(button => button.dataset.key === now.members[0].key);
+    const heading = document.getElementById("page-title");
+    if (target || heading) (target || heading).focus({ preventScroll: true });
+  },
+
+  // The two names are one player: every table, saved or scanned, counts them together. A separation between them is lifted.
+  linkNames(keyA, extraKeys, message) {
+    const player = this.playerOf(this._playerKey);
+    const keys = new Set([...player.members.map(m => m.key), ...extraKeys]);
+    this.changeLinks(links => {
+      links.apart = links.apart.filter(([x, y]) => !(keys.has(x) && keys.has(y)));
+      extraKeys.forEach(key => {
+        if (!links.same.some(([x, y]) => (x === keyA && y === key) || (x === key && y === keyA))) links.same.push([keyA, key]);
+      });
+    }, message);
+  },
+
+  joinPlayer(otherKey) {
+    const player = this.playerOf(this._playerKey);
+    const other = this.playerOf(otherKey);
+    if (!player || !other) return;
+    this.linkNames(player.members[0].key, other.members.map(m => m.key), `${other.name} se unió a ${player.name}: sus ${plural(other.nights, 'noche', 'noches')} y puntos se cuentan juntos.`);
+  },
+
+  joinSelected() {
+    const select = document.getElementById("pl-other");
+    if (select.value) this.joinPlayer(select.value);
+  },
+
+  addTypedName() {
+    const player = this.playerOf(this._playerKey);
+    const key = League.nameKey(document.getElementById("pl-typed").value);
+    if (!key) return this.showPlayerError("Escribe el nombre tal como la tienda lo escribe.");
+    if (player.members.some(m => m.key === key)) return this.showPlayerError("Ese nombre ya está entre los suyos.");
+    const owner = this.playerOf(key);
+    if (owner) return this.joinPlayer(key);
+    this.linkNames(player.members[0].key, [key], `Agregado: cuando salga «${document.getElementById("pl-typed").value.trim()}» en una tabla, se contará con ${player.name}.`);
+  },
+
+  // Takes one name out of the player, and keeps the page from joining it back.
+  separateName(key) {
+    const player = this.playerOf(this._playerKey);
+    const member = player && player.members.find(m => m.key === key);
+    if (!member || player.members.length < 2) return;
+    const others = player.members.filter(m => m.key !== key);
+    this.changeLinks(links => {
+      links.same = links.same.filter(([x, y]) => x !== key && y !== key);
+      others.forEach(o => {
+        if (!links.apart.some(([x, y]) => (x === key && y === o.key) || (x === o.key && y === key))) links.apart.push([key, o.key]);
+      });
+    }, `«${member.name}» se separó de ${player.name}: ahora cuenta como otro jugador.`);
   },
 
   // Takes the person to the table the scan read: the panel opens and focus lands on the first row that needs a look.
