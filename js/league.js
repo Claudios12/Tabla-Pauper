@@ -577,7 +577,9 @@ const League = {
     mine.slice(1).forEach(spelling => join(mine[0], spelling));
     // A cut-off name belongs to the one longer spelling it starts, whole or itself cut off ("Cristhian M…" and "Cristhian
     // Mac…" are one person), and only when exactly one person fits.
-    list.filter(spelling => spelling.cut && spelling.key.length >= 4).forEach(cut => {
+    // The longest cuts go first: "Santiago Ramo…" joins "Santiago Ramos" before "Santiago Ram…" and "Santiago Ra…" are looked at, so
+    // the shorter ones find one person (the group of the longer spellings) and not three.
+    list.filter(spelling => spelling.cut && spelling.key.length >= 4).sort((a, b) => b.key.length - a.key.length).forEach(cut => {
       const owners = new Set(list
         .filter(other => other !== cut && other.key.length > cut.key.length && other.key.startsWith(cut.key))
         .map(other => groupOf.get(other.key)));
