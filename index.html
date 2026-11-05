@@ -560,6 +560,43 @@
     </form>
   </dialog>
 
+  <dialog class="dialog" id="player-dialog" aria-labelledby="pl-title" aria-describedby="pl-body">
+    <div class="dialog-in">
+      <h2 class="dialog-title" id="pl-title" tabindex="-1"></h2>
+      <p class="dialog-body" id="pl-body"></p>
+
+      <section class="player-section" aria-labelledby="pl-names-h">
+        <h3 class="player-h" id="pl-names-h">Nombres que cuenta</h3>
+        <ul class="player-names" id="pl-names"></ul>
+      </section>
+
+      <section class="player-section" id="pl-similar-box" aria-labelledby="pl-similar-h" hidden>
+        <h3 class="player-h" id="pl-similar-h">Parecidos que quizá sean él</h3>
+        <ul class="player-names" id="pl-similar"></ul>
+      </section>
+
+      <section class="player-section" aria-labelledby="pl-add-h">
+        <h3 class="player-h" id="pl-add-h">Agregar otro nombre</h3>
+        <div class="field" id="pl-other-field">
+          <label class="field-label" for="pl-other">Otro jugador de la tabla</label>
+          <select class="input-ctrl input-ctrl-select" id="pl-other" name="pl-other"></select>
+          <button class="btn btn-secondary dialog-remove" type="button" onclick="Arena.joinSelected()">Unir con ese jugador</button>
+        </div>
+        <div class="field">
+          <label class="field-label" for="pl-typed">O escribe otra forma de su nombre</label>
+          <input class="input-ctrl" id="pl-typed" name="pl-typed" type="text" maxlength="60" autocomplete="off" spellcheck="false" aria-describedby="pl-error pl-typed-hint">
+          <span class="hint" id="pl-typed-hint">Sirve para un nombre que aún no ha salido en ninguna tabla: cuando salga, se cuenta con este jugador.</span>
+          <span class="field-error" id="pl-error" role="alert" hidden></span>
+          <button class="btn btn-secondary dialog-remove" type="button" onclick="Arena.addTypedName()">Agregar este nombre</button>
+        </div>
+      </section>
+
+      <div class="dialog-actions">
+        <button class="btn btn-secondary" type="button" onclick="this.closest('dialog').close()">Cerrar</button>
+      </div>
+    </div>
+  </dialog>
+
   <dialog class="dialog" id="league-dialog" aria-labelledby="lg-title" aria-describedby="lg-body">
     <form class="dialog-in" id="league-form" novalidate onsubmit="Arena.saveLeague(event)">
       <h2 class="dialog-title" id="lg-title">Tu liga</h2>

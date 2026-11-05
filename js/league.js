@@ -25,6 +25,19 @@ const League = {
     return /(\.{2,}|…)\s*$/.test(String(raw ?? ''));
   },
 
+  // How a name is shown, whatever way the screen printed it: "camilo mora" is "Camilo Mora", "Sebastian GUE…" is "Sebastian Gue…".
+  prettyName(raw) {
+    return String(raw ?? '').replace(/\s+/g, ' ').trim().toLocaleLowerCase('es')
+      .replace(/(^|[\s'’-])(\p{L})/gu, (all, edge, letter) => edge + letter.toLocaleUpperCase('es'));
+  },
+
+  // What the person decided about names (State.nameLinks), as pairs of name keys: spellings that are ONE player although the page
+  // would not join them (same), and spellings that are two although it would (apart).
+  links: { same: [], apart: [] },
+  setLinks(links) {
+    this.links = { same: (links && links.same) || [], apart: (links && links.apart) || [] };
+  },
+
   // Who "me" is, as the person wrote it: the names they appear under on the standings screens, several spellings separated by
   // commas ("Ana Pérez, Anita Pérez"). In each, the first word is the first name and the rest are surnames; a spelling of one
   // word is a handle that stands alone. Each spelling is judged on its own, so what is listed is what matches and no word of
@@ -546,15 +559,24 @@ const League = {
     const list = [...spellings.values()];
     const groups = list.map(spelling => ({ members: [spelling], nights: new Set(spelling.nights), merged: false }));
     const groupOf = new Map(list.map((spelling, i) => [spelling.key, groups[i]]));
+    // What the person said goes first: a link joins two spellings, and a separation is never undone by the rules below.
+    const pair = (a, b) => (a < b ? `${a}|${b}` : `${b}|${a}`);
+    const apart = new Set(this.links.apart.map(([a, b]) => pair(a, b)));
+    const blocked = (ga, gb) => apart.size > 0 && ga.members.some(m => gb.members.some(n => apart.has(pair(m.key, n.key))));
     const join = (a, b) => {
       const into = groupOf.get(a.key), from = groupOf.get(b.key);
-      if (into === from) return;
+      if (into === from || blocked(into, from)) return;
       for (const night of from.nights) if (into.nights.has(night)) return;
       into.members.push(...from.members);
       from.nights.forEach(night => into.nights.add(night));
       from.members.forEach(member => groupOf.set(member.key, into));
       from.merged = true;
     };
+
+    this.links.same.forEach(([a, b]) => {
+      const first = spellings.get(a), second = spellings.get(b);
+      if (first && second) join(first, second);
+    });
 
     const whole = list.filter(spelling => !spelling.cut);
     // Only long spellings that start with the same letter can be one person read twice, so only those are compared.
@@ -583,17 +605,40 @@ const League = {
       const owners = new Set(list
         .filter(other => other !== cut && other.key.length > cut.key.length && other.key.startsWith(cut.key))
         .map(other => groupOf.get(other.key)));
-      if (owners.size === 1) join([...owners][0].members[0], cut);
+      const open = [...owners].filter(group => !blocked(groupOf.get(cut.key), group));
+      if (open.length === 1) join(open[0].members[0], cut);
     });
     return { groups: groups.filter(group => !group.merged), groupOf };
   },
 
   // The name a person is shown under: the whole spelling seen most often.
+  // The form of a name worth showing: the whole one before a cut one, then the one seen most, then the longest.
+  bestForm(forms) {
+    return [...forms].sort((a, b) =>
+      (this.isTruncated(a[0]) - this.isTruncated(b[0])) || (b[1] - a[1]) || (b[0].length - a[0].length))[0][0];
+  },
+
   displayName(group) {
     const forms = new Map();
     group.members.forEach(member => member.forms.forEach((count, form) => forms.set(form, (forms.get(form) || 0) + count)));
-    return [...forms].sort((a, b) =>
-      (this.isTruncated(a[0]) - this.isTruncated(b[0])) || (b[1] - a[1]) || (b[0].length - a[0].length))[0][0];
+    return this.prettyName(this.bestForm(forms));
+  },
+
+  // The players that could be the same person as `player` and that the page did not join: names a few letters apart, the same words
+  // in another order and, when `loose`, the same first name with a surname cut short. Never one that shares a night with `player`
+  // (two names in one night's table are two people).
+  similar(players, player, loose = false) {
+    const mine = new Set(player.nightIdx);
+    const sorted = (key) => key.split(' ').filter(Boolean).sort().join(' ');
+    const close = (a, b) => {
+      // More edits than the page joins by itself (see isNearDuplicate), so what it left alone can be offered: 3 letters in a name of 12.
+      const room = Math.min(4, Math.max(2, Math.floor(Math.min(a.length, b.length) / 4)));
+      return this.editDistance(a, b, room) <= room || sorted(a) === sorted(b);
+    };
+    const first = (key) => key.split(' ')[0];
+    return players.filter(other => other !== player && !other.nightIdx.some(i => mine.has(i)) && player.members.some(m => other.members.some(n =>
+      close(m.key, n.key)
+      || (loose && first(m.key).length >= 4 && first(m.key) === first(n.key) && (this.isTruncated(m.name) || this.isTruncated(n.name))))));
   },
 
   // The table for a set of tournaments (one season): everyone's points, best first, and where the cut falls. top: how many
@@ -637,8 +682,8 @@ const League = {
     });
 
     const { groups, groupOf } = this.groupPlayers(nights);
-    const totals = new Map(groups.map(group => [group, { name: this.displayName(group), pts: 0, retoPts: 0, storePts: 0, storeNights: 0, w: 0, l: 0, d: 0, withRecord: 0, nights: 0, nightPts: [], isMe: group.members.some(spelling => this.spellingIsMine(spelling)) }]));
-    nights.forEach(rows => {
+    const totals = new Map(groups.map(group => [group, { name: this.displayName(group), members: group.members.map(m => ({ key: m.key, name: this.prettyName(this.bestForm(m.forms)), nights: m.nights.size })), nightIdx: [], pts: 0, retoPts: 0, storePts: 0, storeNights: 0, w: 0, l: 0, d: 0, withRecord: 0, nights: 0, nightPts: [], isMe: group.members.some(spelling => this.spellingIsMine(spelling)) }]));
+    nights.forEach((rows, n) => {
       const counted = new Set();
       rows.forEach(row => {
         const group = groupOf.get(this.nameKey(row.name));
@@ -651,6 +696,7 @@ const League = {
         total.retoPts += row.reto || 0;
         if (storeOnly.has(rows)) { total.storePts += row.pts; total.storeNights++; }
         total.nights++;
+        total.nightIdx.push(n);
         total.nightPts.push(night);
         maxNightPts = Math.max(maxNightPts, night);
         if (row.w !== undefined) {

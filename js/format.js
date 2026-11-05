@@ -4,7 +4,7 @@
          shortDate, TRASH_ICON, EDIT_ICON, logRowHtml, pickLead, deckExtremes, statusPillClass, deckPillHtml,
          deltaHtml, localIsoDate, seasonOf, SEASON_FORMAT, nextSeason, seasonEndBounds, isIsoDate,
          cleanSeasonEnds, cleanSeasonTop, longDate, deckNameWithColours, weekdayName, cleanProfile,
-         PROFILE_NAME_MAX, isStoreNight, countEntries */
+         PROFILE_NAME_MAX, isStoreNight, countEntries, cleanNameLinks */
 
 // ══════════════════════════════════════════════════════════════════
 // DISPLAY HELPERS (formatting, deck names as mana pips)
@@ -83,6 +83,16 @@ function rankClass(rankStr) {
 
 // A night made from the store's monthly table: nobody's tournament, only a table (see Monthly.create). It is told apart by both marks
 // (`source` alone is not enough: a backup edited by hand could put it on a real tournament, which must stay one).
+// What the person decided about names, as it is saved and as a backup brings it: { same: [[keyA, keyB]], apart: [[keyA, keyB]] }, the
+// keys being the names as League.nameKey writes them. Anything that is not a pair of short texts is dropped; null when it is no object.
+const cleanNameLinks = (raw) => {
+  if (!raw || typeof raw !== 'object' || Array.isArray(raw)) return null;
+  const pairs = (list) => (Array.isArray(list) ? list : [])
+    .filter(pair => Array.isArray(pair) && pair.length === 2 && pair.every(key => typeof key === 'string' && key.trim() !== '' && key.length <= 80) && pair[0] !== pair[1])
+    .slice(0, 1000).map(([a, b]) => [a.trim(), b.trim()]);
+  return { same: pairs(raw.same), apart: pairs(raw.apart) };
+};
+
 const isStoreNight = (item) => !!item && item.source === 'store' && item.deck === 'No participó';
 
 // "5 torneos y 3 noches de la liga": the nights made from the store's table are not tournaments, so they are counted apart.

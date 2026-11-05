@@ -1,6 +1,6 @@
 // Arena: season end dates and places that qualify, and the backup export and import.
 /* global CONFIG, State, League, countEntries, isStoreNight, localIsoDate, nextSeason, seasonEndBounds, isIsoDate,
-         cleanSeasonEnds, cleanSeasonTop, cleanProfile, longDate, weekdayName, Arena */
+         cleanSeasonEnds, cleanSeasonTop, cleanProfile, cleanNameLinks, longDate, weekdayName, Arena */
 
 Object.assign(Arena, {
   // ─────────────────────────────────────────────────────────────
@@ -131,7 +131,8 @@ Object.assign(Arena, {
       deletedDecks: State.deletedDecks,
       seasonEnds: State.seasonEnds,
       seasonTop: State.seasonTop,
-      profile: State.profile
+      profile: State.profile,
+      nameLinks: State.nameLinks
     };
     const fileName = `pauper_decks_backup_${localIsoDate()}.json`;
     this.saveAsFile(JSON.stringify(exportData, null, 2), fileName);
@@ -191,6 +192,12 @@ Object.assign(Arena, {
       if (importedTop) {
         State.seasonTop = importedTop;
         State.saveSeasonTop();
+      }
+      // Older copies carry no decisions about names: the ones set here stay.
+      const importedLinks = cleanNameLinks(data.nameLinks);
+      if (importedLinks) {
+        State.nameLinks = importedLinks;
+        State.saveNameLinks();
       }
       // Older copies carry no name or league day: the ones set here stay.
       const importedProfile = cleanProfile(data.profile);

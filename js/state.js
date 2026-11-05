@@ -1,5 +1,5 @@
 // What is saved on this device: history, deleted decks, season end dates, how many qualify in each season, and who the person is.
-/* global CONFIG, Analytics, League, Demo, cleanSeasonEnds, cleanSeasonTop, cleanProfile, isIsoDate, isStoreNight */
+/* global CONFIG, Analytics, League, Demo, cleanSeasonEnds, cleanSeasonTop, cleanProfile, cleanNameLinks, isIsoDate, isStoreNight */
 /* exported State */
 
 // ══════════════════════════════════════════════════════════════════
@@ -17,6 +17,9 @@ const State = {
   // Who the person is: the name they appear under on the standings screens (several spellings may be separated by commas)
   // and the weekday their league plays, 0 (Sunday) to 6, or null while they have not said.
   profile: { name: '', leagueDay: null },
+  // What the person decided about names the page could not settle: { same: [[keyA, keyB]], apart: [[keyA, keyB]] }, name keys as
+  // League.nameKey writes them. It lives under its own key, so the release before this one, which knows nothing of it, ignores it.
+  nameLinks: { same: [], apart: [] },
   // True when the browser refused a write, so a change is never reported as saved when it was not.
   writeFailed: false,
   // Raw text of stored data that could not be read: kept aside so the next save does not wipe it.
@@ -45,6 +48,10 @@ const State = {
 
   profileKey() {
     return CONFIG.isTestMode ? 'pauper_test_arena_profile' : 'pauper_arena_profile';
+  },
+
+  nameLinksKey() {
+    return CONFIG.isTestMode ? 'pauper_test_arena_name_links' : 'pauper_arena_name_links';
   },
 
   unreadableKey() {
@@ -89,6 +96,25 @@ const State = {
       stored = JSON.parse(localStorage.getItem(this.seasonEndsKey()));
     } catch (e) {}
     this.seasonEnds = cleanSeasonEnds(stored) || {};
+  },
+
+  saveNameLinks() {
+    League.setLinks(this.nameLinks);
+    try {
+      localStorage.setItem(this.nameLinksKey(), JSON.stringify(this.nameLinks));
+    } catch (e) {
+      this.writeFailed = true;
+      console.warn('Error guardando en localStorage:', e);
+    }
+  },
+
+  loadNameLinks() {
+    let stored = null;
+    try {
+      stored = JSON.parse(localStorage.getItem(this.nameLinksKey()));
+    } catch (e) {}
+    this.nameLinks = cleanNameLinks(stored) || { same: [], apart: [] };
+    League.setLinks(this.nameLinks);
   },
 
   saveProfile() {
@@ -147,6 +173,8 @@ const State = {
     this.deletedDecks = [];
     this.seasonEnds = {};
     this.seasonTop = {};
+    this.nameLinks = { same: [], apart: [] };
+    this.saveNameLinks();
     this.profile = { name: '', leagueDay: null };
     League.identify('');
     this.saveDeletedDecks();
@@ -166,6 +194,8 @@ const State = {
     this.deletedDecks = [];
     this.seasonEnds = demo.seasonEnds;
     this.seasonTop = demo.seasonTop;
+    this.nameLinks = { same: [], apart: [] };
+    this.saveNameLinks();
     this.profile = demo.profile;
     League.identify(this.profile.name);
     this.saveDeletedDecks();
@@ -178,7 +208,7 @@ const State = {
 
   // What the test mode left under its own keys.
   clearTestData() {
-    ['historic', 'store_nights', 'deleted_decks', 'season_ends', 'season_top', 'profile'].forEach(name => {
+    ['historic', 'store_nights', 'deleted_decks', 'season_ends', 'season_top', 'profile', 'name_links'].forEach(name => {
       try { localStorage.removeItem(`pauper_test_arena_${name}`); } catch (e) {}
     });
   },
@@ -312,6 +342,7 @@ const State = {
       this.loadSeasonEnds();
       this.loadSeasonTop();
       this.loadProfile();
+      this.loadNameLinks();
       stored = localStorage.getItem(this.historicKey());
 
       if (stored) {

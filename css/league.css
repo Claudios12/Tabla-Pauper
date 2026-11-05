@@ -41,6 +41,36 @@
 }
 .board.in-top .board-rank { color: var(--text-primary); }
 .board-main { min-width: 0; }
+/* The name opens the player's card: a button that looks like the text it replaces */
+button.board-main {
+  display: block;
+  inline-size: 100%;
+  padding: 0;
+  font: inherit;
+  color: inherit;
+  text-align: start;
+  background: none;
+  border: 0;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+}
+button.board-main .board-sub { display: block; }
+button.board-main:hover .title-text { text-decoration: underline; text-underline-offset: 3px; }
+.player-section { margin-block-start: 16px; }
+.player-h { margin-block-end: 8px; font-size: 15px; font-weight: 600; }
+.player-names { display: flex; flex-direction: column; gap: 4px; }
+.player-names li {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 4px 8px;
+  padding: 8px 12px;
+  border-radius: var(--radius-sm);
+  background-color: var(--surface-2);
+}
+.player-names small { color: var(--text-secondary); }
+.player-names .btn { min-height: 36px; }
 /* A person's name is never cut short: on a narrow screen it wraps, and the "Tú" tag drops under it if it must. */
 .board-name {
   display: flex;
