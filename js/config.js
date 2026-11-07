@@ -14,16 +14,13 @@ const CONFIG = {
     const today = new Date();
     return seasonOf(today.getFullYear(), today.getMonth() + 1);
   },
-  // Pictures are enlarged before they are read when they are small (a screenshot shared through a chat is): a short side under
-  // OCR_SMALL_SIDE is brought to about OCR_TARGET_SIDE, never more than 3 times. A picture longer than OCR_MAX_SIDE is
-  // scaled down to fit it, whatever its size.
-  OCR_SMALL_SIDE: 1000,
-  OCR_TARGET_SIDE: 1500,
-  OCR_MAX_SIDE: 3200,
-  // The OCR engine is fetched on first use: one pinned version, checked against this hash.
-  OCR_ENGINE: {
-    src: 'https://cdn.jsdelivr.net/npm/tesseract.js@5.1.1/dist/tesseract.min.js',
-    integrity: 'sha384-GJqSu7vueQ9qN0E9yLPb3Wtpd7OrgK8KmYzC8T1IysG1bcvxvIO4qtYR/D3A991F'
+  // The standings scan and the monthly store table are both read by Gemini, called with the person's own key (see
+  // js/gemini.js). `model` is the first one tried; if it is busy, out of free quota or retired, Gemini.read moves on to
+  // the other free "flash" models the key lists. The key lives only on their device; it is never part of what State saves
+  // or backs up.
+  GEMINI: {
+    model: 'gemini-3.8-flash',
+    endpoint: 'https://generativelanguage.googleapis.com/v1beta/models'
   },
   // The General tab: how many places qualify, and how the rest of a season is judged.
   LEAGUE: {

@@ -186,7 +186,10 @@
           <p class="ocr-help">Cada mes la tienda publica la tabla oficial, con los puntos de los retos, a menudo en varias capturas. Súbelas todas juntas, en el orden que quieras: se leen como una sola tabla. Los puntos de los retos se suman a tus tablas, se comprueba que los puntos que guardaste coinciden con los de la tienda, y las noches que no tengas guardadas se pueden crear con esa tabla, para que la liga tenga el mes completo.</p>
           <input id="month-file" name="month-file" type="file" accept="image/*" multiple hidden onchange="Arena.readMonthFiles(this)" aria-label="Capturas de la tabla del mes de la tienda">
           <input id="month-more-file" name="month-more-file" type="file" accept="image/*" multiple hidden onchange="Arena.readMonthFiles(this, true)" aria-label="Otras capturas de la misma tabla del mes">
-          <button class="btn btn-secondary" id="month-pick" type="button" onclick="document.getElementById('month-file').click()">Subir las capturas del mes</button>
+          <div class="btn-row">
+            <button class="btn btn-secondary" id="month-pick" type="button" onclick="document.getElementById('month-file').click()">Subir las capturas del mes</button>
+            <button class="btn btn-secondary" type="button" onclick="Arena.openApiKeyDialog()">Clave de Gemini</button>
+          </div>
           <div class="month-status" id="month-status" role="status" aria-live="polite" aria-atomic="true"></div>
           <div class="visually-hidden" id="month-announce" role="status" aria-live="polite" aria-atomic="true"></div>
           <div class="month-result" id="month-result" hidden></div>
@@ -335,7 +338,10 @@
                 <label class="field-label" for="ocr-file">Capturas de la tabla</label>
                 <input class="input-ctrl input-ctrl-file" id="ocr-file" name="ocr-file" type="file" accept="image/*" multiple onchange="Arena.clearScannedStandings('file')">
               </div>
-              <button class="btn btn-secondary" type="button" onclick="Arena.processOcrScreenshot()">Leer capturas y extraer datos</button>
+              <div class="btn-row">
+                <button class="btn btn-secondary" type="button" onclick="Arena.processOcrScreenshot()">Leer capturas y extraer datos</button>
+                <button class="btn btn-secondary" type="button" onclick="Arena.openApiKeyDialog()">Clave de Gemini</button>
+              </div>
 
               <div class="ocr-found" id="ocr-found" hidden>
                 <div class="ocr-same" id="ocr-same" hidden>
@@ -393,6 +399,12 @@
               <h2 class="data-title" id="h-league">Tu liga</h2>
               <p class="panel-copy" id="league-summary"></p>
               <button class="btn btn-secondary" type="button" onclick="Arena.openLeagueDialog()">Editar mi liga</button>
+            </section>
+
+            <section class="league-settings" aria-labelledby="h-gemini">
+              <h2 class="data-title" id="h-gemini">Clave de Gemini</h2>
+              <p class="panel-copy" id="gemini-key-summary"></p>
+              <button class="btn btn-secondary" type="button" onclick="Arena.openApiKeyDialog()">Clave de Gemini</button>
             </section>
 
             <section aria-labelledby="h-backup">
@@ -635,6 +647,25 @@
     </form>
   </dialog>
 
+  <dialog class="dialog" id="api-key-dialog" aria-labelledby="ak-title" aria-describedby="ak-body">
+    <form class="dialog-in" id="api-key-form" novalidate onsubmit="Arena.saveApiKey(event)">
+      <h2 class="dialog-title" id="ak-title">Clave de Gemini</h2>
+      <p class="dialog-body" id="ak-body">Las capturas se leen con Gemini, usando tu propia clave: se guarda solo en este dispositivo y nunca viaja en tus copias de seguridad. <a href="https://aistudio.google.com/apikey" target="_blank" rel="noopener">Consigue una clave gratis en Google AI Studio</a>.</p>
+
+      <div class="field dialog-field">
+        <label class="field-label" for="ak-key">Tu clave de Gemini</label>
+        <input class="input-ctrl" id="ak-key" name="ak-key" type="password" autocomplete="off" spellcheck="false" aria-describedby="ak-key-hint" autofocus>
+        <span class="hint" id="ak-key-hint">Pégala tal como la copiaste.</span>
+      </div>
+
+      <div class="dialog-actions">
+        <button class="btn btn-secondary" type="button" onclick="this.closest('dialog').close()">Cancelar</button>
+        <button class="btn btn-primary" type="submit">Guardar la clave</button>
+      </div>
+      <button class="btn btn-danger dialog-remove" id="ak-remove" type="button" onclick="Arena.clearApiKey()" hidden>Borrar la clave</button>
+    </form>
+  </dialog>
+
   <script src="js/register-sw.js" defer></script>
   <script src="js/config.js" defer></script>
   <script src="js/state.js" defer></script>
@@ -644,6 +675,7 @@
   <script src="js/monthly.js" defer></script>
   <script src="js/outlook.js" defer></script>
   <script src="js/demo.js" defer></script>
+  <script src="js/gemini.js" defer></script>
   <script src="js/arena.js" defer></script>
   <script src="js/arena-insights.js" defer></script>
   <script src="js/arena-decks.js" defer></script>

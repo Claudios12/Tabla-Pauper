@@ -1,5 +1,5 @@
 // Arena: confirmations, undo and deleting tournaments or decks.
-/* global CONFIG, State, Analytics, League, plural, deckInfo, isStoreNight, Arena, Tesseract, createImageBitmap */
+/* global State, Analytics, League, plural, deckInfo, isStoreNight, Arena, Gemini */
 
 Object.assign(Arena, {
   // ─────────────────────────────────────────────────────────────
@@ -117,139 +117,84 @@ Object.assign(Arena, {
     const open = trigger.getAttribute("aria-expanded") === "true";
     trigger.setAttribute("aria-expanded", String(!open));
     content.hidden = open;
-    // Opening the panel is the first sign the engine will be needed: start fetching it now.
-    if (!open) this.loadOcrEngine().catch(() => {});
   },
 
-  // The engine is large and rarely used, so the page does not load it up front. Only the pinned version
-  // with the hash in CONFIG is accepted; a changed file on the CDN is refused by the browser.
-  loadOcrEngine() {
-    if (window.Tesseract) return Promise.resolve();
-    if (!this._ocrLoading) {
-      this._ocrLoading = new Promise((resolve, reject) => {
-        const script = document.createElement("script");
-        script.src = CONFIG.OCR_ENGINE.src;
-        script.integrity = CONFIG.OCR_ENGINE.integrity;
-        script.crossOrigin = "anonymous";
-        script.onload = () => resolve();
-        script.onerror = () => {
-          script.remove();
-          this._ocrLoading = null;
-          reject(new Error("No se pudo cargar el motor OCR. Revisa tu conexión e inténtalo de nuevo."));
-        };
-        document.head.appendChild(script);
-      });
-    }
-    return this._ocrLoading;
+  // What the scan asks Gemini for: one row per player, in the order the screen lists them, nothing invented.
+  STANDINGS_PROMPT: 'Extract the MTG tournament leaderboard from this Companion app screenshot. Return ONLY a valid '
+    + 'JSON array of objects, in the order the screen lists them, without any markdown formatting. Each object must '
+    + 'have these exact keys: "rank" (integer, the player’s place on the screen, or null if not shown), "name" '
+    + '(string, the player’s full name), "points" (integer, or null if not shown), and "wld" (string, format '
+    + '"W-L-D", or "" if not shown). Ignore the date, event title, header row or footer text: only player rows.',
+
+  // "W-L-D" as League.parseLine's record cell (draws default to 0 when Gemini gives only "W-L"), or '' when there is none to read.
+  standingsRecord(wld) {
+    const match = /^\s*(\d{1,2})\s*-\s*(\d{1,2})(?:\s*-\s*(\d{1,2}))?\s*$/.exec(String(wld ?? ''));
+    return match ? `${match[1]}-${match[2]}-${match[3] ?? '0'}` : '';
   },
 
-  // How much a picture is enlarged before it is read. A small one (a screenshot passed through a chat is) is brought to a short
-  // side of about CONFIG.OCR_TARGET_SIDE, never more than 3 times: the engine misreads small text. A bigger one is read as it
-  // is. Either way the long side never goes past CONFIG.OCR_MAX_SIDE, because a phone runs out of memory on a huge photo.
-  screenshotScale(width, height) {
-    const short = Math.min(width, height), long = Math.max(width, height);
-    const wanted = short >= CONFIG.OCR_SMALL_SIDE ? 1 : Math.min(3, CONFIG.OCR_TARGET_SIDE / short);
-    return Math.min(wanted, CONFIG.OCR_MAX_SIDE / long);
+  // One row of what Gemini returned, as the text League.parseLine already knows how to read: "{rank} {name} {W-L-D} {points}".
+  // Built this way, instead of handed straight to League.extend, so Gemini's reading goes through the very same cross-checks a
+  // local OCR reading did (League.review): a record with more rounds than the event had, points or places out of order.
+  standingsLine(row, index) {
+    // Collapsed, not just trimmed: a newline inside a Gemini-returned name would otherwise survive into the
+    // line this builds and let it split into more than one row once League.parseText reads it back.
+    const name = String((row && row.name) || '').replace(/\s+/g, ' ').trim();
+    if (!name) return '';
+    const rank = Number.isInteger(row.rank) ? row.rank : index + 1;
+    const record = this.standingsRecord(row && row.wld);
+    const points = Number.isInteger(row.points) ? row.points : null;
+    return [rank, name, record, points].filter(part => part !== null && part !== '').join(' ');
   },
 
-  // The picture decoded the way it was taken (rotation included), or null when the browser cannot decode it.
-  async decodeScreenshot(file) {
-    try {
-      return await createImageBitmap(file, { imageOrientation: 'from-image' });
-    } catch (err) {
-      return null;
-    }
-  },
-
-  // A canvas of the stretch of the picture from sy for sh pixels (the whole picture by default), at the scale it is read at.
-  screenshotCanvas(bitmap, scale, sy = 0, sh = bitmap.height) {
-    const canvas = document.createElement('canvas');
-    canvas.width = Math.round(bitmap.width * scale);
-    canvas.height = Math.max(1, Math.round(sh * scale));
-    const ctx = canvas.getContext('2d');
-    ctx.imageSmoothingQuality = 'high';
-    ctx.drawImage(bitmap, 0, sy, bitmap.width, sh, 0, 0, canvas.width, canvas.height);
-    return canvas;
-  },
-
-  // One read of the picture. The whole page goes first; then, for every place that read skipped, just the stretch where that
-  // row sits is read alone: a row with a coloured band across it (the player's own, say) vanishes in the whole-page read but
-  // reads fine by itself. Returns the text in screen order and the places that were recovered.
-  async readStandings(worker, file) {
-    const bitmap = await this.decodeScreenshot(file);
-    if (!bitmap) return { text: (await worker.recognize(file)).data.text, recovered: [] };
-    // A decoded picture is held in memory until it is closed, so it is closed whatever happens to the reading.
-    try {
-      const scale = this.screenshotScale(bitmap.width, bitmap.height);
-      const page = (await worker.recognize(this.screenshotCanvas(bitmap, scale))).data;
-      const lines = (page.lines || []).map(line => ({ y0: line.bbox.y0, y1: line.bbox.y1, text: line.text.trim() })).filter(line => line.text);
-      lines.forEach(line => { line.row = League.parseLine(line.text); });
-      const recovered = [];
-      try {
-        for (const gap of League.gaps(lines)) {
-          this.setStatus("Buscando las filas que la primera lectura se saltó…", "var(--color-brand)");
-          const crop = this.screenshotCanvas(bitmap, scale, gap.y0 / scale, (gap.y1 - gap.y0) / scale);
-          // Only what reads as a player on one of the missing places is taken; anything else in the stretch is ignored.
-          const found = (await worker.recognize(crop)).data.text.split('\n').map(text => text.trim())
-            .map(text => ({ text, row: League.parseLine(text) }))
-            .filter(item => item.row && (item.row.rank === null || gap.places.includes(item.row.rank)));
-          found.slice(0, gap.places.length).forEach((item, i) => {
-            const place = item.row.rank === null ? gap.places[i] : item.row.rank;
-            lines.push({ y0: gap.y0 + i, y1: gap.y0 + i, text: item.row.rank === null ? `${place} ${item.text}` : item.text });
-            recovered.push(place);
-          });
-        }
-      } catch (err) {
-        console.warn("No se pudieron recuperar las filas que faltaban:", err);
-      }
-      lines.sort((a, b) => a.y0 - b.y0);
-      return { text: lines.map(line => line.text).join('\n'), recovered };
-    } finally {
-      bitmap.close();
-    }
-  },
-
-  // Reads one or more pictures as ONE table: each is read on its own (the page, then the gaps in it), and its rows are added to
-  // `rows`, what is already held (nothing at first), with League.extend. So two pictures of one night are one tournament:
-  // a player seen in both is one row, and points are never added up.
+  // Reads one or more pictures as ONE table: each is sent to Gemini on its own and its rows are added to `rows`, what is
+  // already held (nothing at first), with League.extend. So two pictures of one night are one tournament: a player seen
+  // in both is one row, and points are never added up. `recovered` stays empty: that was a local-OCR artifact (a coloured
+  // band hiding a row from a whole-page read), which does not apply to a model reading the whole picture at once.
   async readPictures(files, rows) {
-    await this.loadOcrEngine();
-    const worker = await Tesseract.createWorker('eng+spa', 1, {
-      logger: m => {
-        if (m.status === 'recognizing text') this.setStatus(`Escaneando imagen${this._ocrPart}… ${Math.round((m.progress || 0) * 100)}%`, "var(--color-brand)");
-      }
-    });
+    const known = this.knownPlayers();
+    const total = { added: 0, same: 0, filled: 0, conflicts: 0 };
+    let scan = { rows };
     try {
-      const known = this.knownPlayers();
-      const recovered = [];
-      const total = { added: 0, same: 0, filled: 0, conflicts: 0 };
-      let scan = { rows };
       for (let i = 0; i < files.length; i++) {
         this._ocrPart = files.length > 1 ? ` ${i + 1} de ${files.length}` : '';
-        const read = await this.readStandings(worker, files[i]);
-        recovered.push(...read.recovered);
-        scan = League.extend(scan.rows, read.text, known);
+        this.setStatus(`Leyendo la imagen con Gemini${this._ocrPart}…`, "var(--color-brand)");
+        const parsed = await Gemini.read([files[i]], this.STANDINGS_PROMPT, note => {
+          this.setStatus(note, "var(--color-brand)");
+        });
+        const list = Array.isArray(parsed) ? parsed : [];
+        const text = list.map((row, idx) => this.standingsLine(row, idx)).filter(Boolean).join('\n');
+        scan = League.extend(scan.rows, text, known);
         for (const key of Object.keys(total)) total[key] += scan[key];
       }
-      return { scan, recovered, images: files.length, ...total };
+      return { scan, recovered: [], images: files.length, ...total };
     } finally {
       this._ocrPart = '';
-      await worker.terminate().catch(() => {});
     }
+  },
+
+  // No read starts without a key: an alert says so and opens the dialog to add one, rather than failing silently mid-scan.
+  requireApiKey() {
+    if (Gemini.key()) return true;
+    alert('Agrega tu clave de Gemini en «Clave de Gemini» antes de leer una captura.');
+    this.openApiKeyDialog();
+    return false;
   },
 
   async processOcrScreenshot() {
-    if (this._ocrRunning) return;
+    if (this._ocrRunning) {
+      this.setStatus("Espera a que termine la lectura que está en curso.", "var(--color-bad)");
+      return;
+    }
     const fileInput = document.getElementById("ocr-file");
     if (!fileInput || !fileInput.files || !fileInput.files[0]) {
       this.setStatus("Selecciona un archivo de imagen primero.", "var(--color-bad)");
       return;
     }
+    if (!this.requireApiKey()) return;
 
     this._ocrRunning = true;
     // Choosing another image, discarding the table or saving while this read runs makes its result out of date.
     const run = ++this._scanRun;
-    this.setStatus("Inicializando motor OCR…", "var(--color-brand)");
     try {
       const result = await this.readPictures([...fileInput.files], []);
       if (run !== this._scanRun) {
@@ -270,10 +215,14 @@ Object.assign(Arena, {
   async addScreenshots(input) {
     const files = [...(input.files || [])];
     input.value = '';
-    if (!files.length || this._ocrRunning || !this._scanned.length) return;
+    if (!files.length || !this._scanned.length) return;
+    if (this._ocrRunning) {
+      this.setStatus("Espera a que termine la lectura que está en curso.", "var(--color-bad)");
+      return;
+    }
+    if (!this.requireApiKey()) return;
     this._ocrRunning = true;
     const run = ++this._scanRun;
-    this.setStatus("Inicializando motor OCR…", "var(--color-brand)");
     try {
       // A copy, so a read that fails or is dropped half way leaves the table exactly as it was.
       const result = await this.readPictures(files, this._scanned.map(row => ({ ...row, flags: [...row.flags] })));

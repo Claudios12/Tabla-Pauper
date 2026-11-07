@@ -1,5 +1,5 @@
-// Arena: who the person is (name and league day), the welcome a first visit sees, and the sample league.
-/* global State, League, weekdayName, cleanProfile, Arena */
+// Arena: who the person is (name and league day), the welcome a first visit sees, the sample league, and the Gemini key.
+/* global State, League, Gemini, weekdayName, cleanProfile, Arena */
 
 Object.assign(Arena, {
   // ─────────────────────────────────────────────────────────────
@@ -85,6 +85,55 @@ Object.assign(Arena, {
     const automatic = !Number.isInteger(State.profile.leagueDay);
     const dayText = day === null ? 'sin elegir' : `${weekdayName(day)}${automatic ? ' (el día de la mayoría de tus torneos)' : ''}`;
     el.textContent = `Nombre: ${State.profile.name || 'sin escribir'}. Día de la liga: ${dayText}.`;
+  },
+
+  // ─────────────────────────────────────────────────────────────
+  // CLAVE DE GEMINI: the person's own key for reading screenshots (see js/gemini.js). It is a credential, not league data:
+  // unlike the rest of this file, it is never part of a snapshot and never touched by wipeAll. Borrar la clave still offers
+  // "Deshacer" (it is a destructive action: without it, losing the key by mistake means pasting it in again from scratch).
+  // ─────────────────────────────────────────────────────────────
+  openApiKeyDialog() {
+    const dialog = document.getElementById("api-key-dialog");
+    const input = document.getElementById("ak-key");
+    if (!dialog || !input || typeof dialog.showModal !== 'function') return;
+    this._apiKeyOpener = document.activeElement;
+    input.value = Gemini.key();
+    document.getElementById("ak-remove").hidden = !Gemini.key();
+    dialog.showModal();
+  },
+
+  saveApiKey(event) {
+    event.preventDefault();
+    const key = Gemini.setKey(document.getElementById("ak-key").value);
+    document.getElementById("api-key-dialog").close();
+    this.renderApiKeySummary();
+    this.notify(key ? 'Clave de Gemini guardada en este dispositivo.' : 'No se guardó ninguna clave.');
+    this.refocusApiKeyOpener();
+  },
+
+  clearApiKey() {
+    const before = Gemini.key();
+    Gemini.clearKey();
+    document.getElementById("ak-key").value = '';
+    document.getElementById("ak-remove").hidden = true;
+    document.getElementById("api-key-dialog").close();
+    this.renderApiKeySummary();
+    this.notify('Clave de Gemini borrada de este dispositivo.', {
+      action: { label: 'Deshacer', run: () => { Gemini.setKey(before); this.renderApiKeySummary(); this.notify('Clave de Gemini restaurada.'); } }
+    });
+    this.refocusApiKeyOpener();
+  },
+
+  // The redraw may have replaced the button that opened the dialog: focus goes back to it, or to the page heading.
+  refocusApiKeyOpener() {
+    const opener = this._apiKeyOpener && document.contains(this._apiKeyOpener) ? this._apiKeyOpener : document.getElementById("page-title");
+    if (opener) opener.focus({ preventScroll: true });
+  },
+
+  // Whether a key is saved, in "Tu liga y copia de seguridad": never the key itself.
+  renderApiKeySummary() {
+    const el = document.getElementById("gemini-key-summary");
+    if (el) el.textContent = Gemini.key() ? 'Clave guardada en este dispositivo.' : 'Sin clave guardada: hace falta para leer capturas con Gemini.';
   },
 
   // ─────────────────────────────────────────────────────────────

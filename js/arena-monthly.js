@@ -1,5 +1,5 @@
 // Arena: the store's monthly table (with its side-quest "reto" points): reading the picture, checking it, saving the retos.
-/* global CONFIG, State, League, Monthly, Analytics, Tesseract, plural, esc, seasonOf, weekdayName, Arena */
+/* global State, League, Monthly, Analytics, Gemini, plural, esc, seasonOf, weekdayName, Arena */
 
 Object.assign(Arena, {
   // The month's table as read, held (with the dates the person confirms) until they save it or throw it away.
@@ -19,118 +19,42 @@ Object.assign(Arena, {
   // ─────────────────────────────────────────────────────────────
   // READING THE PICTURES
   // ─────────────────────────────────────────────────────────────
-  // A canvas seen as "how white is it" (the lowest of red, green and blue): the digits of a poster are white, and the art and the
-  // coloured bands behind them are not, so this sees what a read of the colours misses. Changed in place.
-  whiten(canvas, threshold) {
-    const ctx = canvas.getContext('2d', { willReadFrequently: true });
-    const image = ctx.getImageData(0, 0, canvas.width, canvas.height);
-    const px = image.data;
-    for (let i = 0; i < px.length; i += 4) {
-      const lowest = Math.min(px[i], px[i + 1], px[i + 2]);
-      px[i] = px[i + 1] = px[i + 2] = lowest <= threshold ? 255 : Math.max(0, 255 - Math.round((lowest - threshold) * 255 / (255 - threshold)));
-    }
-    ctx.putImageData(image, 0, 0);
-    return canvas;
-  },
+  // What the monthly scan asks Gemini for: the day of each night column, and every row with its night and reto points and the
+  // printed total, top to bottom as the poster lists them (top 10). Nothing invented: a cell Gemini could not read is null, and
+  // Monthly.fromRows derives at most one missing figure from the row's own checksum, the same bar the local OCR reading kept.
+  MONTHLY_PROMPT: 'Extract the store\'s monthly Pauper league poster from this picture. It is a table: one row per player '
+    + '(top 10, best first), and one pair of columns per league night (a column of night points and a column of "reto" '
+    + 'side-quest points), ending in a total column. Return ONLY a valid JSON object, without any markdown formatting, '
+    + 'with this exact shape: {"month": integer 1-12 for the month the poster is for, or null if you cannot tell, '
+    + '"columns": [{"day": integer day-of-month for that night\'s column header, or null if not shown}, ... one per night '
+    + 'column], "rows": [{"name": "full player name", "nights": [integer or null, one per night column, the night points], '
+    + '"retos": [integer or null, one per night column, the reto points, 0 when there is none], "total": integer or null, '
+    + 'the printed total for that row}]}. Use null for any figure you cannot read: never invent one.',
 
-  whiteCanvas(bitmap, scale, threshold) {
-    return this.whiten(this.screenshotCanvas(bitmap, scale), threshold);
-  },
-
-  // Just one piece of the picture (in the picture's own coordinates), enlarged by `scale` and seen the same way.
-  whiteCrop(bitmap, x, y, width, height, scale, threshold) {
-    const canvas = document.createElement('canvas');
-    canvas.width = Math.max(1, Math.round(width * scale));
-    canvas.height = Math.max(1, Math.round(height * scale));
-    const ctx = canvas.getContext('2d', { willReadFrequently: true });
-    ctx.imageSmoothingQuality = 'high';
-    ctx.drawImage(bitmap, x, y, width, height, 0, 0, canvas.width, canvas.height);
-    return this.whiten(canvas, threshold);
-  },
-
-  // The words of one recognition in the picture's own coordinates (what was read was enlarged by k, and may be a crop at ox, oy).
-  wordsOf(data, k, ox = 0, oy = 0) {
-    return (data.words || []).map(w => ({ t: w.text, c: w.confidence, x0: ox + w.bbox.x0 / k, y0: oy + w.bbox.y0 / k, x1: ox + w.bbox.x1 / k, y1: oy + w.bbox.y1 / k }));
-  },
-
-  // One picture, read with an engine that is already running. First the whole page, four ways: it holds the figures, the header and
-  // the title, and one read of such a poster misses cells that the others cover. Then, with the rows located, each row's name area
-  // and figures on their own (readMonthCrops).
-  async readMonthlyPicture(worker, file) {
-    const bitmap = await this.decodeScreenshot(file);
-    if (!bitmap) throw new Error(`No se pudo abrir la imagen «${file.name}».`);
-    try {
-      await worker.setParameters({ tessedit_pageseg_mode: '6' });
-      const base = this.screenshotScale(bitmap.width, bitmap.height);
-      const fit = (k) => Math.min(k, CONFIG.OCR_MAX_SIDE / Math.max(bitmap.width, bitmap.height));
-      const plan = [{ k: base, white: 0 }, { k: base, white: 170 }, { k: fit(base * 2), white: 170 }, { k: base, white: 150 }];
-      const reads = [];
-      for (const { k, white } of plan) {
-        const { data } = await worker.recognize(white ? this.whiteCanvas(bitmap, k, white) : this.screenshotCanvas(bitmap, k));
-        reads.push({ words: this.wordsOf(data, k) });
-      }
-      const frame = Monthly.frame(reads);
-      if (frame.ok) reads.push(...await this.readMonthCrops(worker, bitmap, frame));
-      return reads;
-    } finally {
-      bitmap.close();
-    }
-  },
-
-  // Each row's name area and figures read on their own, seen through the white view. This is what reads the names: the whole-page
-  // read runs the two lines of a name into one word on a busy picture (measured on a real month: 14 of 31 rows came out clean that
-  // way, and 5 names were wrong with nothing to say so), while the crops of the name area got all 31 right at every setting between
-  // 150 and 200. The figures get one crop read too: one more vote for each cell. The crop is enlarged until a row is about 230 px high.
-  async readMonthCrops(worker, bitmap, frame) {
-    const k = Math.min(6, Math.max(1, 230 / frame.pitch));
-    const within = ([a, b]) => [Math.max(0, a), Math.min(bitmap.width, b)];
-    const settings = [
-      { area: within(frame.names), white: 150, nameOnly: true },
-      { area: within(frame.names), white: 170, nameOnly: true },
-      { area: within(frame.names), white: 190, nameOnly: true },
-      { area: within(frame.figures), white: 170, nameOnly: false }
-    ];
-    const reads = [];
-    for (const { area, white, nameOnly } of settings) {
-      const width = area[1] - area[0];
-      if (width < 20) continue;
-      const words = [];
-      for (const y of frame.ys) {
-        const top = Math.max(0, y - frame.pitch / 2);
-        const height = Math.min(frame.pitch, bitmap.height - top);
-        // A row cut off by the edge of the picture has nothing to read; and no crop is made larger than the engine is fed elsewhere.
-        if (height < 12) continue;
-        const scale = Math.min(k, CONFIG.OCR_MAX_SIDE / Math.max(width, height));
-        const { data } = await worker.recognize(this.whiteCrop(bitmap, area[0], top, width, height, scale, white));
-        words.push(...this.wordsOf(data, scale, area[0], top));
-      }
-      reads.push(nameOnly ? { nameOnly: true, words } : { crop: true, words });
-    }
-    return reads;
-  },
-
-  // Every picture read and parsed, one engine for all of them. Each comes back as { file, table }; a picture that is no table has
-  // table.ok false and says why.
+  // Every picture sent to Gemini and parsed into its own table (each picture is its own page, so a player on two pictures is
+  // merged afterwards by Monthly.order + Monthly.join, not here). Each comes back as { file, table }; a picture that is no
+  // table, or that Gemini could not read, has table.ok false and says why.
   async readMonthPictures(files) {
-    await this.loadOcrEngine();
-    const worker = await Tesseract.createWorker('eng+spa', 1, {
-      logger: m => {
-        // The text only changes from one picture to the next (it is a live region: every change is read out), never per percent.
-        if (m.status === 'recognizing text') this.setMonthStatus(files.length > 1 ? `Leyendo la captura ${this._monthPart} de ${files.length}…` : 'Leyendo la tabla del mes…');
-      }
-    });
+    const known = this.knownPlayers();
+    const out = [];
     try {
-      const known = this.knownPlayers();
-      const out = [];
       for (let i = 0; i < files.length; i++) {
         this._monthPart = i + 1;
-        const reads = await this.readMonthlyPicture(worker, files[i]);
-        out.push({ file: files[i], table: Monthly.parse(reads, known) });
+        this.setMonthStatus(files.length > 1
+          ? `Leyendo la captura ${this._monthPart} de ${files.length} con Gemini…`
+          : 'Leyendo la tabla del mes con Gemini…');
+        let table;
+        try {
+          const data = await Gemini.read([files[i]], this.MONTHLY_PROMPT, note => this.setMonthStatus(note));
+          table = Monthly.fromRows(data, known);
+        } catch (err) {
+          table = { ok: false, reason: err.message };
+        }
+        out.push({ file: files[i], table });
       }
       return out;
     } finally {
       this._monthPart = 0;
-      await worker.terminate().catch(() => {});
     }
   },
 
@@ -163,7 +87,8 @@ Object.assign(Arena, {
     const files = [...(input.files || [])];
     input.value = '';
     if (!files.length || (adding && !this._month)) return;
-    if (this._ocrRunning) {
+    if (!this.requireApiKey()) return;
+    if (this._monthOcrRunning) {
       this.setMonthStatus('Espera a que termine la lectura que está en curso.', 'bad');
       return;
     }
@@ -177,9 +102,8 @@ Object.assign(Arena, {
       });
       if (!ok) return;
     }
-    this._ocrRunning = true;
+    this._monthOcrRunning = true;
     const run = ++this._monthRun;
-    this.setMonthStatus('Inicializando motor OCR…');
     try {
       const read = await this.readMonthPictures(files);
       if (run !== this._monthRun || (adding && !this._month)) {
@@ -231,7 +155,7 @@ Object.assign(Arena, {
       console.error("Error OCR:", err);
       this.setMonthStatus(`Error al procesar la imagen (${err.message}). Prueba de nuevo, o con otra captura.`, 'bad');
     } finally {
-      this._ocrRunning = false;
+      this._monthOcrRunning = false;
     }
   },
 
@@ -282,7 +206,7 @@ Object.assign(Arena, {
   },
 
   // What is wrong with a row that needs the person's hand, in words. Figures that do not add up come first; after them, what the
-  // row says because of a guess: a figure nobody read, a reading chosen so that it adds up, a name one letter off or poorly read.
+  // row says because of a guess: a figure nobody read, two pictures that disagree, or a name one letter off a player already saved.
   monthRowProblem(row) {
     if (!League.nameKey(row.name)) return 'Escribe el nombre.';
     if (row.nights.some(n => n === null) || row.retos.some(n => n === null) || row.total === null) return 'Falta alguna cifra: escríbela mirando la imagen.';
@@ -293,12 +217,10 @@ Object.assign(Arena, {
     const picked = (kind) => how.map((h, i) => (h === kind ? i : -1)).filter(i => i >= 0);
     const doubts = [];
     if (picked('derived').length) doubts.push(`No pude leer ${this.monthCells(row, picked('derived'))}: salió de la suma de la fila.`);
-    if (picked('fixed').length) doubts.push(`Las cifras que leí no sumaban: cambié ${this.monthCells(row, picked('fixed'))} por otra lectura que sí.`);
     if (row.flags.includes('conflict')) doubts.push(row.other
       ? `Este jugador sale en dos capturas con cifras distintas: aquí el total es ${row.total} y en la captura ${this.monthSource(row.other.from)}, ${row.other.total}.`
       : 'Este jugador sale en dos capturas con cifras distintas.');
     if (row.flags.includes('snapped')) doubts.push(`Leí «${row.read}» y lo tomé por «${row.name}», que ya está en tus tablas: si es otra persona, escribe su nombre.`);
-    if (row.flags.includes('name')) doubts.push('El nombre se leyó con poca seguridad.');
     return doubts.length ? `${doubts.join(' ')} Mira la imagen y corrige lo que haga falta, o confírmala si está bien.` : '';
   },
 
@@ -503,7 +425,7 @@ Object.assign(Arena, {
       row.name = League.cleanName(input.value);
       input.value = row.name;
       // Writing the name settles what was doubted about the name, and nothing else.
-      row.flags = row.flags.filter(flag => !['name', 'noname', 'snapped'].includes(flag));
+      row.flags = row.flags.filter(flag => !['noname', 'snapped'].includes(flag));
     } else {
       const text = input.value.trim();
       const value = text === '' ? null : Number(text);
@@ -535,8 +457,8 @@ Object.assign(Arena, {
   confirmMonthRow(i) {
     const row = this._month && this._month.table.rows[i];
     if (!row) return;
-    row.how = (row.how || []).map(how => (how === 'derived' || how === 'fixed' ? 'confirmed' : how));
-    row.flags = row.flags.filter(flag => !['name', 'snapped', 'conflict'].includes(flag));
+    row.how = (row.how || []).map(how => (how === 'derived' ? 'confirmed' : how));
+    row.flags = row.flags.filter(flag => !['snapped', 'conflict'].includes(flag));
     this._month.edited = true;
     row.touched = true;
     this.renderMonthFix();

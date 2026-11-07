@@ -261,7 +261,7 @@ const State = {
     this.loadDeletedDecks();
     const foundDecks = new Set();
     this.historic.forEach(item => {
-      if (item.deck && item.deck !== "No participó") {
+      if (typeof item.deck === 'string' && item.deck && item.deck !== "No participó") {
         foundDecks.add(item.deck.trim());
       }
     });
@@ -280,7 +280,7 @@ const State = {
 
     // Remove all tournaments with this deck from historic
     this.historic = this.historic.filter(item => {
-      return !item.deck || item.deck.trim().toLowerCase() !== normalized.toLowerCase();
+      return typeof item.deck !== 'string' || !item.deck || item.deck.trim().toLowerCase() !== normalized.toLowerCase();
     });
 
     this.syncDecksList();
