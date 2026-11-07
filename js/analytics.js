@@ -98,7 +98,7 @@ const Analytics = {
   // Comprehensive Deck Statistics Calculation
   computeDeckStats(deckName, entries) {
     const deckEntries = entries.filter(e => {
-      if (!e.deck || e.deck === "No participó") return false;
+      if (typeof e.deck !== 'string' || !e.deck || e.deck === "No participó") return false;
       return e.deck.trim().toLowerCase() === deckName.trim().toLowerCase();
     });
 
@@ -196,7 +196,7 @@ const Analytics = {
     // Collect all unique decks that are active in State.decksList
     const deckNames = new Set(State.decksList);
     entries.forEach(e => {
-      if (e.deck && e.deck !== "No participó" && !State.deletedDecks.some(d => d.toLowerCase() === e.deck.trim().toLowerCase())) {
+      if (typeof e.deck === 'string' && e.deck && e.deck !== "No participó" && !State.deletedDecks.some(d => d.toLowerCase() === e.deck.trim().toLowerCase())) {
         deckNames.add(e.deck.trim());
       }
     });

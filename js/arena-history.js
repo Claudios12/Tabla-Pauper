@@ -10,7 +10,7 @@ Object.assign(Arena, {
     if (!el) return;
     const counts = new Map();
     entries.forEach(e => {
-      if (e.deck && e.deck !== "No participó") {
+      if (typeof e.deck === 'string' && e.deck && e.deck !== "No participó") {
         const key = e.deck.trim();
         counts.set(key, (counts.get(key) || 0) + 1);
       }
@@ -77,7 +77,7 @@ Object.assign(Arena, {
     li.dataset.index = isNew ? -1 : index;
     const n = list.children.length + 1;
     li.innerHTML = `<input class="input-ctrl ocr-input" type="text" name="ed-pname-${n}" value="${isNew ? '' : esc(row.name)}" placeholder="Nombre" maxlength="60" autocomplete="off" spellcheck="false" aria-label="Nombre del jugador ${n}">`
-      + `<input class="input-ctrl ocr-input ocr-input-pts" type="number" name="ed-ppts-${n}" value="${isNew ? '' : row.pts}" min="0" max="${League.MAX_PTS}" inputmode="numeric" autocomplete="off" aria-label="Puntos del jugador ${n}">`
+      + `<input class="input-ctrl ocr-input ocr-input-pts" type="number" name="ed-ppts-${n}" value="${isNew ? '' : esc(row.pts)}" min="0" max="${League.MAX_PTS}" inputmode="numeric" autocomplete="off" aria-label="Puntos del jugador ${n}">`
       + `<button class="btn-icon-del" type="button" onclick="Arena.removeEditPlayer(this)" aria-label="Quitar al jugador ${n} de la tabla">${TRASH_ICON.replace('<svg ', '<svg class="row-delete-icon" ')}</button>`;
     list.append(li);
     if (isNew) {

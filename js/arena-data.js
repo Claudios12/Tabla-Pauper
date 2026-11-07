@@ -163,7 +163,7 @@ Object.assign(Arena, {
       // The nights made from the store's table come in their own field (older copies have them among the tournaments, or none).
       const nights = Array.isArray(data.storeNights) ? data.storeNights : [];
       const everything = list.concat(nights);
-      if (everything.some(x => !x || typeof x !== 'object' || !('deck' in x))) {
+      if (everything.some(x => !x || typeof x !== 'object' || typeof x.deck !== 'string')) {
         this.toast(`«${file.name}» tiene registros dañados y no se importó. Tus datos siguen intactos.`);
         return;
       }

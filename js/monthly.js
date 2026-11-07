@@ -1,52 +1,18 @@
-// The store's table for a month (night points, side-quest "reto" points, total), read from a picture and checked.
+// The store's table for a month (night points, side-quest "reto" points, total), read from a picture (Gemini) and checked.
 /* global CONFIG, League, isIsoDate, seasonOf, isStoreNight */
 /* exported Monthly */
 
 // ══════════════════════════════════════════════════════════════════
 // MONTHLY TABLE
-// The picture is a poster: coloured art behind white digits, so one read of it misses cells. The page hands this module several
-// reads (words with their boxes, in picture coordinates). They are merged by position, each cell is taken by vote, and the one
-// thing the poster guarantees (on every row, the nights and the retos add up to the total) judges the result: it picks between
-// two readings of a cell, and fills in a single figure that no read saw, saying so. A row it cannot settle is flagged, never guessed.
+// The picture is a poster, read once by Gemini into named rows and figures. The one thing it guarantees (on every row, the
+// nights and the retos add up to the total) still judges the result the same way a local OCR reading was judged: it derives
+// a single figure Gemini could not read from the total, and flags a row that does not add up. Nothing is guessed beyond that.
 // ══════════════════════════════════════════════════════════════════
 const Monthly = {
-  // The most one night, one reto or one total can be: anything above is a misread (two digits glued together).
+  // The most one night, one reto or one total can be: anything above is not a real figure for this table.
   MAX_CELL: 60,
   MAX_TOTAL: 999,
-  // Digits as an engine confuses them, accepted only as a whole short token that is a number's place in a table.
-  LOOKALIKES: { O: '0', o: '0', D: '0', Q: '0', '©': '0', I: '1', l: '1', '|': '1', ']': '1', '!': '1' },
   MONTHS: ['enero', 'febrero', 'marzo', 'abril', 'mayo', 'junio', 'julio', 'agosto', 'septiembre', 'octubre', 'noviembre', 'diciembre'],
-  MONTH_CODES: ['ene', 'feb', 'mar', 'abr', 'may', 'jun', 'jul', 'ago', 'sep', 'oct', 'nov', 'dic'],
-
-  // The number a word stands for in a table, or null.
-  numberOf(text) {
-    const t = String(text ?? '').trim();
-    if (/^\d{1,3}$/.test(t)) return Number(t);
-    if (!t || t.length > 2) return null;
-    const digits = [...t].map(ch => (/\d/.test(ch) ? ch : (this.LOOKALIKES[ch] ?? null)));
-    if (digits.some(d => d === null)) return null;
-    const joined = digits.join('');
-    // "OO" is one zero the engine doubled: no cell of this table is written 00.
-    return /^0+$/.test(joined) ? 0 : Number(joined);
-  },
-
-  median(values) {
-    const sorted = [...values].sort((a, b) => a - b);
-    return sorted.length ? sorted[Math.floor(sorted.length / 2)] : 0;
-  },
-
-  // Items on one axis, grouped: a new group starts where the gap to the previous item is more than `gap`.
-  groups(items, key, gap) {
-    const sorted = [...items].sort((a, b) => key(a) - key(b));
-    const out = [];
-    sorted.forEach(item => {
-      const last = out[out.length - 1];
-      if (last && key(item) - key(last.items[last.items.length - 1]) <= gap) last.items.push(item);
-      else out.push({ items: [item] });
-    });
-    out.forEach(group => { group.center = this.median(group.items.map(key)); });
-    return out;
-  },
 
   // "ALBERT LOAIZA" -> "Albert Loaiza", with the little words of a name left small.
   titleCase(name) {
@@ -55,143 +21,8 @@ const Monthly = {
       .map((word, i) => (i > 0 && small.includes(word) ? word : word.charAt(0).toUpperCase() + word.slice(1))).join(' ');
   },
 
-  // Every number-like word of every read, and where it sits. A read of the names alone (`nameOnly`) has no figures to give.
-  tokens(reads) {
-    const out = [];
-    reads.forEach((read, r) => read.nameOnly || (read.words || []).forEach(w => {
-      const n = this.numberOf(w.t);
-      if (n !== null) out.push({ n, x: (w.x0 + w.x1) / 2, y: (w.y0 + w.y1) / 2, h: w.y1 - w.y0, c: w.c ?? 0, r });
-    }));
-    return out;
-  },
-
-  // The candidates for one cell: each value with the reads that saw it, best first. A value above what a cell can hold is a misread.
-  candidates(tokens, max) {
-    const byValue = new Map();
-    tokens.forEach(t => {
-      if (t.n > max) return;
-      const found = byValue.get(t.n) || { n: t.n, reads: new Set(), c: 0 };
-      found.reads.add(t.r);
-      found.c = Math.max(found.c, t.c);
-      byValue.set(t.n, found);
-    });
-    return [...byValue.values()].sort((a, b) => (b.reads.size - a.reads.size) || (b.c - a.c));
-  },
-
-  // One row's cells (night, reto, night, reto, …, total) from its candidates. Fills what it can and flags what it cannot:
-  //   derived    one figure no read saw was worked out from the total (or the total from the figures)
-  //   fixed      the readings did not add up and exactly one other combination of readings does
-  //   unbalanced the figures do not add up and nothing fixes it
-  //   missing    more than one figure was not seen
-  solveRow(options) {
-    const last = options.length - 1;
-    const values = options.map(list => (list.length ? list[0].n : null));
-    const how = options.map(list => (list.length ? 'read' : 'missing'));
-    const flags = [];
-    const sumOthers = (skip) => values.reduce((sum, v, k) => (k === skip || k === last || v === null ? sum : sum + v), 0);
-
-    const missing = values.map((v, i) => (v === null ? i : -1)).filter(i => i >= 0);
-    // A figure worked out from the others is only as good as they are: it takes two reads agreeing on every one of them, or a
-    // second misread somewhere would be hidden by the figure that made the row add up.
-    const sure = options.every((list, i) => i === missing[0] || (list.length && list[0].reads.size >= 2));
-    if (missing.length === 1 && sure) {
-      const i = missing[0];
-      const worked = i === last ? sumOthers(-1) : values[last] - sumOthers(i);
-      if (worked >= 0 && worked <= (i === last ? this.MAX_TOTAL : this.MAX_CELL)) {
-        values[i] = worked;
-        how[i] = 'derived';
-        flags.push('derived');
-      }
-    }
-    if (values.some(v => v === null)) {
-      flags.push('missing');
-      return { values, how, flags };
-    }
-    if (sumOthers(-1) === values[last]) return { values, how, flags };
-
-    // Not adding up: look for the other readings that do. Only cells that more than one reading saw can change.
-    const varying = options.map((list, i) => (list.length > 1 ? i : -1)).filter(i => i >= 0);
-    const solutions = [];
-    const walk = (k, chosen) => {
-      if (k === varying.length) {
-        const trial = values.map((v, i) => (varying.includes(i) ? options[i][chosen[varying.indexOf(i)]].n : v));
-        if (trial.slice(0, last).reduce((a, b) => a + b, 0) === trial[last] && chosen.some(c => c > 0)) {
-          const score = varying.reduce((sum, i, j) => sum + options[i][chosen[j]].reads.size, 0);
-          solutions.push({ trial, score, chosen });
-        }
-        return;
-      }
-      for (let c = 0; c < options[varying[k]].length; c++) walk(k + 1, [...chosen, c]);
-    };
-    if (varying.length && varying.length <= 10) walk(0, []);
-    solutions.sort((a, b) => b.score - a.score);
-    if (solutions.length && (solutions.length === 1 || solutions[0].score > solutions[1].score)) {
-      const best = solutions[0];
-      best.trial.forEach((v, i) => { if (v !== values[i]) { values[i] = v; how[i] = 'fixed'; } });
-      flags.push('fixed');
-    } else {
-      flags.push('unbalanced');
-    }
-    return { values, how, flags };
-  },
-
-  // The name on a row, from every read: the words in the name's place, top to bottom, left to right (a name may sit on two lines).
-  // The reading most reads agree on wins (letters only); among the ones that agree, the one that kept the spaces; a tie goes to
-  // the one the engine was surer of. A name only one read saw, and not surely, is doubtful: names are not covered by the checksum.
-  rowNames(reads, zone, y0, y1) {
-    // The name area read on its own, row by row, reads names far better than the whole page does (the page read runs a name's two
-    // lines together on a busy picture): when such reads exist they are the ones that vote, and a row they found nothing for falls
-    // back on the page reads.
-    const crops = reads.filter(read => read.nameOnly);
-    const named = crops.length ? this.votedName(crops, zone, y0, y1) : null;
-    if (named && named.name) return named;
-    const fallback = this.votedName(reads.filter(read => !read.nameOnly), zone, y0, y1);
-    // The crops were there and gave this row nothing: a name from the page read alone is not to be trusted.
-    return crops.length ? { ...fallback, doubtful: true } : fallback;
-  },
-
-  // The name on a row as the reads of `pool` agree on it (see rowNames).
-  votedName(pool, zone, y0, y1) {
-    const middle = (w) => (w.y0 + w.y1) / 2;
-    const found = pool.map(read => {
-      const inZone = (read.words || []).filter(w => {
-        const cx = (w.x0 + w.x1) / 2, cy = middle(w);
-        return cx >= zone[0] && cx <= zone[1] && cy >= y0 && cy < y1 && /^[\p{L}'.-]{2,}$/u.test(w.t.trim());
-      });
-      // Words share a line when their centres are less than half a word's height apart, whatever the size of the picture: the
-      // lines are read top to bottom and each line left to right.
-      const half = this.median(inZone.map(w => w.y1 - w.y0)) * 0.5;
-      const lines = [];
-      inZone.sort((a, b) => middle(a) - middle(b)).forEach(w => {
-        const line = lines[lines.length - 1];
-        if (line && middle(w) - middle(line[0]) <= half) line.push(w);
-        else lines.push([w]);
-      });
-      const words = lines.flatMap(line => line.sort((a, b) => a.x0 - b.x0));
-      return {
-        name: words.map(w => w.t.trim().replace(/^[.'-]+|[.'-]+$/g, '')).join(' '),
-        conf: words.length ? words.reduce((sum, w) => sum + (w.c ?? 0), 0) / words.length : 0
-      };
-    }).filter(f => f.name);
-    if (!found.length) return { name: '', doubtful: true };
-    const tally = new Map();
-    found.forEach(f => {
-      const key = League.nameKey(f.name).replace(/ /g, '');
-      const entry = tally.get(key) || { variants: [], votes: 0, conf: 0 };
-      entry.variants.push(f);
-      entry.votes++;
-      entry.conf = Math.max(entry.conf, f.conf);
-      tally.set(key, entry);
-    });
-    const best = [...tally.values()].sort((a, b) => (b.votes - a.votes) || (b.conf - a.conf))[0];
-    const variant = best.variants.sort((a, b) => (b.name.split(' ').length - a.name.split(' ').length) || (b.conf - a.conf))[0];
-    // Two names read as one word ("SAMUELURUETA") are the other way a name comes out wrong, and every read can do it together.
-    const glued = !/\s/.test(variant.name) && variant.name.length >= 11;
-    return { name: variant.name, doubtful: glued || (best.votes < 2 && best.conf < 85) };
-  },
-
-  // A name the engine read, set against the players the person already has: the same letters with the spaces lost, or one letter
-  // off, is that player ("SAMUELURUETA" is Samuel Urueta). Returns the name as the person has it, or the one read when none fits.
+  // A name read, set against the players the person already has: the same letters with the spaces lost, or one letter off, is
+  // that player ("SAMUELURUETA" is Samuel Urueta). Returns the name as the person has it, or the one read when none fits.
   // Only the first is certain: one letter off is a guess (`guessed`), which could as well be another player, so it is flagged.
   snapName(name, known) {
     const squeeze = (text) => League.nameKey(text).replace(/ /g, '');
@@ -202,165 +33,65 @@ const Monthly = {
     return near.length === 1 ? { name: near[0], snapped: true, guessed: !exact.length } : { name, snapped: false, guessed: false };
   },
 
-  // The month the poster says it is: its title ("LIGA MES DE AGOSTO"), or else the three letters under the dates. 1 to 12, or null.
-  monthOf(reads, aboveY, labelWords) {
-    const votes = new Array(12).fill(0);
-    reads.forEach(read => (read.words || []).forEach(w => {
-      if ((w.y0 + w.y1) / 2 >= aboveY) return;
-      const word = League.nameKey(w.t).replace(/ /g, '');
-      if (word.length < 4) return;
-      this.MONTHS.forEach((month, i) => { if (League.editDistance(word, month, 2) <= 2 && Math.abs(word.length - month.length) <= 2) votes[i] += 1; });
-    }));
-    let best = votes.indexOf(Math.max(...votes));
-    if (votes[best] > 0 && votes.filter(v => v === votes[best]).length === 1) return best + 1;
-    // The labels under the dates: only a code with a single neighbour counts.
-    const codes = new Array(12).fill(0);
-    labelWords.forEach(text => {
-      const word = League.nameKey(text).replace(/ /g, '');
-      if (word.length !== 3) return;
-      const near = this.MONTH_CODES.map((code, i) => (League.editDistance(word, code, 1) <= 1 ? i : -1)).filter(i => i >= 0);
-      if (near.length === 1) codes[near[0]] += 1;
-    });
-    best = codes.indexOf(Math.max(...codes));
-    return codes[best] > 0 && codes.filter(v => v === codes[best]).length === 1 ? best + 1 : null;
-  },
-
-  // Where the table is: its rows (numbers that share a height), its columns (numbers that share a place across the rows) and how
-  // far apart the columns are. { ok: false, reason } when it cannot be found, or is not regular enough to trust.
-  layout(tokens) {
+  // The table Gemini read: { ok, nights: [{ day }], month, rows: [{ name, read, nights, retos, total, flags, how }], flags }.
+  // data: { month: 1-12|null, columns: [{ day }], rows: [{ name, nights: [...], retos: [...], total }] }, exactly the shape the
+  // monthly prompt asks Gemini for. known: the players the person already has, to tell a name a letter off from theirs (snapName).
+  // { ok: false, reason } when the response does not even look like a table.
+  fromRows(data, known = []) {
     const fail = (reason) => ({ ok: false, reason });
-    if (tokens.length < 12) return fail('No encontré los números de una tabla en la imagen: sube la captura de la tabla del mes de la tienda.');
-    const h = this.median(tokens.map(t => t.h).filter(v => v > 0)) || 30;
-
-    // Rows are the numbers that share a height; columns are the numbers that share a place across the rows.
-    const bands = this.groups(tokens, t => t.y, h * 0.9).filter(g => g.items.length >= 3);
-    const strong = this.groups(bands.flatMap(g => g.items), t => t.x, h * 0.8).filter(g => g.items.length >= Math.max(3, Math.round(bands.length * 0.4)));
-    // How far apart the columns are, from the table itself: the yardstick for everything that follows (a poster can be any size).
-    // It is the most usual gap between the columns that most rows reach: glued digits and stray marks make weak clusters in between
-    // (a real column holds the numbers of every row, those hold a few), and counting them would halve the figure.
-    const top = Math.max(0, ...strong.map(col => col.items.length));
-    const core = strong.filter(col => col.items.length >= top * 0.5);
-    const between = core.slice(1).map((col, i) => col.center - core[i].center);
-    const bins = new Map();
-    between.forEach(gap => { const bin = Math.round(gap / (h * 0.8)); bins.set(bin, (bins.get(bin) || 0) + 1); });
-    const usual = [...bins.entries()].sort((a, b) => b[1] - a[1])[0];
-    const spacing = usual ? this.median(between.filter(gap => Math.abs(Math.round(gap / (h * 0.8)) - usual[0]) <= 1)) : 0;
-    if (!spacing) return fail('No encontré las columnas de la tabla: ¿es la tabla del mes de la tienda?');
-    // Glued digits ("92" for "9" and "2") land between two columns: a weak column right next to a stronger one is not a column.
-    let columns = strong.filter(col => !strong.some(other => other !== col && other.items.length > col.items.length && Math.abs(other.center - col.center) < spacing * 0.7));
-    // The place column (1, 2, 3…) is numbers too, but the names lie between it and the first night: that gap is far wider than any other.
-    const gaps = columns.slice(1).map((col, i) => col.center - columns[i].center);
-    const wide = gaps.findIndex(gap => gap > this.median(gaps) * 3);
-    const placeCenter = wide >= 0 ? columns[wide].center : null;
-    if (wide >= 0) columns = columns.slice(wide + 1);
-    // Night and reto columns come in pairs, and the total is one more: an odd count.
-    if (columns.length < 3 || columns.length % 2 === 0) return fail('No encontré las columnas de la tabla: ¿es la tabla del mes de la tienda?');
-    const count = (columns.length - 1) / 2;
-    const last = columns.length - 1;
-    // The columns of a poster are evenly spaced (the total sits a little further). A table whose columns are not has lost one, or
-    // found one that is not there: reading it anyway could give rows that add up and are wrong, so it is refused.
-    const regular = columns.slice(1).every((col, i) => {
-      const gap = col.center - columns[i].center;
-      return gap >= spacing * 0.75 && gap <= spacing * (i === last - 1 ? 2.2 : 1.3);
-    });
-    if (!regular) return fail('Las columnas de la tabla no se leyeron con claridad: prueba con una captura más nítida.');
-    return { ok: true, h, bands, columns, spacing, placeCenter, count, last, reach: spacing * 0.4 };
-  },
-
-  // What one picture says about where things are: the layout, its rows split into cells, the rows of players (body), the header
-  // above them, the height of one row, and the stretch of a row where the name is. { ok: false, reason } when there is no table.
-  // Reads that cover only the names (`nameOnly`, crops of the name area) say nothing about figures, so they are left out here.
-  scaffold(reads) {
-    const found = this.layout(this.tokens(reads));
-    if (!found.ok) return found;
-    const { h, bands, columns, spacing, placeCenter, count, last, reach } = found;
-    const fail = (reason) => ({ ok: false, reason });
-    const columnOf = (t) => {
-      let best = -1, dist = Infinity;
-      columns.forEach((col, i) => { const d = Math.abs(col.center - t.x); if (d < dist) { dist = d; best = i; } });
-      return dist <= reach ? best : -1;
-    };
-    const rows = bands.map(band => {
-      const cells = columns.map(() => []);
-      band.items.forEach(t => { const i = columnOf(t); if (i >= 0) cells[i].push(t); });
-      return { y: band.center, cells, items: band.items };
-    });
-    // A row of players reaches the total column, or holds more than a header (which has only the dates) can.
-    const body = rows.filter(row => row.cells[last].length > 0 || row.cells.filter(c => c.length).length >= count + 2);
-    if (body.length < 2) return fail('No encontré las filas de jugadores de la tabla: prueba con una captura más nítida que la muestre completa.');
-    const header = rows.filter(row => row.y < body[0].y - h).pop() || null;
-    // The header's dates are a second count of the nights. More dates than night columns means columns were lost, and what was
-    // read would add up on fewer nights than the poster has: refused rather than shown.
-    if (header && this.groups(header.items, t => t.x, spacing * 0.5).length > count) return fail('Las columnas de la tabla no se leyeron con claridad: prueba con una captura más nítida.');
-    const pitch = body.length > 1 ? this.median(body.slice(1).map((row, i) => row.y - body[i].y)) : h * 2.4;
-    // The names live between the place column and the first night.
-    const zone = [placeCenter === null ? 0 : placeCenter + spacing * 0.5, columns[0].center - spacing * 0.45];
-    return { ok: true, found, rows, body, header, pitch, zone };
-  },
-
-  // Where to look to read a picture again in pieces: the middle of each row of players, the height of one row, the stretch of a row
-  // that holds the name, and the one that holds the figures (picture coordinates). { ok: false } when there is no table to find.
-  frame(reads) {
-    const s = this.scaffold(reads);
-    if (!s.ok) return s;
-    const { columns, spacing } = s.found;
-    return { ok: true, ys: s.body.map(row => row.y), pitch: s.pitch, names: s.zone, figures: [columns[0].center - spacing * 0.5, columns[columns.length - 1].center + spacing * 0.6] };
-  },
-
-  // The table: { ok, nights: [{ day }], month, rows: [{ name, nights, retos, total, flags, how }], flags }.
-  // reads: [{ words: [{ t, c, x0, y0, x1, y1 }] }]. known: the players the person already has, to tell a name misread from theirs.
-  // When the layout cannot be found, { ok: false, reason }.
-  parse(allReads, known = []) {
-    // The figure crops (`crop`) are one more vote for each cell. If they ever upset where the table is found, it is found without them.
-    let reads = allReads;
-    let s = this.scaffold(reads);
-    if (!s.ok && reads.some(read => read.crop)) {
-      reads = reads.filter(read => !read.crop);
-      s = this.scaffold(reads);
+    if (!data || !Array.isArray(data.columns) || !data.columns.length || !Array.isArray(data.rows)) {
+      return fail('Gemini no devolvió una tabla con columnas y filas: prueba con una captura más nítida de la tabla del mes.');
     }
-    if (!s.ok) return s;
-    const { h, columns, count, last, reach } = s.found;
-    const { body, header, pitch, zone } = s;
-    const pages = reads.filter(read => !read.nameOnly);
+    const count = data.columns.length;
+    const clampInt = (v, max) => (Number.isInteger(v) && v >= 0 && v <= max ? v : null);
+    const nights = data.columns.map(col => ({ day: clampInt(col && col.day, 31) }));
 
-    // The nights' days come from the header's numbers; the month, from the title or the labels under them.
-    const nights = [];
-    const labels = [];
-    for (let n = 0; n < count; n++) {
-      const found = header ? this.candidates(header.cells[n * 2], 31).filter(c => c.n >= 1) : [];
-      nights.push({ day: found.length ? found[0].n : null });
-      const x = columns[n * 2].center;
-      pages.forEach(read => (read.words || []).forEach(w => {
-        const cx = (w.x0 + w.x1) / 2, cy = (w.y0 + w.y1) / 2;
-        if (header && Math.abs(cx - x) <= reach && cy > header.y + h * 0.3 && cy < body[0].y - h * 0.8) labels.push(w.t);
-      }));
-    }
-    const month = this.monthOf(pages, body[0].y - h * 3, labels);
+    const rows = data.rows.map(raw => {
+      // One array, night/reto pairs then the total, so the one thing the poster guarantees (they add up) can judge it: it
+      // derives a single missing figure from the others, never more than one, and flags a row that still does not add up.
+      const values = [];
+      for (let n = 0; n < count; n++) {
+        values.push(clampInt(Array.isArray(raw.nights) ? raw.nights[n] : null, this.MAX_CELL));
+        values.push(clampInt(Array.isArray(raw.retos) ? raw.retos[n] : null, this.MAX_CELL));
+      }
+      values.push(clampInt(raw && raw.total, this.MAX_TOTAL));
+      const last = values.length - 1;
+      const how = values.map(() => 'read');
+      const flags = [];
+      const sumOthers = (skip) => values.reduce((sum, v, k) => (k === skip || k === last || v === null ? sum : sum + v), 0);
+      const missing = values.map((v, i) => (v === null ? i : -1)).filter(i => i >= 0);
+      if (missing.length === 1) {
+        const i = missing[0];
+        const worked = i === last ? sumOthers(-1) : (values[last] === null ? null : values[last] - sumOthers(i));
+        if (worked !== null && worked >= 0 && worked <= (i === last ? this.MAX_TOTAL : this.MAX_CELL)) {
+          values[i] = worked;
+          how[i] = 'derived';
+          flags.push('derived');
+        }
+      }
+      if (values.some(v => v === null)) flags.push('missing');
+      else if (sumOthers(-1) !== values[last]) flags.push('unbalanced');
 
-    const result = body.map(row => {
-      const solved = this.solveRow(row.cells.map((cands, i) => this.candidates(cands, i === last ? this.MAX_TOTAL : this.MAX_CELL)));
-      const v = solved.values;
-      const named = this.rowNames(reads, zone, row.y - pitch / 2, row.y + pitch / 2);
-      const read = this.titleCase(named.name);
-      const snap = named.name ? this.snapName(read, known) : { name: '', snapped: false, guessed: false };
-      const flags = [...solved.flags];
-      if (!named.name) flags.push('noname');
+      const read = this.titleCase(String((raw && raw.name) || '').trim().slice(0, 60));
+      const snap = read ? this.snapName(read, known) : { name: '', snapped: false, guessed: false };
+      if (!read) flags.push('noname');
       else if (snap.guessed) flags.push('snapped');
-      else if (named.doubtful && !snap.snapped) flags.push('name');
+
       return {
         name: snap.name,
         read,
-        nights: Array.from({ length: count }, (_, n) => v[n * 2]),
-        retos: Array.from({ length: count }, (_, n) => v[n * 2 + 1]),
-        total: v[last],
+        nights: Array.from({ length: count }, (_, n) => values[n * 2]),
+        retos: Array.from({ length: count }, (_, n) => values[n * 2 + 1]),
+        total: values[last],
         flags,
-        how: solved.how,
-        y: Math.round(row.y)
+        how
       };
     });
+
     const flags = [];
+    const month = clampInt(data.month, 12);
     if (nights.some(n => n.day === null) || month === null) flags.push('dates');
-    return { ok: true, nights, month, rows: result, flags };
+    return { ok: true, nights, month, rows, flags };
   },
 
   // A row adds up when its nights and retos make its total and every figure is there.
@@ -371,8 +102,8 @@ const Monthly = {
 
   // A row nothing doubts: it adds up, and no figure or name in it is a guess or in dispute.
   clean(row) {
-    return this.balanced(row) && !row.flags.some(flag => ['name', 'noname', 'snapped', 'conflict'].includes(flag))
-      && !(row.how || []).some(how => how === 'derived' || how === 'fixed');
+    return this.balanced(row) && !row.flags.some(flag => ['noname', 'snapped', 'conflict'].includes(flag))
+      && !(row.how || []).some(how => how === 'derived');
   },
 
   // ─────────────────────────────────────────────────────────────

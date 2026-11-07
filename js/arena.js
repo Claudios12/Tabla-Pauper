@@ -133,6 +133,7 @@ const Arena = {
     this.populateSeasonFilter();
     this.renderWelcome();
     this.renderLeagueSettings();
+    this.renderApiKeySummary();
     this.renderHeroMetrics();
     this.renderInsights();
     this.renderDeckComparison();

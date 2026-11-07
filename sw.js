@@ -1,6 +1,5 @@
-const CACHE_NAME = 'pauper-deck-arena-v10';
+const CACHE_NAME = 'pauper-deck-arena-v11';
 const FONT_CACHE = 'pauper-fonts-v1';
-const CDN_CACHE = 'pauper-cdn-v1';
 
 // The app cannot start offline without these: if one fails, the new version does not install.
 const SHELL = [
@@ -27,6 +26,7 @@ const SHELL = [
   '/js/monthly.js',
   '/js/outlook.js',
   '/js/demo.js',
+  '/js/gemini.js',
   '/js/arena.js',
   '/js/arena-insights.js',
   '/js/arena-decks.js',
@@ -70,7 +70,7 @@ self.addEventListener('activate', (event) => {
     caches.keys().then((keys) =>
       Promise.all(
         keys
-          .filter((key) => key !== CACHE_NAME && key !== FONT_CACHE && key !== CDN_CACHE)
+          .filter((key) => key !== CACHE_NAME && key !== FONT_CACHE)
           .map((key) => caches.delete(key))
       )
     ).then(() => self.clients.claim())
@@ -117,23 +117,8 @@ self.addEventListener('fetch', (event) => {
     return;
   }
 
-  // Tesseract CDN — cache-first (versioned URLs don't change)
-  if (url.hostname === 'cdn.jsdelivr.net') {
-    event.respondWith(
-      caches.open(CDN_CACHE).then(async (cache) => {
-        const cached = await cache.match(event.request);
-        if (cached) return cached;
-        const response = await fetch(event.request);
-        if (response && response.status === 200) {
-          cache.put(event.request, response.clone());
-        }
-        return response;
-      })
-    );
-    return;
-  }
-
-  // All other cross-origin requests pass through (e.g., Tesseract workers, traineddata)
+  // All other cross-origin requests pass through uncached (e.g. the Gemini API: a POST anyway, so GET-only caching never
+  // sees it, but a response that carries someone's standings is not something to keep in a shared cache either way).
   if (url.origin !== self.location.origin) return;
 
   // The page, its scripts and styles ship together, so they are always fetched as a set: a new page must never run old code.

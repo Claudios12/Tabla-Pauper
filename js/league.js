@@ -395,39 +395,6 @@ const League = {
     return this.scan(text, known).rows;
   },
 
-  // Where a read of the whole page skipped rows. lines: [{ y0, y1, row }] in screen order, row being the parsed line (or null).
-  // For every run of missing places it returns { places, y0, y1 }: the stretch of the picture, between the rows on either
-  // side, where those rows sit. A page whose places do not climb one by one (ties, a misread digit) cannot say.
-  gaps(lines) {
-    const rows = lines.filter(line => line.row && line.row.rank !== null);
-    const ranks = rows.map(line => line.row.rank);
-    if (rows.length < 2 || new Set(ranks).size !== ranks.length || ranks.some((rank, i) => i > 0 && rank < ranks[i - 1])) return [];
-    // How far apart consecutive rows are, from the pairs that are one place apart.
-    const steps = rows.slice(1).map((line, i) => line.y0 - rows[i].y0).filter((step, i) => ranks[i + 1] - ranks[i] === 1).sort((a, b) => a - b);
-    const pitch = steps.length ? steps[Math.floor(steps.length / 2)] : 0;
-    if (!pitch) return [];
-    const places = (from, to) => Array.from({ length: to - from + 1 }, (_, i) => from + i);
-    const found = [];
-    const first = rows[0];
-    if (first.row.rank > 1) {
-      // The places before the first row read sit between the header (the last line above it) and that row.
-      const header = lines.filter(line => line !== first && line.y1 <= first.y0).pop();
-      const slots = first.row.rank - 1;
-      found.push({
-        places: places(1, slots),
-        y0: Math.max(0, header ? Math.max(header.y1, first.y0 - (slots + 0.6) * pitch) : first.y0 - (slots + 0.2) * pitch),
-        y1: first.y0
-      });
-    }
-    rows.forEach((line, i) => {
-      const next = rows[i + 1];
-      if (next && next.row.rank - line.row.rank > 1) found.push({ places: places(line.row.rank + 1, next.row.rank - 1), y0: line.y1, y1: next.y0 });
-    });
-    // A gap has to be tall enough for all the rows it should hold: a picture that is the second half of a table starts at
-    // place 18 with no room above it for the 17 before.
-    return found.filter(gap => gap.y1 - gap.y0 >= gap.places.length * pitch * 0.6);
-  },
-
   // What a saved tournament may carry, whatever a backup file put there: only well-formed rows come back.
   cleanRows(raw) {
     return this.cleanRowsAt(raw).rows;

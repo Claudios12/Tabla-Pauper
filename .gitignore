@@ -1,2 +1,6 @@
 # Playwright CLI output (may contain credentials)
 .playwright-cli/
+
+# Local secrets (the Gemini key used for tests): never commit
+.env
+.env.*
