@@ -124,7 +124,12 @@ Object.assign(Arena, {
       const sub = [plural(p.nights, 'torneo', 'torneos'), p.withRecord ? `${p.w}-${p.l}-${p.d}` : '', p.retoPts ? `${nf0.format(p.retoPts)} de retos` : ''].filter(Boolean).join(' · ');
       const decided = p.mark === 'in' ? '<span class="pill good">Clasificado</span>' : (p.mark === 'out' ? '<span class="pill good">Eliminado</span>' : '');
       // A player seen on one night whose name looks like another's: the place to look for a name that was written wrong.
-      const maybe = (p.nights <= 1 && League.similar(table.players, p).length) || League.repeats(table.players, p).length ? '<span class="pill">¿Repetido?</span>' : '';
+      // A name the screen cut short that the league could tie to nobody (no longer spelling starts with it, or two do): its points
+      // sit apart from whoever it is, so the row says so. The card lists the players it could be.
+      const cutOnly = p.members.every(m => League.isTruncated(m.name));
+      const maybe = (p.nights <= 1 && League.similar(table.players, p).length) || League.repeats(table.players, p).length
+        ? '<span class="pill">¿Repetido?</span>'
+        : (cutOnly ? '<span class="pill">Nombre cortado</span>' : '');
       return `<li class="board-row js-board-row ${p.isMe ? 'is-me' : ''} ${p.mark === 'in' ? 'is-clinched' : (p.mark === 'out' ? 'is-out' : '')}"${p.isMe ? ' aria-current="true"' : ''}>`
         + `<span class="board-rank">${p.rank}°</span>`
         + `<button class="board-main js-open-player" type="button" data-key="${esc(p.members[0].key)}" onclick="Arena.openPlayer(this.dataset.key, this)" aria-haspopup="dialog"><span class="board-name"><span class="title-text">${esc(p.name)}</span>${p.isMe ? '<span class="pill">Tú</span>' : ''}${maybe}${decided}</span><span class="board-sub">${sub}</span><span class="visually-hidden">. Abre sus nombres para corregirlos.</span></button>`
@@ -146,6 +151,8 @@ Object.assign(Arena, {
     el.innerHTML = `<section class="card board-card" aria-labelledby="h-board">`
       + `<div class="card-head"><h2 id="h-board">Tabla de la liga</h2><span class="sec-meta">${esc(season)} · ${plural(table.players.length, 'jugador', 'jugadores')} · clasifican ${top}</span></div>`
       + `<p class="board-note">${covered}</p>`
+      + (table.dropped ? `<p class="board-note">${plural(table.dropped, 'fila no se sumó', 'filas no se sumaron')}: el mismo jugador sale dos veces en una misma noche y solo cuenta la primera. Corrige esa noche con el lápiz del torneo, en Historial.</p>` : '')
+      + (table.players.some(p => p.members.every(m => League.isTruncated(m.name))) ? `<p class="board-note">«Nombre cortado»: la captura cortó ese nombre y no se pudo saber de quién es, así que sus puntos van aparte. Toca la fila y únelo con su jugador, o escribe su nombre completo.</p>` : '')
       + (anyDecided ? `<p class="board-note">En verde, los que ya están decididos: «Clasificado», nadie puede dejarlo fuera; «Eliminado», no entra ni ganando todo lo que queda.</p>` : '')
       + (cut
         ? list(above, 'in-top') + `<p class="board-cut"><span>Top ${top} · clasificados</span></p>` + (below.length ? list(below) : '')
