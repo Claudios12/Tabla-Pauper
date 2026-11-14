@@ -122,7 +122,7 @@ Object.assign(Arena, {
     const top = table.top;
     const row = (p) => {
       const sub = [plural(p.nights, 'torneo', 'torneos'), p.withRecord ? `${p.w}-${p.l}-${p.d}` : '', p.retoPts ? `${nf0.format(p.retoPts)} de retos` : ''].filter(Boolean).join(' · ');
-      const decided = p.mark === 'in' ? '<span class="pill good">Clasificado</span>' : (p.mark === 'out' ? '<span class="pill good">Eliminado</span>' : '');
+      const decided = p.mark === 'in' ? '<span class="pill good">Clasificado</span>' : (p.mark === 'out' ? '<span class="pill bad">Eliminado</span>' : '');
       // A player seen on one night whose name looks like another's: the place to look for a name that was written wrong.
       // A name the screen cut short that the league could tie to nobody (no longer spelling starts with it, or two do): its points
       // sit apart from whoever it is, so the row says so. The card lists the players it could be.
@@ -153,7 +153,7 @@ Object.assign(Arena, {
       + `<p class="board-note">${covered}</p>`
       + (table.dropped ? `<p class="board-note">${plural(table.dropped, 'fila no se sumó', 'filas no se sumaron')}: el mismo jugador sale dos veces en una misma noche y solo cuenta la primera. Corrige esa noche con el lápiz del torneo, en Historial.</p>` : '')
       + (table.players.some(p => p.members.every(m => League.isTruncated(m.name))) ? `<p class="board-note">«Nombre cortado»: la captura cortó ese nombre y no se pudo saber de quién es, así que sus puntos van aparte. Toca la fila y únelo con su jugador, o escribe su nombre completo.</p>` : '')
-      + (anyDecided ? `<p class="board-note">En verde, los que ya están decididos: «Clasificado», nadie puede dejarlo fuera; «Eliminado», no entra ni ganando todo lo que queda.</p>` : '')
+      + (anyDecided ? `<p class="board-note">Los que ya están decididos: en verde, «Clasificado», nadie puede dejarlo fuera; en rojo, «Eliminado», no entra ni ganando todo lo que queda.</p>` : '')
       + (cut
         ? list(above, 'in-top') + `<p class="board-cut"><span>Top ${top} · clasificados</span></p>` + (below.length ? list(below) : '')
         : list(table.players))
