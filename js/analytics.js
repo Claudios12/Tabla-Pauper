@@ -160,14 +160,14 @@ const Analytics = {
 
     // Benchmark Classification — compare rounded value so display and badge always agree
     const winRateRounded = this.roundPct(winRate);
-    let status = { key: 'insufficient', label: 'Muestra insuficiente', icon: '', class: 'insufficient', desc: 'Menos de 3 torneos: todavía no hay muestra suficiente' };
+    let status = { label: 'Muestra insuficiente', class: 'insufficient', desc: 'Menos de 3 torneos: todavía no hay muestra suficiente' };
     if (count >= CONFIG.BENCHMARKS.MIN_SAMPLE_SIZE) {
       if (winRateRounded >= CONFIG.BENCHMARKS.GOOD_WIN_RATE) {
-        status = { key: 'good', label: 'Buen rendimiento', icon: '', class: 'good', desc: 'Gana más partidas de las que pierde (50 % o más)' };
+        status = { label: 'Buen rendimiento', class: 'good', desc: 'Gana más partidas de las que pierde (50 % o más)' };
       } else if (winRateRounded >= CONFIG.BENCHMARKS.AVG_WIN_RATE) {
-        status = { key: 'average', label: 'Promedio / viable', icon: '', class: 'average', desc: 'Cerca del 50 %: competitivo (de 45 % a 49,9 %)' };
+        status = { label: 'Promedio / viable', class: 'average', desc: 'Cerca del 50 %: competitivo (de 45 % a 49,9 %)' };
       } else {
-        status = { key: 'bad', label: 'Bajo rendimiento', icon: '', class: 'bad', desc: 'Pierde más partidas de las que gana (menos de 45 %)' };
+        status = { label: 'Bajo rendimiento', class: 'bad', desc: 'Pierde más partidas de las que gana (menos de 45 %)' };
       }
     }
 
@@ -193,12 +193,16 @@ const Analytics = {
   },
 
   getAllDeckStats(entries) {
-    // Collect all unique decks that are active in State.decksList
-    const deckNames = new Set(State.decksList);
+    // Every deck once: the ones in State.decksList and the ones these entries were played with. computeDeckStats matches a
+    // deck whatever its capitals, so two spellings of one name must be one deck here, or its tournaments are counted twice.
+    const deckNames = new Map();
+    const add = (name) => {
+      const key = name.trim().toLowerCase();
+      if (!deckNames.has(key)) deckNames.set(key, name.trim());
+    };
+    State.decksList.forEach(add);
     entries.forEach(e => {
-      if (typeof e.deck === 'string' && e.deck && e.deck !== "No participó" && !State.deletedDecks.some(d => d.toLowerCase() === e.deck.trim().toLowerCase())) {
-        deckNames.add(e.deck.trim());
-      }
+      if (typeof e.deck === 'string' && e.deck && e.deck !== "No participó") add(e.deck);
     });
 
     const results = [];

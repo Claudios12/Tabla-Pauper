@@ -1,5 +1,5 @@
 // The store's table for a month (night points, side-quest "reto" points, total), read from a picture (Gemini) and checked.
-/* global CONFIG, League, isIsoDate, seasonOf, isStoreNight */
+/* global CONFIG, League, isIsoDate, seasonOf, isStoreNight, tournamentType */
 /* exported Monthly */
 
 // ══════════════════════════════════════════════════════════════════
@@ -43,10 +43,14 @@ const Monthly = {
       return fail('Gemini no devolvió una tabla con columnas y filas: prueba con una captura más nítida de la tabla del mes.');
     }
     const count = data.columns.length;
-    const clampInt = (v, max) => (Number.isInteger(v) && v >= 0 && v <= max ? v : null);
-    const nights = data.columns.map(col => ({ day: clampInt(col && col.day, 31) }));
+    const clampInt = (v, max, min = 0) => (Number.isInteger(v) && v >= min && v <= max ? v : null);
+    // A day or a month of 0 is not one: it was not read.
+    const nights = data.columns.map(col => ({ day: clampInt(col && col.day, 31, 1) }));
 
-    const rows = data.rows.map(raw => {
+    // A row that is no row at all (null, a bare text) is read as an empty one: it shows under "Filas por revisar", it does not
+    // stop the table.
+    const rows = data.rows.map(given => {
+      const raw = given && typeof given === 'object' ? given : {};
       // One array, night/reto pairs then the total, so the one thing the poster guarantees (they add up) can judge it: it
       // derives a single missing figure from the others, never more than one, and flags a row that still does not add up.
       const values = [];
@@ -89,7 +93,7 @@ const Monthly = {
     });
 
     const flags = [];
-    const month = clampInt(data.month, 12);
+    const month = clampInt(data.month, 12, 1);
     if (nights.some(n => n.day === null) || month === null) flags.push('dates');
     return { ok: true, nights, month, rows, flags };
   },
@@ -256,13 +260,17 @@ const Monthly = {
   compare(table, dates, entries) {
     const used = new Map();
     dates.forEach(iso => { if (iso) used.set(iso, (used.get(iso) || 0) + 1); });
+    // Who a name of the poster is, the way the league decides it for the seasons these dates fall in: a player the league already
+    // counts under two names (joined by the person, or by its own rules over the season) is that player here too.
+    const seasons = new Set(dates.filter(Boolean).map(iso => seasonOf(Number(iso.slice(0, 4)), Number(iso.slice(5, 7)))));
+    const same = League.who((entries || []).filter(item => item && seasons.has(item.season)), table.rows.map(row => row.name));
     const nights = dates.map((iso, n) => {
       const entry = iso ? this.entryFor(iso, entries) : null;
       const own = iso ? this.ownFor(iso, entries) : null;
       const stored = League.cleanRowsAt(entry && entry.playerResults);
       const rows = stored.rows;
       const state = !iso ? 'no-date' : (used.get(iso) > 1 ? 'clash' : (!entry ? 'no-entry' : (rows.length ? 'ok' : 'no-table')));
-      const found = table.rows.map(row => (state === 'ok' ? League.matchPlayer(row.name, rows) : { at: -1, how: null }));
+      const found = table.rows.map(row => (state === 'ok' ? League.matchPlayer(row.name, rows, { same }) : { at: -1, how: null }));
       // A row of the person's table that two players of the poster point at belongs to neither for sure.
       const claims = new Map();
       found.forEach(match => { if (match.at >= 0) claims.set(match.at, (claims.get(match.at) || 0) + 1); });
@@ -298,12 +306,6 @@ const Monthly = {
   // than that many misreadings, so nothing should be written there without asking.
   mismatched(night) {
     return night.state === 'ok' && night.differs >= 2 && night.differs > night.exact;
-  },
-
-  // How a night's points are called in the person's tournaments: good, bad or normal.
-  typeOf(pts) {
-    const bench = CONFIG.BENCHMARKS;
-    return pts >= bench.TYPE_GOOD_PTS ? 'good' : (pts <= bench.TYPE_BAD_PTS ? 'bad' : 'normal');
   },
 
   // The nights the poster has and the person lacks, and what it would take to give them. Only nights with a date that is not shared
@@ -379,7 +381,7 @@ const Monthly = {
       done.players += item.rows.length;
       if (item.mine) {
         item.entry.pts = item.mine.to;
-        item.entry.type = this.typeOf(item.mine.to);
+        item.entry.type = tournamentType(item.mine.to);
         done.synced++;
       }
     });
@@ -409,7 +411,7 @@ const Monthly = {
             const tournament = isStoreNight(night.entry) ? night.own : night.entry;
             if (League.isMyName(mine.name) && tournament) {
               tournament.pts = store.nights[n];
-              tournament.type = this.typeOf(tournament.pts);
+              tournament.type = tournamentType(tournament.pts);
             }
           }
         } else if (check.kind === 'absent' && points) {

@@ -201,7 +201,7 @@
 
     <!-- ═════════════════ TAB 3: DETALLE POR MAZO ═════════════════ -->
     <section class="tab-panel js-tab-panel" id="pg-detail" aria-label="Detalle por mazo">
-      <p class="sub" id="detail-sub">Elige un mazo para ver su récord, su racha y cada torneo en que lo jugaste.</p>
+      <p class="sub">Elige un mazo para ver su récord, su racha y cada torneo en que lo jugaste.</p>
 
       <div class="field detail-picker">
         <label class="field-label" for="detail-deck-select">Mazo</label>
@@ -329,7 +329,7 @@
           <div class="ocr">
             <button class="acc-head" id="ocr-trigger" type="button" onclick="Arena.toggleOcrAccordion()" aria-expanded="false" aria-controls="ocr-content">
               <span>Opcional: escanear captura de standings (OCR)</span>
-              <svg class="chevron" id="ocr-arrow" viewBox="0 0 24 24" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg>
+              <svg class="chevron" viewBox="0 0 24 24" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg>
             </button>
 
             <div class="acc-body" id="ocr-content" hidden>
@@ -577,6 +577,18 @@
       <h2 class="dialog-title" id="pl-title" tabindex="-1"></h2>
       <p class="dialog-body" id="pl-body"></p>
 
+      <div class="player-tabs" role="group" aria-label="Qué ver de este jugador">
+        <button class="preset-chip chip-filter js-player-tab" data-tab="points" type="button" onclick="Arena.showPlayerTab('points')" aria-pressed="true">Puntos</button>
+        <button class="preset-chip chip-filter js-player-tab" data-tab="names" type="button" onclick="Arena.showPlayerTab('names')" aria-pressed="false">Nombres</button>
+      </div>
+
+      <section class="player-section" id="pl-points-pane" aria-labelledby="pl-points-h">
+        <h3 class="player-h" id="pl-points-h">Puntos por mes</h3>
+        <div id="pl-points"></div>
+      </section>
+
+      <div id="pl-names-pane" hidden>
+      <p class="hint player-section">Si la tienda escribió mal un nombre, únelo aquí y se cuenta con este jugador en todas las noches, las que ya guardaste y las que vengan.</p>
       <p class="field-error" id="pl-notice" role="alert" hidden></p>
 
       <section class="player-section" aria-labelledby="pl-names-h">
@@ -615,6 +627,7 @@
           <button class="btn btn-secondary dialog-remove" type="button" onclick="Arena.addTypedName()">Agregar este nombre</button>
         </div>
       </section>
+      </div>
 
       <div class="dialog-actions">
         <button class="btn btn-secondary" type="button" onclick="this.closest('dialog').close()">Cerrar</button>

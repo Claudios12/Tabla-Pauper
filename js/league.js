@@ -106,7 +106,9 @@ const League = {
 
   // One line of the standings screen. The cells on the right are figures (points, record, percentages) and what is left
   // is the rank and the name. Returns { name, rank, printed, wl } or null when the line is not a player.
-  parseLine(line) {
+  // structured: the line was built from a row a reader already told apart as a player (see Arena.standingsLine), so a
+  // name with nothing next to it is still a player, shown with what it lacks, never dropped without a word.
+  parseLine(line, structured = false) {
     const text = String(line ?? '').replace(/[|│｜!¦]/g, ' ')
       .replace(/(\d)(pts|puntos)\b/gi, '$1 $2')
       .replace(/(\d{1,2})\s*[-–—:/]\s*(\d{1,2})\s*[-–—:/]\s*([0-9Oo])\b/g, (all, w, l, d) => ` ${w}-${l}-${/[Oo]/.test(d) ? 0 : d} `);
@@ -164,8 +166,10 @@ const League = {
     if (this.NOT_A_NAME.includes(this.nameKey(name).split(' ')[0])) return null;
     // Without a rank, a record or a figure, a line of words is only text. A single word is a player only with a record, or
     // with a place and points together: a date written over the picture ("July 16", "16 Jul") is a word and one figure.
-    if (rank === null && printed === null && !record) return null;
-    if (words.length < 2 && !record && !(rank !== null && printed !== null)) return null;
+    if (!structured) {
+      if (rank === null && printed === null && !record) return null;
+      if (words.length < 2 && !record && !(rank !== null && printed !== null)) return null;
+    }
     return { name, rank, printed, wl: record ? record.cell : '', lead, prefixed: prefixed || lead };
   },
 
@@ -234,7 +238,7 @@ const League = {
     const top = ranks.reduce((most, rank) => Math.max(most, rank), 0);
     const missingPlaces = new Set(ranks).size === ranks.length ? Array.from({ length: top }, (_, i) => i + 1).filter(place => !ranks.includes(place)) : [];
     const missing = missingPlaces.length || Math.max(0, top - out.length);
-    return { rows: out, rounds: votes >= 3 ? rounds : null, missing, missingPlaces, calculated: out.some(row => row.calculated) };
+    return { rows: out, missing, missingPlaces, calculated: out.some(row => row.calculated) };
   },
 
   // Whether a name is one the season already has: the same, a misreading of it, or the start of it when the screen cut it off.
@@ -249,22 +253,16 @@ const League = {
 
   // The rows a text holds, as each line reads (no cross-checks yet). An avatar column shows as something in front of the name
   // on most rows of a picture; real names do not do that on most rows.
-  parseText(text) {
+  parseText(text, structured = false) {
     const parsed = [];
     String(text ?? '').split('\n').forEach(line => {
-      const row = this.parseLine(line);
+      const row = this.parseLine(line, structured);
       if (row) parsed.push(row);
     });
     if (parsed.length >= 6 && parsed.filter(row => row.prefixed).length >= parsed.length / 2) {
       parsed.forEach(row => { if (row.lead) row.name = this.cleanName(row.name.split(' ').slice(1).join(' ')); });
     }
     return parsed;
-  },
-
-  // Every player a picture can read, once each, in the order the screen lists them, cross-checked as a whole.
-  // known: the players the season's table already has, to tell a misread name from one it has seen before.
-  scan(text, known = []) {
-    return this.extend([], text, known);
   },
 
   // Whether a stretch of rows (read from one picture) has places that only climb: the order a picture is read in.
@@ -294,10 +292,12 @@ const League = {
   // disagree the one already there stays and is flagged. Two different players on one place are both kept and flagged.
   // The rows come out in the order of the places, and the whole table is checked together (the missing places, the
   // rounds, the order of the points), so a picture of the second half is not a table with a hole in it.
-  extend(existing, text, known = []) {
+  // This is the one reading of a scan: every player a picture holds, once each, cross-checked as a whole. known: the
+  // players the season's table already has, to tell a misread name from one it has seen before. structured: see parseLine.
+  extend(existing, text, known = [], structured = false) {
     const added = [];
     let same = 0, filled = 0, conflicts = 0;
-    this.parseText(text).forEach(row => {
+    this.parseText(text, structured).forEach(row => {
       if (!this.nameKey(row.name)) return;
       const twin = existing.find(other => this.sameRow(other, row));
       if (twin) {
@@ -361,7 +361,7 @@ const League = {
     }
     return {
       rows, added: added.length, same, filled, conflicts,
-      rounds: reviewed.rounds, missing: reviewed.missing, missingPlaces: reviewed.missingPlaces, calculated: rows.some(row => row.calculated)
+      missing: reviewed.missing, missingPlaces: reviewed.missingPlaces, calculated: rows.some(row => row.calculated)
     };
   },
 
@@ -389,10 +389,6 @@ const League = {
       if (!twin.wl && row.wl) twin.wl = row.wl;
     });
     return result;
-  },
-
-  parseStandings(text, known) {
-    return this.scan(text, known).rows;
   },
 
   // What a saved tournament may carry, whatever a backup file put there: only well-formed rows come back.
@@ -423,7 +419,7 @@ const League = {
 
   // The rows of a table the person scanned, completed with those of a night made from the store's table for the same day: the person's
   // own points stay; the store's retos and the players the scan missed come in, and nobody of the store's night is dropped.
-  absorb(rows, storeRows) {
+  absorb(rows, storeRows, same = null) {
     const out = rows.map(row => ({ ...row }));
     const scanned = out.slice();
     const done = { added: 0, retos: 0 };
@@ -431,7 +427,7 @@ const League = {
     // players of the store's night with names a letter apart are two players. A name that fits more than one scanned row cannot be
     // pinned on one, so that player comes in as a row of their own: nobody of the store's night is dropped.
     this.cleanRows(storeRows).forEach(store => {
-      const match = this.matchPlayer(store.name, scanned);
+      const match = this.matchPlayer(store.name, scanned, { same });
       if (match.at >= 0) {
         if (store.reto && !out[match.at].reto) { out[match.at].reto = store.reto; done.retos++; }
       } else {
@@ -449,11 +445,15 @@ const League = {
   //   near   one letter off, in a long name (a misreading)
   //   cut    the spelling this one starts, when the screen cut it off
   //   close  what the league table joins by itself (two letters off, swapped letters, a stray letter at the end)
+  //   league what the season's table counts as one player (see who): the names the person joined in a player's card, and the
+  //          spellings the league joins from the whole season ("Rubén Morea" for a night's "Rubén Darío M…"). Only when the
+  //          caller hands in `same`, and only when nothing above fits: without it a reto of the store's table was never
+  //          saved for a player the league itself already counted under both names.
   // at is the row's index; -1 when nobody is; -2 when more than one could be.
-  matchPlayer(name, rows, { close = true } = {}) {
+  matchPlayer(name, rows, { close = true, same = null } = {}) {
     const key = this.nameKey(name);
     if (!key || !Array.isArray(rows)) return { at: -1, how: null };
-    const found = { exact: [], near: [], cut: [], close: [] };
+    const found = { exact: [], near: [], cut: [], close: [], league: [] };
     rows.forEach((row, i) => {
       if (!row || typeof row.name !== 'string') return;
       const other = this.nameKey(row.name);
@@ -464,15 +464,27 @@ const League = {
       // What the table of the league joins by itself (isNearDuplicate), so the month's poster and the league never disagree on who a
       // name is: a spelling the league counts as one player is not "absent" from the night. Not used to join the pictures of one poster.
       else if (close && this.isNearDuplicate(other, key)) found.close.push(i);
+      else if (same && same(name, row.name)) found.league.push(i);
     });
-    for (const how of ['exact', 'near', 'cut', 'close']) {
+    for (const how of ['exact', 'near', 'cut', 'close', 'league']) {
       if (found[how].length) return { at: found[how].length === 1 ? found[how][0] : -2, how };
     }
     return { at: -1, how: null };
   },
 
-  findPlayer(name, rows) {
-    return this.matchPlayer(name, rows).at;
+  // Who is who, as the season's table decides it: a test `(a, b)` that says whether two names are one player there. entries: the
+  // tournaments and nights of the season. names: names that are not in any saved night yet (the players of the store's month
+  // table, or of a table just scanned); they stand together as one more night, so two of them are never one player, and each can
+  // still be joined to a saved spelling by a link of the person or by the league's own rules.
+  who(entries, names = []) {
+    const nights = (entries || []).map(entry => this.cleanRows(entry && entry.playerResults)).filter(rows => rows.length);
+    const extra = names.filter(name => this.nameKey(name)).map(name => ({ name }));
+    if (extra.length) nights.push(extra);
+    const { groupOf } = this.groupPlayers(nights);
+    return (a, b) => {
+      const one = groupOf.get(this.nameKey(a)), other = groupOf.get(this.nameKey(b));
+      return !!one && one === other;
+    };
   },
 
   // Edits (a letter changed, lost or added) between two keys, counted up to max + 1.
@@ -656,6 +668,28 @@ const League = {
       || (loose && first(m.key).length >= 4 && first(m.key) === first(n.key) && (this.isTruncated(m.name) || this.isTruncated(n.name))))));
   },
 
+  // A player's points month by month, as the store's own summary lists them: [{ key: 'YYYY-MM' | '', nights: [{ iso, base, reto,
+  // total }], base, reto, total }], the months in order and the nights of each in order. nightDates: the date of every night of
+  // the table (standings().nightDates); a night with no real date goes in a last group with key ''. Every night the player
+  // counts is in exactly one month, so the months add up to the player's points.
+  breakdown(player, nightDates) {
+    const months = new Map();
+    player.nightIdx.forEach((n, k) => {
+      const iso = nightDates[n] || null;
+      const key = iso ? iso.slice(0, 7) : '';
+      if (!months.has(key)) months.set(key, { key, nights: [], base: 0, reto: 0, total: 0 });
+      const month = months.get(key);
+      const base = player.nightBase[k], total = player.nightPts[k];
+      month.nights.push({ iso, base, reto: total - base, total });
+      month.base += base;
+      month.reto += total - base;
+      month.total += total;
+    });
+    const list = [...months.values()].sort((a, b) => (a.key === '') - (b.key === '') || a.key.localeCompare(b.key));
+    list.forEach(month => month.nights.sort((a, b) => String(a.iso || '').localeCompare(String(b.iso || ''))));
+    return list;
+  },
+
   // The table for a set of tournaments (one season): everyone's points, best first, and where the cut falls. top: how many
   // places qualify in that season. Each player also carries the points of every night they were on, for estimating the rest.
   //
@@ -664,9 +698,11 @@ const League = {
   // has no table of their own for that day, so a day is never added twice; where they have a tournament with no table, it stands in
   // for the table that tournament lacks.
   standings(entries, top = CONFIG.LEAGUE.TOP_CUTOFF) {
-    let played = 0, captured = 0, maxRounds = 0, maxNightPts = 0;
+    let played = 0, captured = 0, maxRounds = 0, maxNightPts = 0, maxBasePts = 0, maxReto = 0;
     const nights = [];
-    const isOwn = (entry) => !!entry && !!entry.deck && entry.deck !== 'No participó';
+    // The date of each night, in step with `nights` (null for a tournament without a real date).
+    const nightDates = [];
+    const isOwn =(entry) => !!entry && !!entry.deck && entry.deck !== 'No participó';
     // What each entry's table holds, as the league reads it: worked out once per entry (it is the costliest part of this).
     const tables = new Map(entries.map(entry => [entry, this.cleanRows(entry && entry.playerResults)]));
     // A day is its date: an entry without a real one cannot say which day it is, so it takes no part in deciding whose table counts.
@@ -683,7 +719,7 @@ const League = {
       played++;
       const rows = tables.get(entry);
       const day = dayOf(entry);
-      if (rows.length) { nights.push(rows); captured++; } else if (day && storeNights.has(day) && !ownTableDays.has(day)) captured++;
+      if (rows.length) { nights.push(rows); nightDates.push(day); captured++; } else if (day && storeNights.has(day) && !ownTableDays.has(day)) captured++;
     });
     // The store's nights: the days the person has no table of their own for. Those on days they have no tournament at all are the
     // ones whose points are theirs only through the table (the tournament figures cover the rest).
@@ -692,6 +728,7 @@ const League = {
     storeNights.forEach((rows, day) => {
       if (ownTableDays.has(day)) return;
       nights.push(rows);
+      nightDates.push(day);
       stored++;
       if (!ownDays.has(day)) storeOnly.add(rows);
     });
@@ -715,6 +752,9 @@ const League = {
         total.nightBase.push(row.pts);
         total.nightPts.push(night);
         maxNightPts = Math.max(maxNightPts, night);
+        // The two parts on their own too: the best night and the best reto need not have fallen on the same row.
+        maxBasePts = Math.max(maxBasePts, row.pts);
+        maxReto = Math.max(maxReto, row.reto || 0);
         if (row.w !== undefined) {
           total.w += row.w;
           total.l += row.l;
@@ -738,8 +778,11 @@ const League = {
       top,
       maxRounds,
       maxNightPts,
+      maxBasePts,
+      maxReto,
       captured,
       nights: nights.length,
+      nightDates,
       stored,
       played,
       me: players.find(player => player.isMe) || null,

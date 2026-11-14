@@ -135,12 +135,14 @@ Object.assign(Arena, {
   // One row of what Gemini returned, as the text League.parseLine already knows how to read: "{rank} {name} {W-L-D} {points}".
   // Built this way, instead of handed straight to League.extend, so Gemini's reading goes through the very same cross-checks a
   // local OCR reading did (League.review): a record with more rounds than the event had, points or places out of order.
-  standingsLine(row, index) {
+  standingsLine(row) {
     // Collapsed, not just trimmed: a newline inside a Gemini-returned name would otherwise survive into the
     // line this builds and let it split into more than one row once League.parseText reads it back.
     const name = String((row && row.name) || '').replace(/\s+/g, ' ').trim();
     if (!name) return '';
-    const rank = Number.isInteger(row.rank) ? row.rank : index + 1;
+    // A place the screen does not show stays unknown: the row's position in the list is not its place (a second picture
+    // starts at 1 again), and an invented one would end up in the person's own "Puesto".
+    const rank = Number.isInteger(row.rank) && row.rank >= 1 && row.rank <= 999 ? row.rank : null;
     const record = this.standingsRecord(row && row.wld);
     const points = Number.isInteger(row.points) ? row.points : null;
     return [rank, name, record, points].filter(part => part !== null && part !== '').join(' ');
@@ -148,8 +150,7 @@ Object.assign(Arena, {
 
   // Reads one or more pictures as ONE table: each is sent to Gemini on its own and its rows are added to `rows`, what is
   // already held (nothing at first), with League.extend. So two pictures of one night are one tournament: a player seen
-  // in both is one row, and points are never added up. `recovered` stays empty: that was a local-OCR artifact (a coloured
-  // band hiding a row from a whole-page read), which does not apply to a model reading the whole picture at once.
+  // in both is one row, and points are never added up.
   async readPictures(files, rows) {
     const known = this.knownPlayers();
     const total = { added: 0, same: 0, filled: 0, conflicts: 0 };
@@ -162,11 +163,11 @@ Object.assign(Arena, {
           this.setStatus(note, "var(--color-brand)");
         });
         const list = Array.isArray(parsed) ? parsed : [];
-        const text = list.map((row, idx) => this.standingsLine(row, idx)).filter(Boolean).join('\n');
-        scan = League.extend(scan.rows, text, known);
+        const text = list.map(row => this.standingsLine(row)).filter(Boolean).join('\n');
+        scan = League.extend(scan.rows, text, known, true);
         for (const key of Object.keys(total)) total[key] += scan[key];
       }
-      return { scan, recovered: [], images: files.length, ...total };
+      return { scan, images: files.length, ...total };
     } finally {
       this._ocrPart = '';
     }
@@ -201,7 +202,7 @@ Object.assign(Arena, {
         this.setStatus("La imagen cambió mientras se leía, así que se descartó esa lectura. Pulsa «Leer imagen» otra vez.", "var(--text-secondary)");
         return;
       }
-      this.applyScan(result.scan, result.recovered, { images: result.images });
+      this.applyScan(result.scan, { images: result.images });
     } catch (err) {
       console.error("Error OCR:", err);
       this.setStatus(`Error al procesar imagen: ${err.message}`, "var(--color-bad)");
@@ -230,7 +231,7 @@ Object.assign(Arena, {
         this.setStatus("La tabla cambió mientras se leía, así que se descartó esa lectura. Agrega la captura otra vez.", "var(--text-secondary)");
         return;
       }
-      this.applyScan(result.scan, result.recovered, { ...result, adding: true });
+      this.applyScan(result.scan, { ...result, adding: true });
     } catch (err) {
       console.error("Error OCR:", err);
       this.setStatus(`Error al procesar imagen: ${err.message}`, "var(--color-bad)");
@@ -242,7 +243,7 @@ Object.assign(Arena, {
   // What a scan gives the form (your own row) and the review list (everyone's). One reading feeds both, so the figures
   // you save for yourself and the ones the league table adds up can never disagree. options: how many pictures there were,
   // and, when they were added to a table already read (adding), what they brought (added, filled, conflicts).
-  applyScan(scan, recovered = [], options = {}) {
+  applyScan(scan, options = {}) {
     const { images = 1, adding = false, added = 0, filled = 0, conflicts = 0 } = options;
     this.setScannedStandings(scan);
     const rows = scan.rows;
@@ -258,14 +259,13 @@ Object.assign(Arena, {
     if (startsAt) absent = `; empieza en el puesto ${startsAt}: parece la segunda parte de una tabla, agrega la otra captura`;
     else if (places.length) absent = `; ${places.length === 1 ? 'falta' : 'faltan'} ${this.describePlaces(places)}`;
     else if (scan.missing) absent = `; parece que ${scan.missing === 1 ? 'falta 1 fila' : `faltan ${scan.missing} filas`}`;
-    const found = recovered.length ? ` Leí aparte ${this.describePlaces(recovered)}, que la primera lectura se había saltado.` : '';
     const together = !adding && images > 1 ? ` Las ${images} capturas se leyeron juntas: cuentan como un solo torneo.` : '';
     const plus = !adding ? '' : (added
       ? ` Sumé ${plural(added, 'jugador', 'jugadores')} de ${images === 1 ? 'la captura' : `las ${images} capturas`}.`
       : ' Esa captura no trae jugadores que la tabla no tuviera ya.')
       + (filled ? ` Completé ${plural(filled, 'dato', 'datos')} que faltaban.` : '')
       + (conflicts ? ` ${plural(conflicts, 'jugador tiene', 'jugadores tienen')} puntos distintos en otra captura: se dejó lo que ya había y quedó marcado.` : '');
-    const table = `${plus}${together} Tabla: ${plural(rows.length, 'jugador', 'jugadores')}${doubtful ? `, ${doubtful} por revisar` : ''}${absent}.${found}`;
+    const table = `${plus}${together} Tabla: ${plural(rows.length, 'jugador', 'jugadores')}${doubtful ? `, ${doubtful} por revisar` : ''}${absent}.`;
     // More than one row can look like the person's name (a lone first name beside the full one): the first is used, and the
     // person is told, so a different player's row never fills the form without their knowing.
     const mine = rows.filter(row => League.isMyName(row.name));

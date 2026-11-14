@@ -1,5 +1,5 @@
 // The invented league the test mode shows, so a newcomer can look around before typing anything.
-/* global CONFIG, localIsoDate, seasonOf, seasonEndBounds */
+/* global CONFIG, localIsoDate, seasonOf, seasonEndBounds, tournamentType */
 /* exported Demo */
 
 // ══════════════════════════════════════════════════════════════════
@@ -69,7 +69,7 @@ const Demo = {
         rank: `${place}°`,
         pts,
         wl: mine,
-        type: pts >= CONFIG.BENCHMARKS.TYPE_GOOD_PTS ? 'good' : (pts <= CONFIG.BENCHMARKS.TYPE_BAD_PTS ? 'bad' : 'normal'),
+        type: tournamentType(pts),
         notes: place <= 3 ? 'Podio' : '',
         playerResults: rows
       };

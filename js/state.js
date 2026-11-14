@@ -225,7 +225,8 @@ const State = {
   loadDeletedDecks() {
     try {
       const stored = localStorage.getItem(this.deletedKey());
-      this.deletedDecks = stored ? JSON.parse(stored) : [];
+      const list = stored ? JSON.parse(stored) : [];
+      this.deletedDecks = Array.isArray(list) ? list.filter(name => typeof name === 'string') : [];
     } catch(e) {
       this.deletedDecks = [];
     }
@@ -256,18 +257,33 @@ const State = {
     try { localStorage.removeItem(this.unreadableKey()); } catch (e) {}
   },
 
-  // The decks are the ones the person has played, less the ones they deleted.
+  // A deck that has a tournament is not a deleted deck. Deleting a deck takes its tournaments with it, so one that has a
+  // tournament again was played again (or came back with a backup): its name comes off the deleted list, or the tournament
+  // would be left out of every figure and dropped by a release that still filters the history on that list.
+  reviveDecks() {
+    const played = new Set();
+    this.historic.forEach(item => {
+      if (item && typeof item.deck === 'string' && item.deck && item.deck !== "No participó") played.add(item.deck.trim().toLowerCase());
+    });
+    const kept = this.deletedDecks.filter(name => typeof name === 'string' && !played.has(name.trim().toLowerCase()));
+    if (kept.length === this.deletedDecks.length) return;
+    this.deletedDecks = kept;
+    this.saveDeletedDecks();
+  },
+
+  // The decks are the ones the person has played. The same name written with other capitals is one deck: the first
+  // spelling seen is the one listed.
   syncDecksList() {
     this.loadDeletedDecks();
-    const foundDecks = new Set();
+    this.reviveDecks();
+    const foundDecks = new Map();
     this.historic.forEach(item => {
-      if (typeof item.deck === 'string' && item.deck && item.deck !== "No participó") {
-        foundDecks.add(item.deck.trim());
+      if (item && typeof item.deck === 'string' && item.deck && item.deck !== "No participó") {
+        const key = item.deck.trim().toLowerCase();
+        if (!foundDecks.has(key)) foundDecks.set(key, item.deck.trim());
       }
     });
-    // Filter out any explicitly deleted decks
-    this.deletedDecks.forEach(del => foundDecks.delete(del));
-    this.decksList = Array.from(foundDecks);
+    this.decksList = Array.from(foundDecks.values());
   },
 
   deleteDeck(deckName) {
@@ -362,13 +378,8 @@ const State = {
         }
       }
 
-      // Filter out any entries belonging to deleted decks
-      if (this.deletedDecks.length > 0) {
-        this.historic = this.historic.filter(item => {
-          return !item.deck || !this.deletedDecks.some(d => d.toLowerCase() === item.deck.trim().toLowerCase());
-        });
-      }
-
+      // Nothing is dropped here for being of a deleted deck: deleting a deck already took its tournaments, so one that is
+      // in the history was saved afterwards and is the person's (see reviveDecks, which syncDecksList runs).
       this.syncDecksList();
     } catch (e) {
       console.error('Error cargando datos:', e);

@@ -286,8 +286,7 @@ Object.assign(Arena, {
 
   monthTitle() {
     const { table } = this._month;
-    const names = ['enero', 'febrero', 'marzo', 'abril', 'mayo', 'junio', 'julio', 'agosto', 'septiembre', 'octubre', 'noviembre', 'diciembre'];
-    return `${table.month ? names[table.month - 1].replace(/^./, c => c.toUpperCase()) : 'Tabla del mes'}: ${plural(table.nights.length, 'fecha', 'fechas')} y ${plural(table.rows.length, 'jugador', 'jugadores')}${table.pictures > 1 ? ` en ${plural(table.pictures, 'captura', 'capturas')}` : ''}`;
+    return `${table.month ? Monthly.MONTHS[table.month - 1].replace(/^./, c => c.toUpperCase()) : 'Tabla del mes'}: ${plural(table.nights.length, 'fecha', 'fechas')} y ${plural(table.rows.length, 'jugador', 'jugadores')}${table.pictures > 1 ? ` en ${plural(table.pictures, 'captura', 'capturas')}` : ''}`;
   },
 
   // Everything that depends on the figures and the dates, redrawn when either changes (the editors are not, so typing keeps its place).
@@ -533,10 +532,17 @@ Object.assign(Arena, {
     });
     if (!ok || !this._month) return;
     const before = this.snapshot();
-    const changed = Monthly.apply(Monthly.compare(table, this._month.dates, State.historic), table, { points: true });
+    const fresh = Monthly.compare(table, this._month.dates, State.historic);
+    const changed = Monthly.apply(fresh, table, { points: true });
+    // What it could not write is said, as "Guardar los retos" says it: a reto of a player whose name fits more than one row of
+    // that night is not kept, and without a word the general list would be short of it.
+    const away = fresh.nights.reduce((sum, night) => sum + night.checks.filter(check => check.kind === 'unsure' && check.store.reto > 0).length, 0);
+    const skipped = this._month.table.rows.length - rows.length;
+    const rest = (away ? ` ${plural(away, 'reto no se guardó', 'retos no se guardaron')} porque el nombre de su jugador encaja con más de una fila de esa noche: corrige el nombre en esa noche con el lápiz del torneo y vuelve a guardar.` : '')
+      + (skipped ? ` ${plural(skipped, 'fila quedó', 'filas quedaron')} sin guardar: ${skipped === 1 ? 'espera' : 'esperan'} tu revisión.` : '');
     State.save();
     this.refreshAll();
-    this.notify(`Listo: ${plural(changed.points, 'puntaje cambiado', 'puntajes cambiados')}, ${plural(changed.added, 'jugador agregado', 'jugadores agregados')} y ${plural(changed.retos, 'reto guardado', 'retos guardados')}.`, {
+    this.notify(`Listo: ${plural(changed.points, 'puntaje cambiado', 'puntajes cambiados')}, ${plural(changed.added, 'jugador agregado', 'jugadores agregados')} y ${plural(changed.retos, 'reto guardado', 'retos guardados')}.${rest}`, {
       action: { label: 'Deshacer', run: () => { this.restoreSnapshot(before); this.renderMonth(); this.focusMonthAction('month-save'); this.notify('Tus tablas volvieron a como estaban.'); } }
     });
     this.renderMonth();
