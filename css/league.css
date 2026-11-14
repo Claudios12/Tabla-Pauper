@@ -140,18 +140,22 @@ button.board-main:hover .title-text { text-decoration: underline; text-underline
   content: "";
 }
 
-/* Rows that are already decided, whichever way: green, and a word says which (colour alone would not say it).
-   The tag sits on a dark chip because the row is the same green as a tag would be. */
+/* Rows that are already decided: green for who is in, red for who is out, and a word says which (colour alone would not
+   say it). The tag sits on a dark chip because the row is the same colour as a tag would be. */
 .board-row.is-clinched,
 .board-row.is-out {
-  /* the muted grey is too faint on this green (4.4:1, and 3.3:1 on your own green row): the next one up reads at 4.9:1 or more */
+  /* the muted grey is too faint on these tints (4.4:1, and 3.3:1 on your own row): the next one up reads at 4.9:1 or more */
   --text-muted: var(--text-secondary);
-  background-color: var(--pill-good-bg);
 }
-.board-row.is-me.is-clinched,
-.board-row.is-me.is-out { background-color: #17483a; }
-.board-row.is-clinched .pill.good,
-.board-row.is-out .pill.good { background-color: var(--bg-main); }
+.board-row.is-clinched { background-color: var(--pill-good-bg); }
+.board-row.is-out { background-color: var(--pill-bad-bg); }
+.board-row.is-me.is-clinched { background-color: #17483a; }
+.board-row.is-me.is-out { background-color: #4a1f2a; }
+.board-row.is-clinched .pill.good { background-color: var(--bg-main); }
+.board-row.is-out .pill.bad {
+  color: var(--pill-bad-ink);
+  background-color: var(--bg-main);
+}
 
 /* The chance of ending outside the top */
 .league-ask {
