@@ -286,7 +286,10 @@ const Monthly = {
         return { kind: mine === store.pts ? 'same' : 'differs', store, mine, mineReto: rows[at].reto || 0, at: stored.at[at], how };
       });
       const count = (kind) => checks.filter(check => check.kind === kind).length;
-      return { iso, entry, own, state, checks, same: count('same') + count('rest'), exact: count('same'), differs: count('differs'), absent: count('absent'), unsure: count('unsure') };
+      // The players of the saved night that nobody on the poster is: a poster that came in several pictures and was read without
+      // one of them leaves them here, and their retos are saved nowhere.
+      const unlisted = state === 'ok' ? rows.filter((row, i) => !claims.has(i)).map(row => row.name) : [];
+      return { iso, entry, own, state, checks, unlisted, same: count('same') + count('rest'), exact: count('same'), differs: count('differs'), absent: count('absent'), unsure: count('unsure') };
     });
     // The month's total of each player as the person's tables give it (night points and the retos saved with them), to set against
     // the store's. Null where a night could not be compared: nothing is added up from a guess.

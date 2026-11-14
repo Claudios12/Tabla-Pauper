@@ -185,6 +185,19 @@ Object.assign(Arena, {
     return this._month.table.rows.filter(row => !this.monthRowProblem(row));
   },
 
+  // The players of the saved nights that are not on the table read, once each, in words ("Camilo Mora, Esteban Zuleta y 4 más"), or
+  // ''. A month's table comes in several pictures: read without one of them, everyone on that picture is here, and their retos
+  // are saved nowhere. Nothing else would say so: the comparison only looks at the players the poster has.
+  monthUnlisted(report) {
+    const same = League.who(State.historic);
+    const names = [];
+    report.nights.forEach(night => (night.unlisted || []).forEach(name => { if (!names.some(other => other === name || same(other, name))) names.push(name); }));
+    if (!names.length) return '';
+    const shown = names.slice(0, 6).map(name => League.prettyName(name));
+    const list = names.length > 6 ? `${shown.join(', ')} y ${names.length - 6} más` : shown.join(', ');
+    return `${plural(names.length, 'jugador', 'jugadores')} de tus noches de esas fechas no ${names.length === 1 ? 'está' : 'están'} en la tabla leída (${list}): sus retos no se guardan. Si la tabla de la tienda viene en más capturas, súmalas con «Agregar otra captura de esta tabla».`;
+  },
+
   // "los jueves": the league's weekday the dates were proposed with (kept with the table, so it cannot change under it), or in general
   // the days the league plays when there is none to name.
   monthWeekdays() {
@@ -342,6 +355,8 @@ Object.assign(Arena, {
         const waiting = table.rows.length - rows.length;
         if (waiting) parts.push(`${plural(waiting, 'fila espera', 'filas esperan')} tu revisión (más abajo) y no ${waiting === 1 ? 'cuenta' : 'cuentan'} todavía.`);
         if (canMake) parts.push('Puedes crear las noches que faltan con la tabla de la tienda.');
+        const unlisted = this.monthUnlisted(report);
+        if (unlisted) parts.push(unlisted);
       }
       const said = parts.join(' ');
       summary.textContent = said;
@@ -492,7 +507,8 @@ Object.assign(Arena, {
     const skipped = this._month.table.rows.length - rows.length;
     const rest = (skipped ? ` ${plural(skipped, 'fila quedó', 'filas quedaron')} sin guardar: ${skipped === 1 ? 'espera' : 'esperan'} tu revisión.` : '')
       + (away ? ` ${plural(away, 'reto no se guardó', 'retos no se guardaron')} porque su jugador no está en tus tablas o su nombre no se pudo emparejar (para agregarlos usa «Usar los puntos de la tienda…»).` : '')
-      + (nightsLeft ? ` ${plural(nightsLeft, 'fecha quedó', 'fechas quedaron')} sin guardar: no hay tabla de jugadores de ${nightsLeft === 1 ? 'ese día' : 'esos días'}.` : '');
+      + (nightsLeft ? ` ${plural(nightsLeft, 'fecha quedó', 'fechas quedaron')} sin guardar: no hay tabla de jugadores de ${nightsLeft === 1 ? 'ese día' : 'esos días'}.` : '')
+      + (this.monthUnlisted(fresh) ? ` ${this.monthUnlisted(fresh)}` : '');
     const message = changed.retos
       ? `Retos guardados: ${plural(changed.retos, 'cambio', 'cambios')} en tus tablas.${rest}`
       : `Esos retos ya estaban guardados.${rest}`;
@@ -538,8 +554,11 @@ Object.assign(Arena, {
     // that night is not kept, and without a word the general list would be short of it.
     const away = fresh.nights.reduce((sum, night) => sum + night.checks.filter(check => check.kind === 'unsure' && check.store.reto > 0).length, 0);
     const skipped = this._month.table.rows.length - rows.length;
+    const nightsOut = fresh.nights.filter(night => night.state !== 'ok').length;
     const rest = (away ? ` ${plural(away, 'reto no se guardó', 'retos no se guardaron')} porque el nombre de su jugador encaja con más de una fila de esa noche: corrige el nombre en esa noche con el lápiz del torneo y vuelve a guardar.` : '')
-      + (skipped ? ` ${plural(skipped, 'fila quedó', 'filas quedaron')} sin guardar: ${skipped === 1 ? 'espera' : 'esperan'} tu revisión.` : '');
+      + (skipped ? ` ${plural(skipped, 'fila quedó', 'filas quedaron')} sin guardar: ${skipped === 1 ? 'espera' : 'esperan'} tu revisión.` : '')
+      + (nightsOut ? ` ${plural(nightsOut, 'fecha quedó', 'fechas quedaron')} sin tocar: no hay tabla de jugadores de ${nightsOut === 1 ? 'ese día' : 'esos días'}, o su fecha falta o está repetida.` : '')
+      + (this.monthUnlisted(fresh) ? ` ${this.monthUnlisted(fresh)}` : '');
     State.save();
     this.refreshAll();
     this.notify(`Listo: ${plural(changed.points, 'puntaje cambiado', 'puntajes cambiados')}, ${plural(changed.added, 'jugador agregado', 'jugadores agregados')} y ${plural(changed.retos, 'reto guardado', 'retos guardados')}.${rest}`, {
@@ -570,6 +589,7 @@ Object.assign(Arena, {
     if (waiting.length) parts.push(`${plural(waiting.length, 'fila espera', 'filas esperan')} tu revisión y no ${waiting.length === 1 ? 'entra' : 'entran'} en estas noches (${waiting.slice(0, 6).join(', ')}${waiting.length > 6 ? ` y ${waiting.length - 6} más` : ''}): revísa${waiting.length === 1 ? 'la' : 'las'} antes si quieres que ${waiting.length === 1 ? 'cuente' : 'cuenten'}.`);
     const proposed = (this._month.guessed || []).filter(n => plan.make.concat(plan.attach, plan.move).some(item => item.n === n));
     if (proposed.length) parts.push(`${proposed.map(n => this.dayLabel(this._month.dates[n])).join(', ')} ${proposed.length === 1 ? 'es una fecha propuesta' : 'son fechas propuestas'} (${this.monthWeekdays()} del mes), no leídas de la imagen: si alguna no es, cámbiala arriba antes de crear.`);
+    parts.push('En esas noches solo entran los jugadores de la tabla leída: si la tienda la reparte en varias capturas, súmalas todas antes de crear, o los demás no contarán esas noches.');
     parts.push('Los retos entran con las noches. Podrás deshacerlo unos segundos después, o quitar una noche creada desde el Historial.');
     const ok = await this.confirmDialog({ title: 'Crear las noches con la tabla de la tienda', body: parts.join(' '), confirmLabel: 'Crear las noches', danger: false });
     if (!ok || !this._month) return;

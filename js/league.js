@@ -639,11 +639,19 @@ const League = {
   // The players written another way in the SAME nights as `player`, with the same points on each of them: two rows of one person (a
   // spelling the month's poster brought that was saved another way added him twice), not two people, who rarely tie every night.
   // The page cannot join them by name, since two names of one night are two people; the rows are what has to be put together.
+  // One more case: a name the screen cut short that belongs to nobody ("Alejandro Anto…", for Alejandro Antonio Solano) next to a
+  // player with the same first name and the same points on those nights. The store's table wrote him by another of his names
+  // ("Alejandro Solano"), so "Usar los puntos de la tienda" added him beside his own cut-off row: no letters tie the two, only this.
   repeats(players, player) {
+    const lone = (one) => one.members.every(m => this.isTruncated(m.name));
+    const first = (key) => key.split(' ')[0];
     return players.filter(other => {
       if (other === player) return false;
       const shared = player.nightIdx.filter(i => other.nightIdx.includes(i));
-      if (!shared.length || !player.members.some(m => other.members.some(n => this.isNearDuplicate(m.key, n.key) || this.covers(m.key, n.key)))) return false;
+      if (!shared.length) return false;
+      const alike = player.members.some(m => other.members.some(n => this.isNearDuplicate(m.key, n.key) || this.covers(m.key, n.key)));
+      const cutTwin = lone(player) !== lone(other) && player.members.some(m => other.members.some(n => first(m.key).length >= 4 && first(m.key) === first(n.key)));
+      if (!alike && !cutTwin) return false;
       return shared.every(i => player.nightBase[player.nightIdx.indexOf(i)] === other.nightBase[other.nightIdx.indexOf(i)]);
     });
   },
@@ -698,7 +706,7 @@ const League = {
   // has no table of their own for that day, so a day is never added twice; where they have a tournament with no table, it stands in
   // for the table that tournament lacks.
   standings(entries, top = CONFIG.LEAGUE.TOP_CUTOFF) {
-    let played = 0, captured = 0, maxRounds = 0, maxNightPts = 0, maxBasePts = 0, maxReto = 0;
+    let played = 0, captured = 0, maxRounds = 0, maxNightPts = 0, maxBasePts = 0, maxReto = 0, dropped = 0;
     const nights = [];
     // The date of each night, in step with `nights` (null for a tournament without a real date).
     const nightDates = [];
@@ -739,7 +747,9 @@ const League = {
       const counted = new Set();
       rows.forEach(row => {
         const group = groupOf.get(this.nameKey(row.name));
-        if (!group || counted.has(group)) return;
+        // A second row of the same player in one night is not added up (the night would count twice): it is counted, so the
+        // table can say that a row was left out instead of dropping it without a word.
+        if (!group || counted.has(group)) { if (group) dropped++; return; }
         counted.add(group);
         const total = totals.get(group);
         // What a night gave is its points and its reto (the store's side-quest points), the same way the store adds them up.
@@ -783,6 +793,7 @@ const League = {
       captured,
       nights: nights.length,
       nightDates,
+      dropped,
       stored,
       played,
       me: players.find(player => player.isMe) || null,
