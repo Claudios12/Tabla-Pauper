@@ -98,7 +98,7 @@ Object.assign(Arena, {
   offerUnreadableCopy() {
     const raw = State.unreadableCopy();
     if (!raw) return;
-    this.toast('No se pudieron leer tus datos guardados. La app empezó con el historial inicial y apartó una copia de lo que había.', {
+    this.toast('No se pudieron leer tus datos guardados. La app empezó con el historial vacío y apartó una copia de lo que había.', {
       action: { label: 'Descargar copia', run: () => this.downloadUnreadableCopy(raw) }
     });
   },

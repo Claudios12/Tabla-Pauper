@@ -56,6 +56,27 @@ button.board-main {
 }
 button.board-main .board-sub { display: block; }
 button.board-main:hover .title-text { text-decoration: underline; text-underline-offset: 3px; }
+.player-tabs {
+  display: flex;
+  gap: 8px;
+  margin-block-start: 16px;
+}
+/* A player's points, night by night under each month: the month row carries the month's sum. */
+.points-grid .points-month th,
+.points-grid .points-month td {
+  font-weight: 600;
+  background-color: var(--surface-2);
+}
+.points-grid tfoot th,
+.points-grid tfoot td {
+  font-weight: 600;
+  border-block-start: 2px solid var(--rule);
+}
+.points-grid tbody th.points-night {
+  padding-inline-start: 16px;
+  font-weight: 400;
+  color: var(--text-secondary);
+}
 .player-section { margin-block-start: 16px; }
 .player-h { margin-block-end: 8px; font-size: 15px; font-weight: 600; }
 .player-names { display: flex; flex-direction: column; gap: 4px; }

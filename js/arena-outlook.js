@@ -25,8 +25,10 @@ Object.assign(Arena, {
     if (State.leagueDay() === null) return { blocked: 'no-day' };
     const nightsLeft = this.nightsLeft(season);
     if (table.captured < table.played) return { blocked: 'incomplete', gap: table.played - table.captured };
-    // The most a night can give: what the league is known to give, or more if the results show it.
-    const maxNight = Math.max(CONFIG.LEAGUE.MAX_NIGHT_PTS, 3 * table.maxRounds, table.maxNightPts);
+    // The most a night can give: what the league is known to give, or more if the results show it, and on top of that the
+    // biggest reto seen. The best night and the best reto need not have fallen on one player yet, so the two are added:
+    // taking the best single night seen would call someone safe whom a full night with a reto can still pass.
+    const maxNight = Math.max(CONFIG.LEAGUE.MAX_NIGHT_PTS, 3 * table.maxRounds, table.maxBasePts) + table.maxReto;
     return { nightsLeft, maxNight, marks: Outlook.decided(table.players, table.top, nightsLeft, maxNight) };
   },
 

@@ -1,6 +1,6 @@
 // Arena: the Registrar form, its live preview and the OCR scan.
 /* global CONFIG, State, Analytics, League, pct, plural, deckInfo, logRowHtml, localIsoDate, seasonOf,
-         isStoreNight, Arena */
+         isStoreNight, tournamentType, Arena */
 
 Object.assign(Arena, {
   // ─────────────────────────────────────────────────────────────
@@ -251,7 +251,7 @@ Object.assign(Arena, {
       rank: rankVal,
       pts: ptsVal,
       wl: `${w}-${l}-${d}`,
-      type: ptsVal >= CONFIG.BENCHMARKS.TYPE_GOOD_PTS ? "good" : (ptsVal <= CONFIG.BENCHMARKS.TYPE_BAD_PTS ? "bad" : "normal"),
+      type: tournamentType(ptsVal),
       notes: val("log-notes")
     };
     // Only what the General tab adds up is stored: the name, the points and, when it was read cleanly, the record.
@@ -263,7 +263,9 @@ Object.assign(Arena, {
     const madeNight = tableRows.length ? State.historic.find(item => isStoreNight(item) && item.isoDate === dateVal) : null;
     let absorbed = null;
     if (madeNight) {
-      absorbed = League.absorb(entry.playerResults, madeNight.playerResults);
+      // Who of the store's night is who in this table is the league's call (the names the person joined count).
+      const same = League.who(State.historic.filter(item => item.season === entry.season), entry.playerResults.map(row => row.name));
+      absorbed = League.absorb(entry.playerResults, madeNight.playerResults, same);
       entry.playerResults = absorbed.rows;
       State.historic.splice(State.historic.indexOf(madeNight), 1);
     }

@@ -22,6 +22,7 @@ Object.assign(Arena, {
     const today = localIsoDate();
     const dates = Object.values(State.seasonEnds).sort();
     const upcoming = dates.find(date => date >= today);
+    const upcomingSeason = Object.keys(State.seasonEnds).find(season => State.seasonEnds[season] === upcoming);
     const lastEnd = dates.filter(date => date < today).pop();
     const day = (iso) => new Intl.DateTimeFormat('es', { day: 'numeric', month: 'long' }).format(Analytics.parseDate(iso));
     const weekday = State.leagueDay();
@@ -33,7 +34,8 @@ Object.assign(Arena, {
       opens = 'Arena.openLeagueDialog()';
       hidden = 'Elegir el día de tu liga';
     } else if (upcoming) {
-      const remaining = Analytics.getRemainingDates(upcoming, new Date(), weekday);
+      // The same count the risk card uses (today's night included until its table is saved), so the two never disagree.
+      const remaining = this.nightsLeft(upcomingSeason);
       const name = weekdayName(weekday, remaining || 2);
       value = nf0.format(remaining);
       note = remaining ? `${name} hasta el ${day(upcoming)}` : `no quedan ${name} hasta el ${day(upcoming)}`;

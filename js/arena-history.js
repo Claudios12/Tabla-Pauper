@@ -1,5 +1,5 @@
 // Arena: the Historial list and its deck filter.
-/* global CONFIG, State, Analytics, League, plural, countEntries, esc, TRASH_ICON, deckInfo, deckNameHtml, logRowHtml, isStoreNight, isIsoDate, Arena */
+/* global State, Analytics, League, plural, countEntries, esc, TRASH_ICON, deckInfo, deckNameHtml, logRowHtml, isStoreNight, isIsoDate, tournamentType, Arena */
 
 Object.assign(Arena, {
   // ─────────────────────────────────────────────────────────────
@@ -180,7 +180,7 @@ Object.assign(Arena, {
     item.rank = rankRaw ? `${parseInt(rankRaw, 10)}°` : "—";
     item.wl = `${w}-${l}-${d}`;
     item.pts = pts;
-    item.type = pts >= CONFIG.BENCHMARKS.TYPE_GOOD_PTS ? "good" : (pts <= CONFIG.BENCHMARKS.TYPE_BAD_PTS ? "bad" : "normal");
+    item.type = tournamentType(pts);
     item.notes = val("ed-notes");
     document.getElementById("edit-dialog").close();
     State.syncDecksList();
@@ -296,7 +296,7 @@ Object.assign(Arena, {
     container.innerHTML = seasons.map(season => {
       const rows = sortedEntries.filter(item => item.season === season);
       const head = seasons.length > 1
-        ? `<h3 class="group-label">Temporada ${esc(season)} · ${plural(rows.length, 'torneo', 'torneos')}</h3>`
+        ? `<h3 class="group-label">Temporada ${esc(season)} · ${countEntries(rows)}</h3>`
         : '';
       return head + `<ul class="log">` + rows.map(item =>
         logRowHtml(item, { mode: 'deck', fresh: item === this._fresh, delIdx: State.historic.indexOf(item) })

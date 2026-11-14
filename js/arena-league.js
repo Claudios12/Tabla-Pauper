@@ -322,7 +322,40 @@ Object.assign(Arena, {
     this._playerOpener = opener || document.activeElement;
     this._playerKey = key;
     this.renderPlayer();
+    // The card opens on the points: that is what a tap on a player asks first. The names are a tap away.
+    this.showPlayerTab('points');
     dialog.showModal();
+  },
+
+  // The two views of the card: the player's points month by month, and the names the player counts.
+  showPlayerTab(tab) {
+    document.getElementById("pl-points-pane").hidden = tab !== 'points';
+    document.getElementById("pl-names-pane").hidden = tab !== 'names';
+    document.querySelectorAll("#player-dialog .js-player-tab").forEach(button => button.setAttribute("aria-pressed", String(button.dataset.tab === tab)));
+  },
+
+  // The player's points as the store's own summary lists them: each month with its sum and, under it, every night of that month
+  // (the night's points and its reto), then the total, which is the figure the league table shows.
+  playerPointsHtml(player, table) {
+    const months = League.breakdown(player, table.nightDates);
+    if (!months.length) return '<p class="empty">Este jugador aún no tiene noches en la tabla.</p>';
+    const withRetos = player.retoPts > 0;
+    const monthName = (key) => {
+      if (!key) return 'Sin fecha';
+      const name = new Intl.DateTimeFormat('es', { month: 'long' }).format(Analytics.parseDate(`${key}-01`));
+      return name.charAt(0).toUpperCase() + name.slice(1);
+    };
+    const reto = (value) => (value ? `+${nf0.format(value)}` : '—');
+    const cells = (item) => (withRetos ? `<td>${nf0.format(item.base)}</td><td>${reto(item.reto)}</td>` : '') + `<td>${nf0.format(item.total)}</td>`;
+    const body = months.map(month => `<tbody><tr class="points-month"><th scope="rowgroup">${esc(monthName(month.key))} <small>· ${plural(month.nights.length, 'noche', 'noches')}</small></th>${cells(month)}</tr>`
+      + month.nights.map(night => `<tr><th class="points-night" scope="row">${esc(night.iso ? this.dayLabel(night.iso) : 'Sin fecha')}</th>${cells(night)}</tr>`).join('')
+      + `</tbody>`).join('');
+    const sum = { base: player.pts - player.retoPts, reto: player.retoPts, total: player.pts };
+    return `<div class="table-wrap" role="region" aria-label="Puntos de ${esc(player.name)} por mes" tabindex="0"><table class="month-grid points-grid">`
+      + `<caption>Puntos de ${esc(player.name)} en ${esc(this._board.season)}, mes por mes y noche por noche</caption>`
+      + `<thead><tr><th scope="col">Fecha</th>${withRetos ? '<th scope="col">Puntos</th><th scope="col">Reto</th>' : ''}<th scope="col">${withRetos ? 'Total' : 'Puntos'}</th></tr></thead>`
+      + body
+      + `<tfoot><tr><th scope="row">Total</th>${cells(sum)}</tr></tfoot></table></div>`;
   },
 
   // The card, drawn from the table as it is now.
@@ -331,7 +364,8 @@ Object.assign(Arena, {
     const player = this.playerOf(this._playerKey);
     if (!player) { document.getElementById("player-dialog").close(); return; }
     document.getElementById("pl-title").textContent = player.name;
-    document.getElementById("pl-body").textContent = `${plural(player.nights, 'torneo', 'torneos')} · ${nf0.format(player.pts)} pts en ${this._board.season}. Si la tienda escribió mal un nombre, únelo aquí y se cuenta con este jugador en todas las noches, las que ya guardaste y las que vengan.`;
+    document.getElementById("pl-body").textContent = `${player.rank}° · ${plural(player.nights, 'torneo', 'torneos')} · ${nf0.format(player.pts)} pts en ${this._board.season}.`;
+    document.getElementById("pl-points").innerHTML = this.playerPointsHtml(player, table);
     const names = document.getElementById("pl-names");
     names.innerHTML = player.members.map(m => `<li><span>${esc(m.name)} <small>${plural(m.nights, 'noche', 'noches')}</small></span>`
       + (player.members.length > 1 ? `<button class="btn btn-secondary" type="button" data-key="${esc(m.key)}" onclick="Arena.separateName(this.dataset.key)" aria-label="Separar «${esc(m.name)}» de ${esc(player.name)}">Separar</button>` : '')
@@ -666,7 +700,8 @@ Object.assign(Arena, {
     // A night made from the store's table for this day gives way to the tournament's own table, and brings what it lacks.
     const madeNight = State.historic.find(item => isStoreNight(item) && item.isoDate === entry.isoDate);
     if (madeNight) {
-      entry.playerResults = League.absorb(entry.playerResults, madeNight.playerResults).rows;
+      const same = League.who(State.historic.filter(item => item.season === entry.season));
+      entry.playerResults = League.absorb(entry.playerResults, madeNight.playerResults, same).rows;
       State.historic.splice(State.historic.indexOf(madeNight), 1);
     }
     State.save();
