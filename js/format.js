@@ -4,7 +4,7 @@
          shortDate, TRASH_ICON, EDIT_ICON, logRowHtml, pickLead, deckExtremes, statusPillClass, deckPillHtml,
          deltaHtml, localIsoDate, seasonOf, SEASON_FORMAT, nextSeason, seasonEndBounds, isIsoDate,
          cleanSeasonEnds, cleanSeasonTop, longDate, deckNameWithColours, weekdayName, cleanProfile,
-         PROFILE_NAME_MAX, isStoreNight, tournamentType, countEntries, cleanNameLinks */
+         PROFILE_NAME_MAX, isStoreNight, tournamentType, countEntries, cleanNameLinks, cleanRounds */
 
 // ══════════════════════════════════════════════════════════════════
 // DISPLAY HELPERS (formatting, deck names as mana pips)
@@ -90,6 +90,15 @@ const cleanNameLinks = (raw) => {
     .slice(0, 1000).map(([a, b]) => [a.trim(), b.trim()]);
   return { same: pairs(raw.same), apart: pairs(raw.apart) };
 };
+
+// The rounds of a tournament as the person marked them on the night, whatever a backup put there: [{ r: 'W'|'L'|'D'|'B', vs }], at
+// most nine (the record allows no more), the opponent's deck a short text or ''. 'B' is a bye: a win (3 points, as the standings
+// count it) with no opponent, so its vs is always ''. Anything else is dropped; [] when there are none.
+const ROUND_RESULTS = ['W', 'L', 'D', 'B'];
+const cleanRounds = (raw) => (Array.isArray(raw) ? raw : [])
+  .filter(round => round && typeof round === 'object' && ROUND_RESULTS.includes(round.r))
+  .slice(0, 9)
+  .map(round => ({ r: round.r, vs: round.r !== 'B' && typeof round.vs === 'string' ? round.vs.replace(/\s+/g, ' ').trim().slice(0, 40) : '' }));
 
 // A night made from the store's monthly table: nobody's tournament, only a table (see Monthly.create). It is told apart by both marks
 // (`source` alone is not enough: a backup edited by hand could put it on a real tournament, which must stay one).

@@ -41,6 +41,8 @@ const Arena = {
     if ('ResizeObserver' in window && wrap) new ResizeObserver(() => this.renderPointsChart()).observe(wrap);
     else window.addEventListener('resize', () => this.renderPointsChart());
     this.bindShell();
+    // A night being marked round by round survives closing the app.
+    this.restoreDraft();
     window.addEventListener('storage', (e) => this.onStorageChange(e));
     this.offerUnreadableCopy();
   },

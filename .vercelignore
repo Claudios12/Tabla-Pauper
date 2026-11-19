@@ -1,0 +1,5 @@
+# Not part of the site: the checks, their tests and the notes for whoever works on the code.
+.github
+tests
+tools
+CLAUDE.md

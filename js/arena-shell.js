@@ -178,6 +178,8 @@ Object.assign(Arena, {
     this.dropMonth();
     this.populateDeckPickers();
     this.refreshAll();
+    // The rounds being marked belong to the data just left: the test mode has its own (and loses it when it ends).
+    this.restoreDraft();
   },
 
   // Leaves the app as if it had just been opened for the first time.
@@ -193,6 +195,7 @@ Object.assign(Arena, {
     this.dropMonth();
     this.populateDeckPickers();
     this.refreshAll();
+    this.restoreDraft();
     this.notify("Datos borrados: la app quedó como recién abierta.", {
       action: { label: 'Deshacer', run: () => { this.restoreSnapshot(before); this.notify('Tus datos volvieron a como estaban.'); } }
     });

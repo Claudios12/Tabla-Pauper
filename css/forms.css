@@ -291,3 +291,91 @@ legend { padding: 0; margin-block-end: 8px; }
 /* Inline field errors */
 .field-error { font-size: 13px; color: var(--color-bad); }
 .input-ctrl[aria-invalid="true"] { border-color: #fb7185; }
+
+/* Round by round: the night marked as it is played. The rounds are a list of buttons (tap one to change it), the results reuse
+   the record chips and their win/loss/draw dots. */
+.rounds-panel { margin-block-end: 16px; }
+.rounds-toggle { min-height: 44px; }
+.rounds-panel[open] .how-to-chevron { transform: rotate(180deg); }
+.rounds-body {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.rounds-next {
+  align-self: center;
+  font-size: 14px;
+  font-weight: 500;
+  font-variant-numeric: tabular-nums;
+}
+.rounds-list {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.rounds-list:empty { display: none; }
+.round-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  inline-size: 100%;
+  min-height: 44px;
+  padding-block: 8px;
+  padding-inline: 12px;
+  font: inherit;
+  font-size: 14px;
+  text-align: start;
+  color: var(--text-primary);
+  background-color: var(--surface-2);
+  border: 0;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  transition: background-color .15s;
+}
+.round-item:hover,
+.round-item.is-editing { background-color: var(--surface-3); }
+.round-n { min-width: 26px; color: var(--text-muted); font-variant-numeric: tabular-nums; }
+.round-result { min-width: 56px; font-weight: 500; }
+.round-vs { min-width: 0; color: var(--text-secondary); overflow-wrap: anywhere; }
+.rounds-editor {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 12px;
+  border-radius: var(--radius-sm);
+  background-color: var(--surface-2);
+}
+.rounds-editor .btn,
+.rounds-resume .btn,
+.round-conflict .btn { width: auto; }
+/* The two records disagree: the person picks. A tinted box, a status colour only behind the words that say it. */
+.round-conflict,
+.rounds-resume {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 12px;
+  border-radius: var(--radius-sm);
+  background-color: var(--pill-avg-bg);
+}
+.round-conflict { margin-block-end: 16px; }
+.round-conflict[hidden],
+.rounds-resume[hidden] { display: none; }
+.round-conflict-text { font-size: 14px; color: var(--text-primary); }
+@media (prefers-reduced-motion: reduce) {
+  .round-item { transition: none; }
+}
+
+/* The night is over: its summary and the next step, in place of the round buttons. */
+.rounds-end { align-self: flex-start; width: auto; }
+.rounds-done {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 12px;
+  border-radius: var(--radius-sm);
+  background-color: var(--pill-good-bg);
+}
+.rounds-done[hidden] { display: none; }
+.rounds-done .btn { width: auto; }
+.rounds-done:focus-visible { outline: 2px solid var(--color-brand); outline-offset: 2px; }

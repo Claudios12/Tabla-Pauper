@@ -319,13 +319,19 @@ Object.assign(Arena, {
       if (field && (!adding || field.value === '')) field.value = value;
     };
     const record = Analytics.parseWLD(me.wl);
+    // While the night is being marked round by round, the rounds are the record: the screenshot gives the place and its printed
+    // points, and its record is only compared (Arena.noteScanRecord asks the person when the two differ).
+    const rounds = this.hasDraftRounds();
     if (me.rank) put("log-rank", me.rank);
-    if (record) {
+    if (record && !rounds) {
       put("log-w", record.w);
       put("log-l", record.l);
       put("log-d", record.d);
     }
-    if (me.pts !== null) put("log-pts", me.pts);
+    if (rounds) {
+      if (me.pts !== null) document.getElementById("log-pts").value = me.pts;
+      this.noteScanRecord(record, me.pts);
+    } else if (me.pts !== null) put("log-pts", me.pts);
     else if (record && !adding) this.autoCalculatePointsFromRecord();
     return record;
   },

@@ -34,6 +34,9 @@ Object.assign(Arena, {
     this.renderLeagueSummary(season, entries, table);
     this.renderLeagueAsk(season);
     this.renderLeagueRisk(season, table, outlook);
+    this.renderLeagueNeed(table, outlook);
+    this.renderLeagueRivals(entries, table);
+    this.renderLeagueProgress(season, entries, table);
     this.renderMonth();
     this.renderLeagueBoard(season, table);
   },
@@ -127,12 +130,16 @@ Object.assign(Arena, {
       // A name the screen cut short that the league could tie to nobody (no longer spelling starts with it, or two do): its points
       // sit apart from whoever it is, so the row says so. The card lists the players it could be.
       const cutOnly = p.members.every(m => League.isTruncated(m.name));
-      const maybe = (p.nights <= 1 && League.similar(table.players, p).length) || League.repeats(table.players, p).length
-        ? '<span class="pill">¿Repetido?</span>'
-        : (cutOnly ? '<span class="pill">Nombre cortado</span>' : '');
+      const flag = (p.nights <= 1 && League.similar(table.players, p).length) || League.repeats(table.players, p).length
+        ? '¿Repetido?' : (cutOnly ? 'Nombre cortado' : '');
+      // The warning is a button of its own, beside the one that opens the card (a button cannot hold another): it opens the card on
+      // "Nombres", where the repeated row is joined or the cut-off name is given to its player.
+      const fix = flag
+        ? `<button class="pill pill-action js-fix-name" type="button" data-key="${esc(p.members[0].key)}" onclick="Arena.openPlayer(this.dataset.key, this, 'names')" aria-haspopup="dialog" aria-label="${esc(flag)} Revisar el nombre de ${esc(p.name)}">${esc(flag)}</button>`
+        : '';
       return `<li class="board-row js-board-row ${p.isMe ? 'is-me' : ''} ${p.mark === 'in' ? 'is-clinched' : (p.mark === 'out' ? 'is-out' : '')}"${p.isMe ? ' aria-current="true"' : ''}>`
         + `<span class="board-rank">${p.rank}°</span>`
-        + `<button class="board-main js-open-player" type="button" data-key="${esc(p.members[0].key)}" onclick="Arena.openPlayer(this.dataset.key, this)" aria-haspopup="dialog"><span class="board-name"><span class="title-text">${esc(p.name)}</span>${p.isMe ? '<span class="pill">Tú</span>' : ''}${maybe}${decided}</span><span class="board-sub">${sub}</span><span class="visually-hidden">. Abre sus nombres para corregirlos.</span></button>`
+        + `<div class="board-cell"><button class="board-main js-open-player" type="button" data-key="${esc(p.members[0].key)}" onclick="Arena.openPlayer(this.dataset.key, this)" aria-haspopup="dialog"><span class="board-name"><span class="title-text">${esc(p.name)}</span>${p.isMe ? '<span class="pill">Tú</span>' : ''}${decided}</span><span class="board-sub">${sub}</span><span class="visually-hidden">. Abre sus puntos y sus nombres.</span></button>${fix}</div>`
         + `<b class="board-pts">${nf0.format(p.pts)}<small class="board-unit"> pts</small></b></li>`;
     };
     const list = (players, cls = '') => `<ol class="board ${cls}">${players.map(row).join('')}</ol>`;
@@ -323,14 +330,15 @@ Object.assign(Arena, {
     return table ? table.players.find(p => p.members.some(m => m.key === key)) || null : null;
   },
 
-  openPlayer(key, opener) {
+  // tab: which view the card opens on ('points', or 'names' from a row's name warning).
+  openPlayer(key, opener, tab = 'points') {
     const dialog = document.getElementById("player-dialog");
     if (!dialog || typeof dialog.showModal !== 'function' || !this.playerOf(key)) return;
     this._playerOpener = opener || document.activeElement;
     this._playerKey = key;
     this.renderPlayer();
-    // The card opens on the points: that is what a tap on a player asks first. The names are a tap away.
-    this.showPlayerTab('points');
+    // The card opens on the points: that is what a tap on a player asks first. The names are a tap away (or first, from a warning).
+    this.showPlayerTab(tab === 'names' ? 'names' : 'points');
     dialog.showModal();
   },
 

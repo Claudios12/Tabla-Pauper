@@ -253,6 +253,8 @@ Object.assign(Arena, {
   renderMonth(open = false) {
     const card = document.getElementById("league-month");
     if (!card) return;
+    // Open or closed as the person left it, the first time it is drawn (see Arena.foldCard); a table just read opens it.
+    if (!card.dataset.foldInit) { card.dataset.foldInit = '1'; card.open = this.isFoldOpen('month'); }
     if (open) card.open = true;
     const result = document.getElementById("month-result");
     if (!result) return;

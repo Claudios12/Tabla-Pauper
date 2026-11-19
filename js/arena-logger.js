@@ -1,6 +1,6 @@
 // Arena: the Registrar form, its live preview and the OCR scan.
 /* global CONFIG, State, Analytics, League, pct, plural, deckInfo, logRowHtml, localIsoDate, seasonOf,
-         isStoreNight, tournamentType, Arena */
+         isStoreNight, tournamentType, cleanRounds, esc, isIsoDate, Arena */
 
 Object.assign(Arena, {
   // ─────────────────────────────────────────────────────────────
@@ -83,6 +83,8 @@ Object.assign(Arena, {
 
     this.renderSameDay();
     this.syncRecordUi();
+    // A night being marked round by round belongs to the date and deck the form shows.
+    if (this._draft) this.persistDraft();
   },
 
   // ─────────────────────────────────────────────────────────────
@@ -176,6 +178,11 @@ Object.assign(Arena, {
     }
     this.clearFieldErrors();
     this.setStatus('');
+    if (this._recordConflict) {
+      this.setStatus('Antes de guardar, elige tu récord: el de tu cuenta ronda a ronda o el de la captura.', "var(--color-bad)");
+      document.getElementById("round-conflict")?.focus();
+      return;
+    }
     const errors = [];
     const fail = (inputId, message, errId) => errors.push(this.fieldError(inputId, message, errId));
 
@@ -255,6 +262,9 @@ Object.assign(Arena, {
       notes: val("log-notes")
     };
     // Only what the General tab adds up is stored: the name, the points and, when it was read cleanly, the record.
+    // The rounds marked during the night go with it (see addRound): an optional field, read only through cleanRounds.
+    const rounds = this.hasDraftRounds() ? cleanRounds(this._draft.rounds) : [];
+    if (rounds.length) entry.rounds = rounds;
     if (tableRows.length) entry.playerResults = tableRows.map(row => (row.wl ? { name: row.name, pts: row.pts, wl: row.wl } : { name: row.name, pts: row.pts }));
 
     const before = this.snapshot();
@@ -275,6 +285,8 @@ Object.assign(Arena, {
     // Undo takes the tournament out of the history, but the table took a while to check: it goes back to the form.
     const keptScan = { rows: this._scanned.map(row => ({ ...row, flags: [...row.flags] })), notes: { ...this._scanNotes } };
     this.clearScannedStandings();
+    const keptDraft = this._draft ? { ...this._draft, rounds: this._draft.rounds.map(round => ({ ...round })) } : null;
+    this.forgetDraft();
 
     // Land where the new row can be found, even if the season filter would hide it.
     if (this.currentFilterSeason !== 'all' && this.currentFilterSeason !== entry.season) {
@@ -325,6 +337,7 @@ Object.assign(Arena, {
         label: 'Deshacer',
         run: () => {
           this.restoreSnapshot(before);
+          if (keptDraft) { State.saveDraft(keptDraft); this.applyDraft(keptDraft); }
           if (keptScan.rows.length) {
             this._scanned = keptScan.rows;
             this._scanNotes = keptScan.notes;
@@ -335,5 +348,310 @@ Object.assign(Arena, {
         }
       }
     });
+  },
+  // ─────────────────────────────────────────────────────────────
+  // ROUND BY ROUND: the night marked as it is played, kept as a draft on the device until the tournament is saved
+  // ─────────────────────────────────────────────────────────────
+  // The draft is { date, deck, rounds: [{ r: 'W'|'L'|'D', vs }] } (State.loadDraft / saveDraft). Every change is written at
+  // once, so closing the app on the night loses nothing. The rounds fill the record fields; the screenshot, read at the end,
+  // fills only what it alone knows (the place and the printed points), and when its record says otherwise the person picks
+  // (`_recordConflict`): nothing is saved until they do.
+  _draft: null,
+  _draftPending: null,
+  _roundEdit: -1,
+  _recordConflict: null,
+  _scanPts: null,
+  ROUND_WORDS: { W: 'Gané', L: 'Perdí', D: 'Empaté', B: 'Bye' },
+
+  // Focus on the first button of the next round ("Gané"): the label beside it is text and cannot take focus.
+  focusRoundButtons() {
+    document.querySelector("#rounds-panel .rounds-body > .preset-records button")?.focus();
+  },
+
+  hasDraftRounds() {
+    return !!(this._draft && this._draft.rounds.length);
+  },
+
+  roundsRecord(rounds = this._draft ? this._draft.rounds : []) {
+    // A bye is a win: 3 points, and a win in the record, as the standings screen counts it.
+    return { w: rounds.filter(round => round.r === 'W' || round.r === 'B').length, l: rounds.filter(round => round.r === 'L').length, d: rounds.filter(round => round.r === 'D').length };
+  },
+
+  recordText({ w, l, d }) {
+    return `${w}-${l}-${d}`;
+  },
+
+  // On opening (and on leaving the test mode, or after a wipe): a draft of today is simply put back; one of another day is
+  // offered, since the person may have forgotten to save it.
+  restoreDraft() {
+    this._draft = null;
+    this._draftPending = null;
+    this._roundEdit = -1;
+    this._recordConflict = null;
+    this._scanPts = null;
+    const draft = State.loadDraft();
+    if (draft && draft.rounds.length) {
+      if (draft.date && draft.date !== localIsoDate()) this._draftPending = draft;
+      else this.applyDraft(draft);
+    }
+    this.renderRounds();
+    this.renderConflict();
+  },
+
+  applyDraft(draft) {
+    this._draft = { date: draft.date, deck: draft.deck, rounds: draft.rounds.map(round => ({ ...round })), done: draft.done === true };
+    this._draftPending = null;
+    const date = document.getElementById("log-date");
+    if (date && draft.date) date.value = draft.date;
+    const deck = document.getElementById("log-deck");
+    if (deck && draft.deck && State.decksList.includes(draft.deck)) { deck.value = draft.deck; this._deckPicked = true; this.syncCustomDeckGroup(); }
+    document.getElementById("rounds-panel").open = true;
+    this.syncRoundsToForm();
+    this.renderRounds();
+  },
+
+  resumeDraft() {
+    if (!this._draftPending) return;
+    this.applyDraft(this._draftPending);
+    this.focusRoundButtons();
+  },
+
+  async discardDraft() {
+    const draft = this._draftPending || this._draft;
+    if (!draft) return;
+    this.forgetDraft();
+    ["log-w", "log-l", "log-d", "log-pts"].forEach(id => { const field = document.getElementById(id); if (field) field.value = ''; });
+    this.renderLogPreview();
+    this.focusRoundButtons();
+    this.notify(`Se descartó la cuenta de ${plural(draft.rounds.length, 'ronda', 'rondas')}.`, {
+      action: { label: 'Deshacer', run: () => { State.saveDraft(draft); this.applyDraft(draft); this.notify('La cuenta de rondas volvió.'); } }
+    });
+  },
+
+  // The draft goes (saved as a tournament, or thrown away).
+  forgetDraft() {
+    this._draft = null;
+    this._draftPending = null;
+    this._roundEdit = -1;
+    this._recordConflict = null;
+    this._scanPts = null;
+    State.saveDraft(null);
+    this.renderRounds();
+    this.renderConflict();
+  },
+
+  persistDraft() {
+    if (!this._draft) return;
+    const date = document.getElementById("log-date")?.value || '';
+    this._draft.date = isIsoDate(date) ? date : this._draft.date;
+    const deck = this.formDeck();
+    if (deck && deck !== 'other') this._draft.deck = deck;
+    State.saveDraft(this._draft);
+  },
+
+  // A night has as many rounds as people came (three, four, five): the person says when it is over. The rounds stop being asked
+  // for, the night is summed up, and the next step is offered: the screenshot for the place and the points, then Guardar. A round
+  // can still be changed, and "Agregar otra ronda" opens the night again.
+  endNight() {
+    if (!this.hasDraftRounds()) return;
+    this._draft.done = true;
+    this._roundEdit = -1;
+    this.persistDraft();
+    this.renderRounds();
+    document.getElementById("rounds-done")?.focus();
+  },
+
+  reopenNight() {
+    if (!this._draft) return;
+    this._draft.done = false;
+    this.persistDraft();
+    this.renderRounds();
+    this.focusRoundButtons();
+  },
+
+  // From the end of the night straight to the screenshot: the scan panel opens and the file picker with it.
+  pickNightScreenshot() {
+    if (document.getElementById("ocr-trigger")?.getAttribute("aria-expanded") !== "true") this.toggleOcrAccordion();
+    const input = document.getElementById("ocr-file");
+    if (!input) return;
+    input.scrollIntoView({ block: 'center' });
+    input.click();
+  },
+
+  addRound(result) {
+    if (this._draft && this._draft.done) return;
+    if (this._draftPending) { this.setStatus('Primero continúa o descarta la noche sin terminar de arriba.', "var(--color-bad)"); return; }
+    if (!this._draft) this._draft = { date: null, deck: '', rounds: [] };
+    if (this._draft.rounds.length >= 9) { this.setStatus('Un torneo de más de 9 rondas parece un error: revisa las que marcaste.', "var(--color-bad)"); return; }
+    this._draft.rounds.push({ r: result, vs: '' });
+    // A bye has no opponent to write: the round is done, and the next one is ready.
+    this._roundEdit = result === 'B' ? -1 : this._draft.rounds.length - 1;
+    this.persistDraft();
+    this.syncRoundsToForm();
+    this.renderRounds();
+    // Otherwise straight to the opponent's deck: it is the next thing to write, and "Listo" leaves it blank.
+    if (result === 'B') this.focusRoundButtons(); else document.getElementById("round-vs")?.focus();
+  },
+
+  editRound(index) {
+    if (!this._draft || !this._draft.rounds[index]) return;
+    this._roundEdit = index;
+    this.renderRounds();
+    document.getElementById("round-vs")?.focus();
+  },
+
+  setRoundResult(result) {
+    const round = this._draft && this._draft.rounds[this._roundEdit];
+    if (!round) return;
+    round.r = result;
+    if (result === 'B') round.vs = '';
+    this.persistDraft();
+    this.syncRoundsToForm();
+    this.renderRounds();
+  },
+
+  setRoundDeck(value) {
+    const round = this._draft && this._draft.rounds[this._roundEdit];
+    if (!round || round.r === 'B') return;
+    round.vs = String(value || '').replace(/\s+/g, ' ').trim().slice(0, 40);
+    this.persistDraft();
+    this.renderRoundList();
+  },
+
+  closeRoundEditor() {
+    const at = this._roundEdit;
+    this._roundEdit = -1;
+    this.renderRounds();
+    const back = document.querySelectorAll("#rounds-list .js-round-item")[at];
+    if (back) back.focus(); else this.focusRoundButtons();
+  },
+
+  removeRound() {
+    if (!this._draft || !this._draft.rounds[this._roundEdit]) return;
+    this._draft.rounds.splice(this._roundEdit, 1);
+    this._roundEdit = -1;
+    if (!this._draft.rounds.length) {
+      this.forgetDraft();
+      ["log-w", "log-l", "log-d", "log-pts"].forEach(id => { const field = document.getElementById(id); if (field) field.value = ''; });
+      this.renderLogPreview();
+    } else {
+      this.persistDraft();
+      this.syncRoundsToForm();
+      this.renderRounds();
+    }
+    this.focusRoundButtons();
+  },
+
+  // The rounds are the record. Points follow it, unless the screenshot printed others (special events score differently).
+  syncRoundsToForm() {
+    if (!this.hasDraftRounds()) return;
+    const { w, l, d } = this.roundsRecord();
+    this.setRecordPreset(w, l, d);
+    if (this._scanPts !== null) {
+      document.getElementById("log-pts").value = this._scanPts;
+      this.renderLogPreview();
+    }
+    // Fixing a round so the two records agree settles the question by itself.
+    if (this._recordConflict && this.recordText(this._recordConflict.theirs) === this.recordText({ w, l, d })) this._recordConflict = null;
+    this.renderConflict();
+  },
+
+  // What the screenshot says of the person's own row, while rounds are being kept: its place and points go in the form (done by
+  // fillFormFromRow), its record is only compared.
+  noteScanRecord(record, pts) {
+    if (pts !== null && pts !== undefined) this._scanPts = pts;
+    const mine = this.roundsRecord();
+    this._recordConflict = record && this.recordText(record) !== this.recordText(mine) ? { theirs: { w: record.w, l: record.l, d: record.d } } : null;
+    this.renderConflict();
+  },
+
+  useMyRecord() {
+    if (!this._recordConflict) return;
+    this._recordConflict = null;
+    this.renderConflict();
+    this.setStatus(`Se guardará tu cuenta: ${this.recordText(this.roundsRecord())}.`, "var(--text-secondary)");
+    document.querySelector(".js-save-button")?.focus();
+  },
+
+  useScanRecord() {
+    if (!this._recordConflict) return;
+    const { w, l, d } = this._recordConflict.theirs;
+    this._recordConflict = null;
+    this.setRecordPreset(w, l, d);
+    if (this._scanPts !== null) document.getElementById("log-pts").value = this._scanPts;
+    this.renderLogPreview();
+    this.renderConflict();
+    this.setStatus(`Se guardará el récord de la captura: ${w}-${l}-${d}. Tus rondas se guardan como las marcaste.`, "var(--text-secondary)");
+    document.querySelector(".js-save-button")?.focus();
+  },
+
+  renderConflict() {
+    const box = document.getElementById("round-conflict");
+    if (!box) return;
+    const conflict = this._recordConflict;
+    box.hidden = !conflict;
+    if (!conflict) { box.innerHTML = ''; return; }
+    const mine = this.recordText(this.roundsRecord()), theirs = this.recordText(conflict.theirs);
+    box.innerHTML = `<p class="round-conflict-text">Tu cuenta ronda a ronda dice <strong>${mine}</strong> y la captura dice <strong>${theirs}</strong>. ¿Cuál es tu récord de esta noche? Si marcaste mal una ronda, corrígela arriba y esto se resuelve solo.</p>`
+      + `<div class="btn-row"><button class="btn btn-secondary" type="button" onclick="Arena.useMyRecord()">Usar la mía (${mine})</button>`
+      + `<button class="btn btn-secondary" type="button" onclick="Arena.useScanRecord()">Usar la de la captura (${theirs})</button></div>`;
+  },
+
+  // The opponent decks the person has written before, for the field's suggestions: theirs alone, nothing shipped with the app.
+  opponentDecks() {
+    const seen = new Map();
+    State.historic.forEach(entry => cleanRounds(entry.rounds).forEach(round => { if (round.vs && !seen.has(round.vs.toLowerCase())) seen.set(round.vs.toLowerCase(), round.vs); }));
+    (this._draft ? this._draft.rounds : []).forEach(round => { if (round.vs && !seen.has(round.vs.toLowerCase())) seen.set(round.vs.toLowerCase(), round.vs); });
+    return [...seen.values()].sort((a, b) => a.localeCompare(b, 'es'));
+  },
+
+  renderRoundList() {
+    const list = document.getElementById("rounds-list");
+    if (!list) return;
+    const rounds = this._draft ? this._draft.rounds : [];
+    list.innerHTML = rounds.map((round, i) => `<li><button class="round-item js-round-item${i === this._roundEdit ? ' is-editing' : ''}" type="button" onclick="Arena.editRound(${i})" aria-label="Ronda ${i + 1}: ${this.ROUND_WORDS[round.r]}${round.r === 'B' ? ', sin rival' : (round.vs ? `, contra ${esc(round.vs)}` : ', rival sin anotar')}. Cambiarla">`
+      + `<span class="round-n">R${i + 1}</span><i class="dot ${round.r === 'W' || round.r === 'B' ? 'win' : (round.r === 'L' ? 'loss' : 'draw')}" aria-hidden="true"></i><span class="round-result">${this.ROUND_WORDS[round.r]}</span>`
+      + `<span class="round-vs">${round.r === 'B' ? 'sin rival (3 pts)' : (round.vs ? `vs ${esc(round.vs)}` : 'rival sin anotar')}</span></button></li>`).join('');
+  },
+
+  renderRounds() {
+    const panel = document.getElementById("rounds-panel");
+    if (!panel) return;
+    const rounds = this._draft ? this._draft.rounds : [];
+    const resume = document.getElementById("rounds-resume");
+    const pending = this._draftPending;
+    resume.hidden = !pending;
+    if (pending) {
+      panel.open = true;
+      const day = pending.date ? new Intl.DateTimeFormat('es', { day: 'numeric', month: 'short' }).format(Analytics.parseDate(pending.date)) : 'otro día';
+      resume.innerHTML = `<p class="round-conflict-text">Tienes una noche sin guardar del ${esc(day)}: ${plural(pending.rounds.length, 'ronda', 'rondas')} (${this.recordText(this.roundsRecord(pending.rounds))}).</p>`
+        + `<div class="btn-row"><button class="btn btn-secondary" type="button" onclick="Arena.resumeDraft()">Continuar esa noche</button><button class="btn btn-secondary" type="button" onclick="Arena.discardDraft()">Descartarla</button></div>`;
+    } else resume.innerHTML = '';
+    this.renderRoundList();
+    const record = this.roundsRecord();
+    // The night is over: no more rounds are asked for, and what comes next is said.
+    const done = !!(this._draft && this._draft.done && rounds.length);
+    document.getElementById("rounds-add").hidden = done;
+    document.getElementById("rounds-end").hidden = done || !rounds.length;
+    const doneBox = document.getElementById("rounds-done");
+    doneBox.hidden = !done;
+    doneBox.innerHTML = !done ? '' : `<p class="round-conflict-text"><strong>Noche terminada:</strong> ${plural(rounds.length, 'ronda', 'rondas')} · ${this.recordText(record)} · ${record.w * 3 + record.d} pts. Ahora sube la captura de la tabla para tu puesto y los puntos oficiales, o guarda el torneo si no la tienes.</p>`
+      + `<div class="btn-row"><button class="btn btn-primary" type="button" onclick="Arena.pickNightScreenshot()">Subir la captura</button><button class="btn btn-secondary" type="button" onclick="Arena.reopenNight()">Agregar otra ronda</button></div>`;
+    document.getElementById("rounds-next").textContent = rounds.length
+      ? `Ronda ${rounds.length + 1} (vas ${this.recordText(record)}):`
+      : 'Ronda 1:';
+    const editor = document.getElementById("rounds-editor");
+    const round = rounds[this._roundEdit];
+    editor.hidden = !round;
+    if (round) {
+      document.getElementById("round-edit-title").textContent = `Ronda ${this._roundEdit + 1}:`;
+      document.getElementById("round-vs-label").textContent = `Mazo del rival en la ronda ${this._roundEdit + 1}`;
+      // A bye has no rival: the field goes while the round is one.
+      document.getElementById("round-vs").closest(".field").hidden = round.r === 'B';
+      const input = document.getElementById("round-vs");
+      if (document.activeElement !== input) input.value = round.vs;
+      editor.querySelectorAll(".js-round-result").forEach(button => button.setAttribute("aria-pressed", String(button.dataset.r === round.r)));
+      document.getElementById("round-vs-list").innerHTML = this.opponentDecks().map(name => `<option value="${esc(name)}"></option>`).join('');
+    }
   },
 });

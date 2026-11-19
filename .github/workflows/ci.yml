@@ -1,0 +1,46 @@
+# Checks every push and every pull request into main. Deploying is not here: Vercel publishes each push by itself.
+# Nothing to install: the app has no build step, and the checks and tests run on plain Node.
+name: CI
+
+on:
+  push:
+    branches: ['**']
+  pull_request:
+    branches: [main]
+
+# A newer push to the same branch makes an older run pointless.
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  checks:
+    name: Revisar y probar
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Descargar el código
+        uses: actions/checkout@v7
+        with:
+          # The whole history, so tools/check-repo.js can compare sw.js with production (origin/main).
+          fetch-depth: 0
+
+      - name: Preparar Node
+        uses: actions/setup-node@v7
+        with:
+          node-version: '20'
+
+      - name: Sintaxis de los scripts
+        run: |
+          for f in js/*.js sw.js tools/*.js tests/*.js; do
+            node --check "$f"
+          done
+
+      - name: Repositorio en orden
+        run: node tools/check-repo.js
+
+      - name: Pruebas
+        run: node --test tests/

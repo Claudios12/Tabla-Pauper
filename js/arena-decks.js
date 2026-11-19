@@ -192,6 +192,21 @@ Object.assign(Arena, {
     const statusLabel = stat.count === 0 ? 'Sin torneos' : stat.status.label;
     const statusDesc = stat.count === 0 ? `No jugaste este mazo${this.inSeason() || ' todavía'}.` : stat.status.desc;
 
+    // How the deck did against each opponent deck, from the rounds marked on the night (see Arena.addRound). Only when there are some.
+    const matchups = Analytics.matchups(entries, deckName);
+    const matchupHtml = !matchups.some(row => row.vs) ? '' : `
+      <section class="card matchup-card" aria-labelledby="h-matchups">
+        <div class="card-head"><h2 id="h-matchups">Contra qué mazos</h2><span class="sec-meta">${plural(matchups.reduce((sum, row) => sum + row.played, 0), 'ronda', 'rondas')} anotadas</span></div>
+        <div class="table-wrap matchup-wrap" role="region" aria-label="Récord de ${esc(info.name)} contra cada mazo" tabindex="0">
+          <table class="month-grid matchup-grid">
+            <caption>Récord de ${esc(info.name)} contra cada mazo rival${esc(this.inSeason())}, de las rondas que anotaste</caption>
+            <thead><tr><th scope="col">Mazo rival</th><th scope="col">Rondas</th><th scope="col">Récord</th><th scope="col">% victorias</th></tr></thead>
+            <tbody>${matchups.map(row => `<tr><th scope="row">${row.vs ? esc(row.vs) : '<span class="muted">Sin anotar</span>'}</th><td>${row.played}</td><td>${row.w}-${row.l}-${row.d}</td><td class="${row.winRate >= 50 ? 'win-rate-good' : ''}">${pct(row.winRate)}</td></tr>`).join('')}</tbody>
+          </table>
+        </div>
+        <p class="hint matchup-note">Sale de las rondas que marcas en Registrar, en «Llevar la cuenta ronda a ronda». Con pocas rondas contra un mazo, el porcentaje dice poco.</p>
+      </section>`;
+
     container.innerHTML = `
       <div class="cols detail">
         <section class="card card-pad st-${stat.status.class}" aria-labelledby="h-dossier">
@@ -239,6 +254,8 @@ Object.assign(Arena, {
           ${timelineHtml}
         </section>
       </div>
+
+      ${matchupHtml}
 
       <section class="card card-pad detail-danger" aria-labelledby="h-del-deck">
         <h2 class="detail-danger-title" id="h-del-deck">Eliminar este mazo</h2>

@@ -1,5 +1,5 @@
 // Win rates, points, streaks and the other numbers shown on screen.
-/* global CONFIG, State */
+/* global CONFIG, State, cleanRounds */
 /* exported Analytics */
 
 // ══════════════════════════════════════════════════════════════════
@@ -190,6 +190,28 @@ const Analytics = {
       status,
       entries: sortedDeckEntries
     };
+  },
+
+  // How a deck did against each opponent deck, from the rounds the person marked: [{ vs, w, l, d, played, winRate }], the
+  // most played first. Opponent names are one deck whatever their capitals (the first spelling is shown); a round with no
+  // opponent written counts under vs ''. Only rounds read through cleanRounds count.
+  matchups(entries, deckName) {
+    const key = String(deckName || '').trim().toLowerCase();
+    const byDeck = new Map();
+    (entries || []).forEach(entry => {
+      if (typeof entry.deck !== 'string' || entry.deck.trim().toLowerCase() !== key) return;
+      cleanRounds(entry.rounds).forEach(round => {
+        // A bye has no opponent: it is in the record, never in a matchup.
+        if (round.r === 'B') return;
+        const vsKey = round.vs.toLowerCase();
+        if (!byDeck.has(vsKey)) byDeck.set(vsKey, { vs: round.vs, w: 0, l: 0, d: 0 });
+        const row = byDeck.get(vsKey);
+        if (round.r === 'W') row.w++; else if (round.r === 'L') row.l++; else row.d++;
+      });
+    });
+    return [...byDeck.values()]
+      .map(row => ({ ...row, played: row.w + row.l + row.d, winRate: (row.w / (row.w + row.l + row.d)) * 100 }))
+      .sort((a, b) => (b.played - a.played) || (b.winRate - a.winRate) || a.vs.localeCompare(b.vs, 'es'));
   },
 
   getAllDeckStats(entries) {
