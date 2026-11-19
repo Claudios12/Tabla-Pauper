@@ -1,5 +1,5 @@
 // What is saved on this device: history, deleted decks, season end dates, how many qualify in each season, and who the person is.
-/* global CONFIG, Analytics, League, Demo, cleanSeasonEnds, cleanSeasonTop, cleanProfile, cleanNameLinks, isIsoDate, isStoreNight */
+/* global CONFIG, Analytics, League, Demo, cleanSeasonEnds, cleanSeasonTop, cleanProfile, cleanNameLinks, cleanRounds, isIsoDate, isStoreNight */
 /* exported State */
 
 // ══════════════════════════════════════════════════════════════════
@@ -52,6 +52,33 @@ const State = {
 
   nameLinksKey() {
     return CONFIG.isTestMode ? 'pauper_test_arena_name_links' : 'pauper_arena_name_links';
+  },
+
+  // The night being played, round by round, before it is saved (see Arena.addRound): transient, so it is not in a backup or
+  // the undo, but it is the person's, so a wipe and leaving the test mode take it.
+  draftKey() {
+    return CONFIG.isTestMode ? 'pauper_test_arena_draft' : 'pauper_arena_draft';
+  },
+
+  loadDraft() {
+    try {
+      const raw = JSON.parse(localStorage.getItem(this.draftKey()));
+      if (!raw || typeof raw !== 'object') return null;
+      const rounds = cleanRounds(raw.rounds);
+      return { date: isIsoDate(raw.date) ? raw.date : null, deck: typeof raw.deck === 'string' ? raw.deck : '', rounds, done: raw.done === true };
+    } catch (e) {
+      return null;
+    }
+  },
+
+  saveDraft(draft) {
+    try {
+      if (draft && draft.rounds.length) localStorage.setItem(this.draftKey(), JSON.stringify({ ...draft, at: Date.now() }));
+      else localStorage.removeItem(this.draftKey());
+    } catch (e) {
+      this.writeFailed = true;
+      console.warn('Error guardando en localStorage:', e);
+    }
   },
 
   unreadableKey() {
@@ -183,6 +210,7 @@ const State = {
     this.saveProfile();
     this.save();
     this.syncDecksList();
+    this.saveDraft(null);
     // Nothing of the test mode stays behind either (a sample left under its own keys by a page closed in the middle of it).
     this.clearTestData();
   },
@@ -208,7 +236,7 @@ const State = {
 
   // What the test mode left under its own keys.
   clearTestData() {
-    ['historic', 'store_nights', 'deleted_decks', 'season_ends', 'season_top', 'profile', 'name_links'].forEach(name => {
+    ['historic', 'store_nights', 'deleted_decks', 'season_ends', 'season_top', 'profile', 'name_links', 'draft'].forEach(name => {
       try { localStorage.removeItem(`pauper_test_arena_${name}`); } catch (e) {}
     });
   },

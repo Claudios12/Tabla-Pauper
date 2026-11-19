@@ -177,7 +177,13 @@
 
       <div class="league-risk" id="league-risk"></div>
 
-      <details class="card league-month" id="league-month">
+      <div class="league-need" id="league-need"></div>
+
+      <div class="league-rivals" id="league-rivals"></div>
+
+      <div class="league-progress" id="league-progress"></div>
+
+      <details class="card fold league-month" id="league-month" data-fold="month" ontoggle="Arena.rememberFold(this)">
         <summary class="acc-head data-panel-toggle">
           <span>Tabla del mes de la tienda (retos)</span>
           <svg class="chevron" viewBox="0 0 24 24" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg>
@@ -268,6 +274,44 @@
               <span class="field-error js-field-error" id="err-log-rank" hidden></span>
             </div>
           </div>
+
+          <details class="rounds-panel" id="rounds-panel">
+            <summary class="how-to-toggle rounds-toggle">Llevar la cuenta ronda a ronda<svg class="how-to-chevron" viewBox="0 0 24 24" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg></summary>
+            <div class="rounds-body">
+              <p class="hint">Marca cada ronda al terminarla y anota contra qué mazo jugaste (un bye cuenta como victoria, sin rival): el récord se llena solo y queda guardado en tu teléfono aunque cierres la app. Al final de la noche sube la captura de la tabla para el puesto y los puntos.</p>
+              <div class="rounds-resume" id="rounds-resume" hidden></div>
+              <ol class="rounds-list" id="rounds-list"></ol>
+              <div class="rounds-done" id="rounds-done" role="status" tabindex="-1" hidden></div>
+              <div class="preset-records" id="rounds-add" role="group" aria-labelledby="rounds-next">
+                <span class="rounds-next" id="rounds-next">Ronda 1:</span>
+                <button class="preset-chip" type="button" onclick="Arena.addRound('W')"><i class="dot win"></i>Gané</button>
+                <button class="preset-chip" type="button" onclick="Arena.addRound('L')"><i class="dot loss"></i>Perdí</button>
+                <button class="preset-chip" type="button" onclick="Arena.addRound('D')"><i class="dot draw"></i>Empaté</button>
+                <button class="preset-chip" type="button" onclick="Arena.addRound('B')" aria-label="Bye: ronda sin rival, cuenta como victoria"><i class="dot win"></i>Bye</button>
+              </div>
+              <button class="btn btn-secondary rounds-end" id="rounds-end" type="button" onclick="Arena.endNight()" hidden>Terminé la noche</button>
+              <div class="rounds-editor" id="rounds-editor" hidden>
+                <div class="preset-records" role="group" aria-labelledby="round-edit-title">
+                  <span class="rounds-next" id="round-edit-title">Ronda 1:</span>
+                  <button class="preset-chip js-round-result" data-r="W" type="button" onclick="Arena.setRoundResult('W')" aria-pressed="false"><i class="dot win"></i>Gané</button>
+                  <button class="preset-chip js-round-result" data-r="L" type="button" onclick="Arena.setRoundResult('L')" aria-pressed="false"><i class="dot loss"></i>Perdí</button>
+                  <button class="preset-chip js-round-result" data-r="D" type="button" onclick="Arena.setRoundResult('D')" aria-pressed="false"><i class="dot draw"></i>Empaté</button>
+                  <button class="preset-chip js-round-result" data-r="B" type="button" onclick="Arena.setRoundResult('B')" aria-pressed="false" aria-label="Bye: ronda sin rival, cuenta como victoria"><i class="dot win"></i>Bye</button>
+                </div>
+                <div class="field">
+                  <label class="field-label" for="round-vs" id="round-vs-label">Mazo del rival</label>
+                  <input class="input-ctrl" id="round-vs" name="round-vs" type="text" list="round-vs-list" maxlength="40" placeholder="Ej.: Affinity" autocomplete="off" spellcheck="false" onchange="Arena.setRoundDeck(this.value)" onkeydown="if (event.key === 'Enter') { event.preventDefault(); event.stopPropagation(); Arena.setRoundDeck(this.value); Arena.closeRoundEditor(); }">
+                  <datalist id="round-vs-list"></datalist>
+                </div>
+                <div class="btn-row">
+                  <button class="btn btn-secondary" type="button" onclick="Arena.setRoundDeck(document.getElementById('round-vs').value); Arena.closeRoundEditor()">Listo</button>
+                  <button class="btn btn-secondary" type="button" onclick="Arena.removeRound()">Quitar esta ronda</button>
+                </div>
+              </div>
+            </div>
+          </details>
+
+          <div class="round-conflict" id="round-conflict" role="status" aria-live="polite" tabindex="-1" hidden></div>
 
           <fieldset class="field">
             <legend>Récord de partidas</legend>

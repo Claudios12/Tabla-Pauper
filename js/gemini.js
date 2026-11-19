@@ -37,21 +37,67 @@ const Gemini = {
   // Which model reads. Google retires models and some days one is overloaded or out of free quota, and the person has
   // nobody to change the code, so the page moves on by itself. It only ever tries the free-tier families, "flash" and
   // "flash-lite" (never "pro", which is not free), and it learns which ones exist from the person's own key
-  // (ListModels), so a model Google adds later is found without a release. The order is: the one that last worked, the
-  // one in CONFIG, then the rest (flash newest first, then flash-lite, then the "-latest" aliases).
+  // (ListModels), so a model Google adds later is found without a release. The order is: the one that last worked (on
+  // this device, for a week), the one in CONFIG, then the rest (flash newest first, then flash-lite, then the "-latest"
+  // aliases), with the ones that did not answer in this visit last.
   _working: null,
   _found: null,
   _dead: new Set(),
+  _slow: new Set(),
+  // The model that last answered, kept on this device like the key (a setting, not league data: never in State or a backup).
+  WORKING_KEY: 'gemini_model_ok',
+  WORKING_DAYS: 7,
 
   // 502/503/504: the server is busy for a moment. 429: the free quota of that model is used up (per minute or per day).
   // Both are worth trying on another model, and again after a pause. 404 (or the API saying the model is gone) is a model
   // that no longer answers: it is dropped for this visit.
   RETRY_STATUSES: [502, 503, 504],
   PASS_DELAYS_MS: [4000, 8000],
+  // A busy model may also take the request and never answer (seen 2026-11-19: every full flash model silent for minutes
+  // while flash-lite answered in 2 s). A phone then drops the call, which looks like no connection, so each call has a
+  // time limit and a model that runs out of it is passed over like a busy one; and no new call starts once the whole
+  // reading has taken READ_BUDGET_MS.
+  CALL_TIMEOUT_MS: 30000,
+  LIST_TIMEOUT_MS: 10000,
+  READ_BUDGET_MS: 150000,
+  NO_ANSWER: 0,
+
+  remembered() {
+    try {
+      const saved = JSON.parse(localStorage.getItem(this.WORKING_KEY));
+      if (saved && typeof saved.model === 'string' && Date.now() - saved.at < this.WORKING_DAYS * 86400000) return saved.model;
+    } catch (err) { /* nothing remembered */ }
+    return null;
+  },
+
+  remember(model) {
+    this._working = model;
+    try { localStorage.setItem(this.WORKING_KEY, JSON.stringify({ model, at: Date.now() })); } catch (err) { /* only a help */ }
+  },
+
+  forget(model) {
+    if (this._working === model) this._working = null;
+    try { if (this.remembered() === model) localStorage.removeItem(this.WORKING_KEY); } catch (err) { /* only a help */ }
+  },
 
   candidates() {
-    return [this._working, CONFIG.GEMINI.model, ...(this._found || [])]
-      .filter((model, i, all) => model && !this._dead.has(model) && all.indexOf(model) === i);
+    const all = [this._working || this.remembered(), CONFIG.GEMINI.model, ...(this._found || [])]
+      .filter((model, i, list) => model && !this._dead.has(model) && list.indexOf(model) === i);
+    return all.filter(model => !this._slow.has(model)).concat(all.filter(model => this._slow.has(model)));
+  },
+
+  // A fetch with a time limit: resolves with the response, or with null when nothing came back in time.
+  async timed(url, options, ms) {
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), ms);
+    try {
+      return await fetch(url, { ...options, signal: controller.signal });
+    } catch (err) {
+      if (err && err.name === 'AbortError') return null;
+      throw err;
+    } finally {
+      clearTimeout(timer);
+    }
   },
 
   // The free-tier models a key can call, best first: full flash (newest version first), then flash-lite, with the
@@ -82,8 +128,8 @@ const Gemini = {
   // the question is asked again next time.
   async discover(key) {
     try {
-      const response = await fetch(`${CONFIG.GEMINI.endpoint}?pageSize=1000&key=${encodeURIComponent(key)}`);
-      if (!response.ok) return;
+      const response = await this.timed(`${CONFIG.GEMINI.endpoint}?pageSize=1000&key=${encodeURIComponent(key)}`, {}, this.LIST_TIMEOUT_MS);
+      if (!response || !response.ok) return;
       const data = await response.json();
       this._found = this.rankFree(data && data.models);
     } catch (err) {
@@ -110,28 +156,50 @@ const Gemini = {
       })
     };
     const say = text => { if (typeof onNote === 'function') onNote(text); };
+    const started = Date.now();
+    const late = () => Date.now() - started >= this.READ_BUDGET_MS;
     let statuses = [];
     let lastDetail = '';
     for (let pass = 0; ; pass++) {
       const tried = new Set();
       statuses = [];
+      // After a model gave no answer, a lighter one goes next: when the full models are swamped the lite ones still answer.
+      let preferLite = false;
       for (;;) {
-        let model = this.candidates().find(name => !tried.has(name));
+        if (late()) break;
+        const pick = () => {
+          const open = this.candidates().filter(name => !tried.has(name));
+          return (preferLite && open.find(name => name.includes('-lite'))) || open[0];
+        };
+        let model = pick();
         if (!model && !this._found) {
           await this.discover(key);
-          model = this.candidates().find(name => !tried.has(name));
+          model = pick();
         }
         if (!model) break;
-        if (tried.size) say(`Probando con otro modelo de Gemini (${model})…`);
+        if (tried.size) say(`${statuses[statuses.length - 1] === this.NO_ANSWER ? 'Gemini tarda en responder' : 'Gemini está ocupado'}: probando con otro modelo (${model})…`);
         tried.add(model);
         let response;
         try {
-          response = await fetch(`${CONFIG.GEMINI.endpoint}/${model}:generateContent?key=${encodeURIComponent(key)}`, request);
+          response = await this.timed(`${CONFIG.GEMINI.endpoint}/${model}:generateContent?key=${encodeURIComponent(key)}`, request, this.CALL_TIMEOUT_MS);
         } catch (err) {
-          throw new Error('No se pudo contactar a Gemini: revisa tu conexión e inténtalo de nuevo.');
+          // Truly offline: nothing to try. Otherwise the call was dropped on the way (a phone does this to a call that hangs):
+          // that model is passed over like one that did not answer.
+          if (typeof navigator !== 'undefined' && navigator.onLine === false) {
+            throw new Error('No hay conexión a internet: conéctate y vuelve a subir la captura.');
+          }
+          response = null;
+        }
+        if (!response) {
+          this._slow.add(model);
+          if (this._working === model) this._working = null;
+          statuses.push(this.NO_ANSWER);
+          preferLite = true;
+          continue;
         }
         if (response.ok) {
-          this._working = model;
+          this._slow.delete(model);
+          this.remember(model);
           return this.parse(response);
         }
         const body = await response.json().catch(() => null);
@@ -144,17 +212,17 @@ const Gemini = {
         if (!gone && !busy) {
           throw new Error(`Gemini respondió con un error${detail ? `: ${detail}` : ` (${response.status})`}.`);
         }
-        if (gone) this._dead.add(model);
+        if (gone) { this._dead.add(model); this.forget(model); }
         statuses.push(response.status);
         lastDetail = detail;
       }
       const waitable = statuses.some(status => status === 429 || this.RETRY_STATUSES.includes(status));
-      if (!waitable || pass >= this.PASS_DELAYS_MS.length) break;
+      if (!waitable || late() || pass >= this.PASS_DELAYS_MS.length) break;
       say('Gemini está ocupado: reintentando en unos segundos…');
       await new Promise(resolve => setTimeout(resolve, this.PASS_DELAYS_MS[pass]));
     }
-    if (statuses.some(status => this.RETRY_STATUSES.includes(status))) {
-      throw new Error('Gemini sigue con mucha demanda en todos los modelos gratuitos. Espera unos minutos y vuelve a subir la captura.');
+    if (statuses.some(status => status === this.NO_ANSWER || this.RETRY_STATUSES.includes(status))) {
+      throw new Error('Gemini no respondió a tiempo: sus modelos gratuitos están saturados ahora mismo. Tu conexión está bien; espera unos minutos y vuelve a subir la captura.');
     }
     if (statuses.includes(429)) {
       throw new Error('Se acabó la cuota gratuita de Gemini por ahora (por minuto o por día). Espera un rato o inténtalo mañana.');

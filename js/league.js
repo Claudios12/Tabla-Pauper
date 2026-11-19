@@ -698,6 +698,19 @@ const League = {
     return list;
   },
 
+  // The person's season night by night: after each night that has a real date, where they stood. [{ iso, rank, pts, cut,
+  // players }], oldest first: rank and pts are theirs (null on a night before their first), cut is the points of the last
+  // place inside the top (null while the table has fewer players than that). Each step is the very table the General tab would
+  // show had the season stopped that day (the same standings(), on the entries up to that date), so the last step is today's.
+  progress(entries, top = CONFIG.LEAGUE.TOP_CUTOFF) {
+    const dated = (entries || []).filter(entry => entry && isIsoDate(entry.isoDate));
+    const days = [...new Set(this.standings(dated, top).nightDates.filter(Boolean))].sort();
+    return days.map(iso => {
+      const table = this.standings(dated.filter(entry => entry.isoDate <= iso), top);
+      return { iso, rank: table.me ? table.me.rank : null, pts: table.me ? table.me.pts : null, cut: table.cutPts, players: table.players.length };
+    });
+  },
+
   // The table for a set of tournaments (one season): everyone's points, best first, and where the cut falls. top: how many
   // places qualify in that season. Each player also carries the points of every night they were on, for estimating the rest.
   //

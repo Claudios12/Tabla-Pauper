@@ -20,6 +20,8 @@ const Demo = {
   RECORDS: ['4-0-0', '3-1-0', '3-0-1', '2-2-0', '2-1-1', '1-3-0', '1-2-1', '0-4-0'],
   MINE: ['2-2-0', '3-1-0', '1-3-0', '2-1-1', '2-2-0', '3-1-0', '1-3-0', '2-2-0'],
   SKIPPED: 4,
+  // The decks the sample person meets, for the rounds marked on each night (common Pauper archetypes, nobody's own list).
+  FACED: ['Affinity', 'Kuldotha Red', 'Elves', 'Faeries', 'Grixis Affinity', 'Mono Blue Terror', 'Walls Combo'],
 
   // A small deterministic generator (mulberry32).
   random(seed) {
@@ -33,6 +35,17 @@ const Demo = {
     };
   },
 
+  // The rounds of a night with this record, in an order drawn at random, each against one of FACED.
+  rounds(record, rand) {
+    const [w, l, d] = record.split('-').map(Number);
+    const results = [...Array(w).fill('W'), ...Array(l).fill('L'), ...Array(d).fill('D')];
+    for (let i = results.length - 1; i > 0; i--) {
+      const j = Math.floor(rand() * (i + 1));
+      [results[i], results[j]] = [results[j], results[i]];
+    }
+    return results.map(r => ({ r, vs: this.FACED[Math.floor(rand() * this.FACED.length)] }));
+  },
+
   points(record) {
     const [w, , d] = record.split('-').map(Number);
     return w * 3 + d;
@@ -41,6 +54,8 @@ const Demo = {
   // { historic, seasonEnds, seasonTop, profile } for a person who plays on DAY and has been at it for NIGHTS weeks.
   build(today = new Date()) {
     const rand = this.random(2026);
+    // A generator of its own for the rounds, so the sample's results (drawn from `rand`) stay as they were.
+    const roundRand = this.random(7);
     // The last league night before today, then the ones before it.
     const last = new Date(today.getFullYear(), today.getMonth(), today.getDate() - 1);
     while (last.getDay() !== this.DAY) last.setDate(last.getDate() - 1);
@@ -71,6 +86,7 @@ const Demo = {
         wl: mine,
         type: tournamentType(pts),
         notes: place <= 3 ? 'Podio' : '',
+        rounds: this.rounds(mine, roundRand),
         playerResults: rows
       };
     });

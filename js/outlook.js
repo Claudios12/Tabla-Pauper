@@ -44,16 +44,46 @@ const Outlook = {
     const mine = players.indexOf(me);
     if (mine < 0) return null;
     if (nightsLeft <= 0 || captured <= 0) return me.rank > top ? 1 : 0;
+    let out = 0;
+    const runs = this.simulate(players, { nightsLeft, captured, seed: 0x9E3779B9 ^ (players.length * 7919) ^ (me.pts * 104729) ^ nightsLeft }, totals => {
+      let above = 0;
+      for (let i = 0; i < players.length; i++) if (totals[i] > totals[mine]) above++;
+      if (above >= top) out++;
+    });
+    return out / runs;
+  },
+
+  // Where the line of the top ends the season: the points of the last place inside it, played out the same way as risk().
+  // { likely, safe }: the median of the runs, and a mark beaten in 8 runs of 10 (reaching it leaves a margin). An estimate;
+  // with nothing left to play it is today's line. Null while the table has fewer players than places.
+  finalCut(players, { top, nightsLeft, captured }) {
+    if (players.length < top) return null;
+    if (nightsLeft <= 0 || captured <= 0) return { likely: players[top - 1].pts, safe: players[top - 1].pts };
+    const cuts = [];
+    const sorted = new Array(players.length);
+    this.simulate(players, { nightsLeft, captured, seed: 0x85EBCA6B ^ (players.length * 7919) ^ (top * 31) ^ nightsLeft }, totals => {
+      for (let i = 0; i < totals.length; i++) sorted[i] = totals[i];
+      sorted.sort((a, b) => b - a);
+      cuts.push(sorted[top - 1]);
+    });
+    cuts.sort((a, b) => a - b);
+    return { likely: cuts[Math.floor(cuts.length / 2)], safe: cuts[Math.min(cuts.length - 1, Math.floor(cuts.length * 0.8))] };
+  },
+
+  // Plays the rest of the season out many times and hands each run's final points (in the players' order) to `each`. Each
+  // player is on a night as often as they have been so far, and takes the points they have taken: from their own nights, and
+  // from the league's as a whole when they have few. The draws are seeded, so the same table gives the same figures. Returns
+  // how many runs were played.
+  simulate(players, { nightsLeft, captured, seed }, each) {
     const pool = players.flatMap(player => player.nightPts);
     const attends = players.map(player => (player.nights + 0.5) / (captured + 1));
     const own = players.map(player => player.nights / (player.nights + 3));
-    const next = this.random(0x9E3779B9 ^ (players.length * 7919) ^ (me.pts * 104729) ^ nightsLeft);
+    const next = this.random(seed);
     const pick = (list) => list[Math.floor(next() * list.length)];
     // A long season with a big league gets fewer runs (never fewer than 500, which still keeps the error within a couple of
     // points), so the screen never waits on it: the work is about the same for every league.
     const runs = Math.max(500, Math.min(CONFIG.LEAGUE.RISK_RUNS, Math.floor(8e5 / (players.length * nightsLeft))));
     const totals = new Array(players.length);
-    let out = 0;
     for (let run = 0; run < runs; run++) {
       for (let i = 0; i < players.length; i++) totals[i] = players[i].pts;
       for (let night = 0; night < nightsLeft; night++) {
@@ -62,10 +92,8 @@ const Outlook = {
           totals[i] += next() < own[i] ? pick(players[i].nightPts) : pick(pool);
         }
       }
-      let above = 0;
-      for (let i = 0; i < players.length; i++) if (totals[i] > totals[mine]) above++;
-      if (above >= top) out++;
+      each(totals);
     }
-    return out / runs;
+    return runs;
   }
 };

@@ -435,3 +435,153 @@ button.board-main:hover .title-text { text-decoration: underline; text-underline
   font-size: 13px;
   color: var(--pill-avg-ink);
 }
+
+/* The climb: the person's points after each night against the top's line. One scale, two lines told apart by weight and
+   dash as well as tone, the place written on each dot, and every figure in the table under the chart. */
+.league-progress:empty { display: none; }
+.progress-card { margin-block-start: 16px; }
+.progress-note { padding-block-end: 16px; padding-inline: 16px; }
+.progress-wrap { position: relative; touch-action: pan-y; }
+.legend-mark.me { background-color: var(--text-primary); }
+.progress-me {
+  fill: none;
+  stroke: var(--text-primary);
+  stroke-width: 2;
+  stroke-linejoin: round;
+}
+.progress-cut {
+  fill: none;
+  stroke: var(--text-muted);
+  stroke-width: 2;
+  stroke-dasharray: 5 4;
+}
+.progress-dot {
+  fill: var(--text-primary);
+  stroke: var(--surface-1);
+  stroke-width: 2;
+}
+.progress-rank {
+  font: 500 11px var(--font-body);
+  font-variant-numeric: tabular-nums;
+  fill: var(--text-secondary);
+}
+.progress-rank.is-now { font-weight: 700; fill: var(--text-primary); }
+.progress-cross { stroke: var(--text-muted); stroke-width: 1; }
+.progress-hit { fill: transparent; }
+.progress-tip {
+  position: absolute;
+  inset-block-start: 0;
+  inset-inline-start: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding-block: 6px;
+  padding-inline: 10px;
+  font-size: 13px;
+  font-variant-numeric: tabular-nums;
+  color: var(--text-secondary);
+  white-space: nowrap;
+  pointer-events: none;
+  background-color: var(--surface-3);
+  border-radius: var(--radius-sm);
+  box-shadow: 0 4px 12px rgb(0 0 0 / .35);
+  transform: translateX(var(--x, 0));
+}
+.progress-tip b { color: var(--text-primary); }
+.progress-table { padding-block-end: 12px; padding-inline: 16px; }
+.progress-table .month-grid caption {
+  position: static;
+  width: auto;
+  height: auto;
+  clip-path: none;
+  margin-block-end: 8px;
+  font-size: 13px;
+  text-align: start;
+  color: var(--text-muted);
+}
+.progress-table[open] .how-to-chevron { transform: rotate(180deg); }
+
+/* What you need, and your rivals: two cards under the risk, in the same dress as it and the league table. */
+.league-need:empty,
+.league-rivals:empty { display: none; }
+.need-card,
+.rivals-card { margin-block-start: 16px; }
+.rivals-card .board-note { padding-block-start: 0; }
+/* Two players apart in the table, not next to each other */
+.rival-gap {
+  padding-block: 0;
+  text-align: center;
+  font-size: 13px;
+  line-height: 1;
+  color: var(--text-muted);
+}
+/* What the last night did, said in words; the tone only repeats them */
+.rival-move.is-up { color: var(--color-good); }
+.rival-move.is-down { color: var(--color-bad); }
+
+/* Cards of the General tab that fold. The summary is the card's head: its title, the figure it holds (so a closed card still
+   answers), and a chevron that turns when it opens. Only the league table never folds. */
+.fold > .fold-head {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-height: 56px;
+  padding: 12px 16px;
+  list-style: none;
+  cursor: pointer;
+  border-radius: var(--radius-card);
+  transition: background-color .15s;
+}
+.fold > .fold-head::-webkit-details-marker { display: none; }
+.fold > .fold-head:hover { background-color: var(--surface-2); }
+.fold[open] > .fold-head { padding-block-end: 8px; }
+.fold[open] > .fold-head:hover { background-color: transparent; }
+.fold[open] > .fold-head .chevron { transform: rotate(180deg); }
+.fold-text {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+.fold-title { font-size: 16px; }
+.fold-peek {
+  font-size: 13px;
+  font-variant-numeric: tabular-nums;
+  color: var(--text-secondary);
+  overflow-wrap: anywhere;
+}
+/* Open, the body says it all: the peek would only repeat it. */
+.fold[open] .fold-peek { display: none; }
+.fold-meta { flex: none; }
+.league-month[open] > summary .chevron { transform: rotate(180deg); }
+@media (prefers-reduced-motion: reduce) {
+  .fold > .fold-head,
+  .fold .chevron { transition: none; }
+}
+/* Closed, the title and its figure get the whole width: the label on the right ("estimación") comes back when it opens. */
+.fold:not([open]) .fold-meta { display: none; }
+
+/* A row's name warning ("¿Repetido?", "Nombre cortado") is a button beside the one that opens the card, so a tap on it goes
+   straight to the card's names. It keeps the tag's look, with an outline and a bigger target saying it can be pressed. */
+.board-cell {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+}
+.board-cell > .board-main { flex: 1; }
+.pill-action {
+  min-height: 32px;
+  font: 500 12px var(--font-body);
+  color: var(--text-primary);
+  background-color: var(--bg-main);
+  border: 1px solid #34445c;
+  cursor: pointer;
+  touch-action: manipulation;
+  transition: border-color .15s;
+}
+.pill-action:hover { border-color: var(--text-muted); }
+@media (prefers-reduced-motion: reduce) {
+  .pill-action { transition: none; }
+}
