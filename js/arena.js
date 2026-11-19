@@ -50,7 +50,7 @@ const Arena = {
   // Another window saved: take in what it stored, or this one would overwrite it on its next save.
   onStorageChange(e) {
     if (e.storageArea !== localStorage) return;
-    if (e.key !== null && ![State.historicKey(), State.storeNightsKey(), State.deletedKey(), State.seasonEndsKey(), State.seasonTopKey(), State.profileKey(), State.nameLinksKey()].includes(e.key)) return;
+    if (e.key !== null && ![State.historicKey(), State.storeNightsKey(), State.deletedKey(), State.seasonEndsKey(), State.seasonTopKey(), State.profileKey(), State.nameLinksKey(), State.monthsLogKey()].includes(e.key)) return;
     clearTimeout(this._syncTimer);
     this._syncTimer = setTimeout(() => this.syncFromStorage(), 50);
   },

@@ -1,6 +1,6 @@
 // Arena: season end dates and places that qualify, and the backup export and import.
 /* global CONFIG, State, League, countEntries, isStoreNight, localIsoDate, nextSeason, seasonEndBounds, isIsoDate,
-         cleanSeasonEnds, cleanSeasonTop, cleanProfile, cleanNameLinks, longDate, weekdayName, Arena */
+         cleanSeasonEnds, cleanSeasonTop, cleanProfile, cleanNameLinks, cleanMonthsLog, longDate, weekdayName, Arena */
 
 Object.assign(Arena, {
   // ─────────────────────────────────────────────────────────────
@@ -132,7 +132,8 @@ Object.assign(Arena, {
       seasonEnds: State.seasonEnds,
       seasonTop: State.seasonTop,
       profile: State.profile,
-      nameLinks: State.nameLinks
+      nameLinks: State.nameLinks,
+      monthsLog: State.monthsLog
     };
     const fileName = `pauper_decks_backup_${localIsoDate()}.json`;
     this.saveAsFile(JSON.stringify(exportData, null, 2), fileName);
@@ -198,6 +199,12 @@ Object.assign(Arena, {
       if (importedLinks) {
         State.nameLinks = importedLinks;
         State.saveNameLinks();
+      }
+      // Older copies carry no record of the months: the one kept here stays.
+      const importedMonths = cleanMonthsLog(data.monthsLog);
+      if (importedMonths) {
+        State.monthsLog = importedMonths;
+        State.saveMonthsLog();
       }
       // Older copies carry no name or league day: the ones set here stay.
       const importedProfile = cleanProfile(data.profile);

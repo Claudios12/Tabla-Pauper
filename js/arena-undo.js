@@ -9,7 +9,8 @@ Object.assign(Arena, {
     return {
       historic: JSON.parse(JSON.stringify(State.historic)), deleted: State.deletedDecks.slice(),
       seasonEnds: { ...State.seasonEnds }, seasonTop: { ...State.seasonTop }, profile: { ...State.profile },
-      nameLinks: JSON.parse(JSON.stringify(State.nameLinks))
+      nameLinks: JSON.parse(JSON.stringify(State.nameLinks)),
+      monthsLog: JSON.parse(JSON.stringify(State.monthsLog))
     };
   },
 
@@ -25,6 +26,10 @@ Object.assign(Arena, {
     if (snap.nameLinks) {
       State.nameLinks = snap.nameLinks;
       State.saveNameLinks();
+    }
+    if (snap.monthsLog) {
+      State.monthsLog = snap.monthsLog;
+      State.saveMonthsLog();
     }
     League.identify(State.profile.name);
     State.saveDeletedDecks();

@@ -8,7 +8,7 @@ const vm = require('vm');
 const ROOT = path.join(__dirname, '..');
 const CORE = ['config', 'state', 'analytics', 'format', 'league', 'monthly', 'outlook', 'demo', 'gemini'];
 const EXPOSE = ['CONFIG', 'State', 'Analytics', 'League', 'Monthly', 'Outlook', 'Demo', 'Gemini', 'tournamentType', 'cleanRounds',
-  'cleanNameLinks', 'isStoreNight', 'seasonOf', 'localIsoDate'];
+  'cleanNameLinks', 'cleanMonthsLog', 'isStoreNight', 'seasonOf', 'localIsoDate'];
 
 // A fresh app: its own storage (`ctx.store`), and, with `arena`, the Arena parts named (e.g. ['arena-undo']).
 function boot({ arena = [], extra = {} } = {}) {
