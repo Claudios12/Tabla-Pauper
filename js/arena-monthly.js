@@ -1,5 +1,5 @@
 // Arena: the store's monthly table (with its side-quest "reto" points): reading the picture, checking it, saving the retos.
-/* global State, League, Monthly, Analytics, Gemini, plural, esc, seasonOf, weekdayName, Arena */
+/* global State, League, Monthly, Analytics, Gemini, plural, esc, seasonOf, weekdayName, localIsoDate, Arena */
 
 Object.assign(Arena, {
   // The month's table as read, held (with the dates the person confirms) until they save it or throw it away.
@@ -87,6 +87,9 @@ Object.assign(Arena, {
     const files = [...(input.files || [])];
     input.value = '';
     if (!files.length || (adding && !this._month)) return;
+    // Which month the pictures are of, as the person said before choosing them (more pictures join the month already held).
+    const monthKey = adding ? this._month.monthKey : this._monthChoice;
+    if (!monthKey) { this.askWhichMonth(); return; }
     if (!this.requireApiKey()) return;
     if (this._monthOcrRunning) {
       this.setMonthStatus('Espera a que termine la lectura que está en curso.', 'bad');
@@ -126,6 +129,8 @@ Object.assign(Arena, {
         return;
       }
       const table = joined.table;
+      // When the pictures do not say the month, it is the one the person chose (the dates of the columns hang on it).
+      if (table.month === null) table.month = Number(monthKey.slice(5));
       // Each column of the poster is a date, as the poster writes it (day and month, so the year is the latest that fits); the dates
       // the person already set stay.
       const before = adding ? (this._month.guessed || []) : [];
@@ -150,7 +155,9 @@ Object.assign(Arena, {
       // The button that brought these pictures was drawn again with the table: focus goes back to it, unless the person went elsewhere.
       if (adding && document.activeElement === document.body) this.focusMonthAction('month-more', 'month-save');
       // The progress line only ever said "reading": this says it is done, for whoever is not looking at the page.
-      this.notify(this.monthReadNote(joined, files.length, adding));
+      this._month.monthKey = monthKey;
+      const noted = this.recordMonthRead(this._month);
+      this.notify(this.monthReadNote(joined, files.length, adding) + (noted ? ` ${this.monthName(monthKey)} quedó anotado como leído.` : ''));
     } catch (err) {
       console.error("Error OCR:", err);
       this.setMonthStatus(`Error al procesar la imagen (${err.message}). Prueba de nuevo, o con otra captura.`, 'bad');
@@ -256,6 +263,7 @@ Object.assign(Arena, {
     // Open or closed as the person left it, the first time it is drawn (see Arena.foldCard); a table just read opens it.
     if (!card.dataset.foldInit) { card.dataset.foldInit = '1'; card.open = this.isFoldOpen('month'); }
     if (open) card.open = true;
+    this.renderMonthLog();
     const result = document.getElementById("month-result");
     if (!result) return;
     if (!this._month) {
@@ -620,5 +628,153 @@ Object.assign(Arena, {
     this.renderMonth();
     document.getElementById("month-pick")?.focus({ preventScroll: true });
     this.notify('Se descartó la tabla del mes.', { action: { label: 'Deshacer', run: () => { this._month = kept; this.renderMonth(true); this.focusMonthAction('month-save'); this.notify('Tabla del mes recuperada.'); } } });
-  }
+  },
+
+  // ─────────────────────────────────────────────────────────────
+  // WHICH MONTHS ARE DONE: asked before the pictures, recorded once they are read, marked as published by the person
+  // ─────────────────────────────────────────────────────────────
+  // The person forgets which months they already did. So the card asks which month a table is before it opens the pictures
+  // (`_monthChoice`, 'YYYY-MM'), records the month as read in State.monthsLog once the pictures make a table of that month, and only
+  // then offers "Marcar como publicada". A table whose pictures say another month is not recorded: the person is told, and picking
+  // that month in the list records it.
+  _monthChoice: '',
+
+  // The months of the season on screen that have begun, oldest first, as 'YYYY-MM'.
+  seasonMonths() {
+    const season = this.leagueSeason();
+    const [year, half] = season.split('-').map(Number);
+    const now = localIsoDate().slice(0, 7);
+    return Array.from({ length: 6 }, (_, i) => `${year}-${String((half === 1 ? 1 : 7) + i).padStart(2, '0')}`).filter(key => key <= now);
+  },
+
+  monthName(key) {
+    const name = Monthly.MONTHS[Number(key.slice(5)) - 1];
+    const year = key.slice(0, 4) === localIsoDate().slice(0, 4) ? '' : ` ${key.slice(0, 4)}`;
+    return `${name.charAt(0).toUpperCase()}${name.slice(1)}${year}`;
+  },
+
+  shortDay(iso) {
+    return new Intl.DateTimeFormat('es', { day: 'numeric', month: 'short' }).format(new Date(iso));
+  },
+
+  // The list of the season's months with what was done in each, the choice of month for the next pictures, and the card's header.
+  renderMonthLog() {
+    const list = document.getElementById("month-log");
+    const select = document.getElementById("month-which");
+    if (!list || !select) return;
+    const months = this.seasonMonths();
+    const current = localIsoDate().slice(0, 7);
+    list.innerHTML = months.map(key => {
+      const item = State.monthsLog[key];
+      const name = this.monthName(key);
+      let state, action = '';
+      if (item && item.published) {
+        state = `<span class="pill good">Publicada</span><span class="month-log-detail">el ${esc(this.shortDay(item.published))}</span>`;
+        action = `<button class="btn btn-secondary month-log-btn" type="button" data-month="${key}" onclick="Arena.unmarkMonthPublished(this.dataset.month)" aria-label="Quitar la marca de publicada a ${esc(name)}">Quitar la marca</button>`;
+      } else if (item) {
+        state = `<span class="pill">Leída</span><span class="month-log-detail">el ${esc(this.shortDay(item.read))}${item.players ? ` · ${plural(item.players, 'jugador', 'jugadores')}` : ''}</span>`;
+        action = `<button class="btn btn-secondary month-log-btn" type="button" data-month="${key}" onclick="Arena.markMonthPublished(this.dataset.month)">Marcar como publicada<span class="visually-hidden"> (${esc(name)})</span></button>`;
+      } else {
+        state = `<span class="month-log-detail">${key === current ? 'En curso: la tienda la publica al terminar el mes' : 'Sin leer'}</span>`;
+      }
+      return `<li class="month-log-row"><span class="month-log-name">${esc(name)}</span><span class="month-log-state">${state}</span>${action}</li>`;
+    }).join('') || '<li class="month-log-row"><span class="month-log-detail">Esta temporada aún no empieza.</span></li>';
+
+    if (!months.includes(this._monthChoice)) this._monthChoice = '';
+    select.innerHTML = `<option value="">Elige el mes…</option>` + [...months].reverse().map(key => {
+      const item = State.monthsLog[key];
+      const tag = item ? (item.published ? ' · publicada' : ' · leída') : '';
+      return `<option value="${key}">${esc(this.monthName(key))}${tag}</option>`;
+    }).join('');
+    select.value = this._monthChoice;
+
+    // Closed, the card says which finished months are still to do.
+    const peek = document.getElementById("month-peek");
+    if (peek) {
+      const due = months.filter(key => !(State.monthsLog[key] && State.monthsLog[key].published) && (key !== current || State.monthsLog[key]));
+      const done = months.filter(key => State.monthsLog[key] && State.monthsLog[key].published);
+      peek.textContent = due.length
+        ? `Sin publicar: ${due.map(key => this.monthName(key).toLowerCase()).join(', ')}`
+        : (done.length ? `Todo publicado hasta ${this.monthName(done[done.length - 1]).toLowerCase()}` : '');
+    }
+  },
+
+  chooseMonth(value) {
+    this._monthChoice = value || '';
+    const error = document.getElementById("month-which-error");
+    if (error) { error.textContent = ''; error.hidden = true; }
+    document.getElementById("month-which")?.removeAttribute("aria-invalid");
+    // A table already read whose pictures said this month, which the person had set as another: now it is the right one.
+    if (this._month && !this._month.recorded && value && Number(value.slice(5)) === this._month.table.month) {
+      this._month.monthKey = value;
+      if (this.recordMonthRead(this._month)) {
+        this.setMonthStatus('');
+        this.notify(`${this.monthName(value)} quedó anotado como leído.`);
+      }
+    }
+  },
+
+  askWhichMonth() {
+    const select = document.getElementById("month-which");
+    const error = document.getElementById("month-which-error");
+    if (error) { error.textContent = 'Primero elige de qué mes es la tabla.'; error.hidden = false; }
+    if (select) { select.setAttribute("aria-invalid", "true"); select.focus(); }
+  },
+
+  // The upload button: the pictures are chosen only once the month is known.
+  pickMonthFiles() {
+    if (!this._monthChoice) { this.askWhichMonth(); return; }
+    document.getElementById("month-file")?.click();
+  },
+
+  // A table read for a month: recorded as read, unless its pictures say another month than the one chosen. Returns whether it was.
+  recordMonthRead(month) {
+    const key = month.monthKey;
+    const read = month.table.month;
+    if (!key || !read) return false;
+    if (read !== Number(key.slice(5))) {
+      month.recorded = false;
+      const said = Monthly.MONTHS[read - 1], chosen = Monthly.MONTHS[Number(key.slice(5)) - 1];
+      this.setMonthStatus(`Las capturas parecen de ${said}, pero elegiste ${chosen}: no lo anoté. Si las capturas son las correctas, elige ${said} en «¿De qué mes es la tabla?»; si no, sube las de ${chosen}.`, 'bad');
+      return false;
+    }
+    const before = State.monthsLog[key];
+    State.monthsLog[key] = {
+      read: new Date().toISOString(),
+      players: month.table.rows.length,
+      pictures: month.table.pictures || 1,
+      published: before ? before.published : null
+    };
+    State.saveMonthsLog();
+    month.recorded = true;
+    this.renderMonthLog();
+    return true;
+  },
+
+  markMonthPublished(key) {
+    const item = State.monthsLog[key];
+    // Only a month whose table was read can be published: that is the record the person asked for.
+    if (!item || item.published) return;
+    const before = this.snapshot();
+    item.published = new Date().toISOString();
+    State.saveMonthsLog();
+    this.renderMonthLog();
+    document.querySelector(`#month-log button[data-month="${key}"]`)?.focus();
+    this.notify(`${this.monthName(key)} quedó marcado como publicado.`, {
+      action: { label: 'Deshacer', run: () => { this.restoreSnapshot(before); this.notify(`${this.monthName(key)} vuelve a estar sin publicar.`); } }
+    });
+  },
+
+  unmarkMonthPublished(key) {
+    const item = State.monthsLog[key];
+    if (!item || !item.published) return;
+    const before = this.snapshot();
+    item.published = null;
+    State.saveMonthsLog();
+    this.renderMonthLog();
+    document.querySelector(`#month-log button[data-month="${key}"]`)?.focus();
+    this.notify(`${this.monthName(key)} ya no está marcado como publicado.`, {
+      action: { label: 'Deshacer', run: () => { this.restoreSnapshot(before); this.notify(`${this.monthName(key)} vuelve a estar publicado.`); } }
+    });
+  },
 });

@@ -185,15 +185,25 @@
 
       <details class="card fold league-month" id="league-month" data-fold="month" ontoggle="Arena.rememberFold(this)">
         <summary class="acc-head data-panel-toggle">
-          <span>Tabla del mes de la tienda (retos)</span>
+          <span class="fold-text"><span>Tabla del mes de la tienda (retos)</span><span class="fold-peek" id="month-peek"></span></span>
           <svg class="chevron" viewBox="0 0 24 24" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg>
         </summary>
         <div class="month-body">
           <p class="ocr-help">Cada mes la tienda publica la tabla oficial, con los puntos de los retos, a menudo en varias capturas. Súbelas todas juntas, en el orden que quieras: se leen como una sola tabla. Los puntos de los retos se suman a tus tablas, se comprueba que los puntos que guardaste coinciden con los de la tienda, y las noches que no tengas guardadas se pueden crear con esa tabla, para que la liga tenga el mes completo.</p>
           <input id="month-file" name="month-file" type="file" accept="image/*" multiple hidden onchange="Arena.readMonthFiles(this)" aria-label="Capturas de la tabla del mes de la tienda">
           <input id="month-more-file" name="month-more-file" type="file" accept="image/*" multiple hidden onchange="Arena.readMonthFiles(this, true)" aria-label="Otras capturas de la misma tabla del mes">
+          <section class="month-log" aria-labelledby="month-log-h">
+            <h3 class="month-title" id="month-log-h">Meses de la temporada</h3>
+            <ul class="month-log-list" id="month-log"></ul>
+          </section>
+          <div class="field month-which-field">
+            <label class="field-label" for="month-which">¿De qué mes es la tabla?</label>
+            <select class="input-ctrl input-ctrl-select" id="month-which" name="month-which" onchange="Arena.chooseMonth(this.value)" aria-describedby="month-which-hint month-which-error"></select>
+            <span class="hint" id="month-which-hint">Elígelo antes de subir las capturas: así queda anotado qué meses ya leíste.</span>
+            <span class="field-error" id="month-which-error" hidden></span>
+          </div>
           <div class="btn-row">
-            <button class="btn btn-secondary" id="month-pick" type="button" onclick="document.getElementById('month-file').click()">Subir las capturas del mes</button>
+            <button class="btn btn-secondary" id="month-pick" type="button" onclick="Arena.pickMonthFiles()">Subir las capturas del mes</button>
             <button class="btn btn-secondary" type="button" onclick="Arena.openApiKeyDialog()">Clave de Gemini</button>
           </div>
           <div class="month-status" id="month-status" role="status" aria-live="polite" aria-atomic="true"></div>

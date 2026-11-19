@@ -4,7 +4,7 @@
          shortDate, TRASH_ICON, EDIT_ICON, logRowHtml, pickLead, deckExtremes, statusPillClass, deckPillHtml,
          deltaHtml, localIsoDate, seasonOf, SEASON_FORMAT, nextSeason, seasonEndBounds, isIsoDate,
          cleanSeasonEnds, cleanSeasonTop, longDate, deckNameWithColours, weekdayName, cleanProfile,
-         PROFILE_NAME_MAX, isStoreNight, tournamentType, countEntries, cleanNameLinks, cleanRounds */
+         PROFILE_NAME_MAX, isStoreNight, tournamentType, countEntries, cleanNameLinks, cleanRounds, cleanMonthsLog */
 
 // ══════════════════════════════════════════════════════════════════
 // DISPLAY HELPERS (formatting, deck names as mana pips)
@@ -102,6 +102,21 @@ const cleanRounds = (raw) => (Array.isArray(raw) ? raw : [])
 
 // A night made from the store's monthly table: nobody's tournament, only a table (see Monthly.create). It is told apart by both marks
 // (`source` alone is not enough: a backup edited by hand could put it on a real tournament, which must stay one).
+// Which months of the store's table the person has read and marked as published: { 'YYYY-MM': { read, players, pictures, published } },
+// `read` and `published` the moments as ISO texts (published null until the person marks it, and never before a read). Anything a
+// backup puts there that is not that is dropped; null when there is no such object at all.
+const cleanMonthsLog = (raw) => {
+  if (!raw || typeof raw !== 'object' || Array.isArray(raw)) return null;
+  const moment = (value) => (typeof value === 'string' && !isNaN(Date.parse(value)) ? value : null);
+  const count = (value) => (Number.isInteger(value) && value >= 0 && value <= 999 ? value : 0);
+  const clean = {};
+  Object.entries(raw).forEach(([key, item]) => {
+    if (!/^\d{4}-(0[1-9]|1[0-2])$/.test(key) || !item || typeof item !== 'object' || !moment(item.read)) return;
+    clean[key] = { read: moment(item.read), players: count(item.players), pictures: count(item.pictures), published: moment(item.published) };
+  });
+  return clean;
+};
+
 const isStoreNight = (item) => !!item && item.source === 'store' && item.deck === 'No participó';
 
 // How a tournament's points are called wherever one is saved or changed: good, bad or normal.
