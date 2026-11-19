@@ -163,7 +163,7 @@ const Analytics = {
     let status = { label: 'Muestra insuficiente', class: 'insufficient', desc: 'Menos de 3 torneos: todavía no hay muestra suficiente' };
     if (count >= CONFIG.BENCHMARKS.MIN_SAMPLE_SIZE) {
       if (winRateRounded >= CONFIG.BENCHMARKS.GOOD_WIN_RATE) {
-        status = { label: 'Buen rendimiento', class: 'good', desc: 'Gana más partidas de las que pierde (50 % o más)' };
+        status = { label: 'Buen rendimiento', class: 'good', desc: 'Gana al menos la mitad de sus partidas (50 % o más)' };
       } else if (winRateRounded >= CONFIG.BENCHMARKS.AVG_WIN_RATE) {
         status = { label: 'Promedio / viable', class: 'average', desc: 'Cerca del 50 %: competitivo (de 45 % a 49,9 %)' };
       } else {

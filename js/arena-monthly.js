@@ -647,6 +647,11 @@ Object.assign(Arena, {
     return Array.from({ length: 6 }, (_, i) => `${year}-${String((half === 1 ? 1 : 7) + i).padStart(2, '0')}`).filter(key => key <= now);
   },
 
+  // Whether the person has any night saved in that month: a tournament of theirs or a night made from the store's table.
+  monthHasNights(key) {
+    return State.historic.some(item => item && typeof item.isoDate === 'string' && item.isoDate.slice(0, 7) === key);
+  },
+
   monthName(key) {
     const name = Monthly.MONTHS[Number(key.slice(5)) - 1];
     const year = key.slice(0, 4) === localIsoDate().slice(0, 4) ? '' : ` ${key.slice(0, 4)}`;
@@ -675,7 +680,7 @@ Object.assign(Arena, {
         state = `<span class="pill">Leída</span><span class="month-log-detail">el ${esc(this.shortDay(item.read))}${item.players ? ` · ${plural(item.players, 'jugador', 'jugadores')}` : ''}</span>`;
         action = `<button class="btn btn-secondary month-log-btn" type="button" data-month="${key}" onclick="Arena.markMonthPublished(this.dataset.month)">Marcar como publicada<span class="visually-hidden"> (${esc(name)})</span></button>`;
       } else {
-        state = `<span class="month-log-detail">${key === current ? 'En curso: la tienda la publica al terminar el mes' : 'Sin leer'}</span>`;
+        state = `<span class="month-log-detail">${key === current ? 'En curso: la tienda la publica al terminar el mes' : (this.monthHasNights(key) ? 'Sin leer' : 'Sin noches guardadas')}</span>`;
       }
       return `<li class="month-log-row"><span class="month-log-name">${esc(name)}</span><span class="month-log-state">${state}</span>${action}</li>`;
     }).join('') || '<li class="month-log-row"><span class="month-log-detail">Esta temporada aún no empieza.</span></li>';
@@ -688,10 +693,12 @@ Object.assign(Arena, {
     }).join('');
     select.value = this._monthChoice;
 
-    // Closed, the card says which finished months are still to do.
+    // Closed, the card says which finished months are still to do: those with nights saved whose table is not published. A month
+    // with no night saved (before the person started, or a season begun again) is nothing to do.
     const peek = document.getElementById("month-peek");
     if (peek) {
-      const due = months.filter(key => !(State.monthsLog[key] && State.monthsLog[key].published) && (key !== current || State.monthsLog[key]));
+      const due = months.filter(key => !(State.monthsLog[key] && State.monthsLog[key].published) && (key !== current || State.monthsLog[key])
+        && (State.monthsLog[key] || this.monthHasNights(key)));
       const done = months.filter(key => State.monthsLog[key] && State.monthsLog[key].published);
       peek.textContent = due.length
         ? `Sin publicar: ${due.map(key => this.monthName(key).toLowerCase()).join(', ')}`

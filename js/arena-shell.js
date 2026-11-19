@@ -1,5 +1,5 @@
 // Arena: tabs, toasts, test mode and resetting the data.
-/* global CONFIG, State, plural, localIsoDate, Arena */
+/* global CONFIG, State, plural, localIsoDate, isStoreNight, Arena */
 
 Object.assign(Arena, {
   // ─────────────────────────────────────────────────────────────
@@ -180,6 +180,40 @@ Object.assign(Arena, {
     this.refreshAll();
     // The rounds being marked belong to the data just left: the test mode has its own (and loses it when it ends).
     this.restoreDraft();
+  },
+
+  // One season from zero, keeping everything else (see State.restartSeason). The season is the one on screen (today's when every
+  // season is shown). Asks first, says exactly what goes, and can be undone.
+  async restartSeasonConfirm() {
+    const season = this.leagueSeason();
+    const inSeason = State.historic.filter(item => item && item.season === season);
+    const nights = inSeason.filter(isStoreNight).length;
+    const tournaments = inSeason.length - nights;
+    const [year, half] = season.split('-').map(Number);
+    const months = Object.keys(State.monthsLog).filter(key => Number(key.slice(0, 4)) === year && (Number(key.slice(5)) <= 6 ? 1 : 2) === half).length;
+    if (!inSeason.length && !months) {
+      this.notify(`No hay nada guardado en la temporada ${season}: ya está en cero.`);
+      return;
+    }
+    const parts = [tournaments ? plural(tournaments, 'torneo', 'torneos') : '', nights ? plural(nights, 'noche de la liga', 'noches de la liga') : '', months ? `el registro de ${plural(months, 'mes', 'meses')} de la tabla de la tienda` : ''].filter(Boolean);
+    const list = parts.length > 1 ? `${parts.slice(0, -1).join(', ')} y ${parts[parts.length - 1]}` : parts[0];
+    // "Se borra 1 torneo" / "Se borran 3 torneos": the verb agrees with what goes ("el registro…" alone is one thing).
+    const one = parts.length === 1 && (tournaments === 1 || nights === 1 || (!tournaments && !nights));
+    const ok = await this.confirmDialog({
+      title: `Empezar la temporada ${season} de nuevo`,
+      body: `Se ${one ? 'borra' : 'borran'} ${list} de ${season}. Se quedan tu nombre, el día de tu liga, la fecha de cierre y cuántos clasifican, los nombres que uniste y las otras temporadas. Exporta una copia antes si quieres conservar lo de ahora. Podrás deshacerlo unos segundos después.`,
+      confirmLabel: 'Borrar la temporada'
+    });
+    if (!ok) return;
+    const before = this.snapshot();
+    State.restartSeason(season);
+    this.dropMonth();
+    this.populateDeckPickers();
+    this.refreshAll();
+    this.restoreDraft();
+    this.notify(`La temporada ${season} empieza de cero: se ${one ? 'borró' : 'borraron'} ${list}.`, {
+      action: { label: 'Deshacer', run: () => { this.restoreSnapshot(before); this.notify(`La temporada ${season} volvió a como estaba.`); } }
+    });
   },
 
   // Leaves the app as if it had just been opened for the first time.
