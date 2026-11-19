@@ -241,6 +241,26 @@ const State = {
     this.clearTestData();
   },
 
+  // One season begun again: its tournaments, the nights made from the store's table and the record of its months go; everything
+  // else stays (the other seasons, the name and league day, the closing dates and places, the names joined, the Gemini key). The
+  // night being marked round by round goes too when it is of that season. Returns what went, for the person to be told.
+  restartSeason(season) {
+    const inSeason = (item) => item && item.season === season;
+    const gone = { tournaments: this.historic.filter(item => inSeason(item) && !isStoreNight(item)).length, nights: this.historic.filter(item => inSeason(item) && isStoreNight(item)).length, months: 0 };
+    this.historic = this.historic.filter(item => !inSeason(item));
+    const [year, half] = season.split('-').map(Number);
+    Object.keys(this.monthsLog).forEach(key => {
+      const [y, m] = key.split('-').map(Number);
+      if (y === year && (m <= 6 ? 1 : 2) === half) { delete this.monthsLog[key]; gone.months++; }
+    });
+    const draft = this.loadDraft();
+    if (draft && draft.date && draft.date.startsWith(String(year)) && (Number(draft.date.slice(5, 7)) <= 6 ? 1 : 2) === half) this.saveDraft(null);
+    this.saveMonthsLog();
+    this.save();
+    this.syncDecksList();
+    return gone;
+  },
+
   // The invented league the test mode shows. Every write goes under the test keys, so the person's own data is not touched.
   loadDemo() {
     const demo = Demo.build();

@@ -485,6 +485,12 @@
               <input class="switch" id="test-mode-toggle" name="test-mode-toggle" type="checkbox" onchange="Arena.toggleTestMode()" role="switch">
             </label>
 
+            <section class="reset-block" aria-labelledby="h-restart">
+              <h2 class="data-title" id="h-restart">Empezar la temporada de nuevo</h2>
+              <p class="panel-copy">Borra solo la temporada que ves arriba: sus torneos, las noches creadas con la tabla de la tienda y el registro de sus meses. Tu nombre, el día de tu liga, la fecha de cierre, cuántos clasifican, los nombres que uniste y las otras temporadas se quedan.</p>
+              <button class="btn btn-danger" type="button" onclick="Arena.restartSeasonConfirm()">Empezar la temporada de nuevo</button>
+            </section>
+
             <section class="reset-block" aria-labelledby="h-reset">
               <h2 class="data-title" id="h-reset">Borrar mis datos</h2>
               <p class="panel-copy">Quita de este dispositivo todos tus torneos, mazos, fechas de temporada, tu nombre y el día de tu liga: la app queda como recién abierta. Exporta una copia antes si quieres conservarlos.</p>

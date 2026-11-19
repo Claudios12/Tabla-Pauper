@@ -126,6 +126,12 @@ Object.assign(Arena, {
       el.innerHTML = say(`La temporada terminó y estás empatado en la línea del top ${top}: lo decide el desempate.`, '', 'empatado en la línea');
       return;
     }
+    // With fewer players than places, everyone seen is inside and the players still to come are not in the table: an estimate
+    // then says "casi seguro" about nothing. It waits, as "Lo que necesitas" does (the marks above are arithmetic and still speak).
+    if (!me.mark && table.players.length < top) {
+      el.innerHTML = say(`Hacen falta al menos ${top} jugadores en la tabla para estimarlo: ahora hay ${table.players.length}, y con menos todos quedan dentro del top ${top}, así que la cuenta no diría nada.`, '', 'aún faltan jugadores en la tabla');
+      return;
+    }
     let shown, label, note, tone, exact = true;
     if (me.mark === 'in') {
       shown = 0; label = 'Ya clasificado'; tone = 'is-low';

@@ -172,11 +172,13 @@ function pickLead(stats) {
 }
 
 // The deck that leads and the one that struggles most, judged on decks with enough tournaments to mean something.
-// The headline and the diagnosis both read this, so they never name different decks.
+// The headline and the diagnosis both read this, so they never name different decks. A deck at 50 % or more is doing well
+// (Detalle por mazo says "Buen rendimiento"), so it is never the one that struggles, even when it is the lowest.
 function deckExtremes(stats) {
   const lead = pickLead(stats);
   const weak = !lead ? null : stats
-    .filter((d) => d.deck !== lead.deck && d.count >= CONFIG.BENCHMARKS.MIN_SAMPLE_SIZE && d.winRate < lead.winRate)
+    .filter((d) => d.deck !== lead.deck && d.count >= CONFIG.BENCHMARKS.MIN_SAMPLE_SIZE && d.winRate < lead.winRate
+      && Analytics.roundPct(d.winRate) < CONFIG.BENCHMARKS.GOOD_WIN_RATE)
     .sort((a, b) => a.winRate - b.winRate)[0] || null;
   return { lead, weak };
 }
