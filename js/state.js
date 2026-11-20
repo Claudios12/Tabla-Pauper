@@ -362,6 +362,24 @@ const State = {
     this.decksList = Array.from(foundDecks.values());
   },
 
+  // A deck's name is written on every tournament played with it, so a new name is written on each (whatever the capitals of the
+  // old one). Renaming it to a deck already there joins the two. The night being marked round by round follows. Returns how many
+  // tournaments changed.
+  renameDeck(from, to) {
+    const key = String(from || '').trim().toLowerCase();
+    const name = String(to || '').trim();
+    if (!key || !name) return 0;
+    let changed = 0;
+    this.historic.forEach(item => {
+      if (item && typeof item.deck === 'string' && item.deck.trim().toLowerCase() === key) { item.deck = name; changed++; }
+    });
+    const draft = this.loadDraft();
+    if (draft && draft.deck && draft.deck.trim().toLowerCase() === key) this.saveDraft({ ...draft, deck: name });
+    this.save();
+    this.syncDecksList();
+    return changed;
+  },
+
   deleteDeck(deckName) {
     if (!deckName) return;
     const normalized = deckName.trim();
