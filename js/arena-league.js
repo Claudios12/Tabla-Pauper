@@ -249,7 +249,7 @@ Object.assign(Arena, {
     }
   },
 
-  // button: where the row sat in the list on screen, so focus stays in the list afterwards (the list shows doubtful rows first).
+  // button: where the row sat in the list on screen, so focus stays in the list afterwards.
   removeScannedPlayer(index, button) {
     const at = [...document.querySelectorAll("#ocr-found-list .js-remove-scanned")].indexOf(button);
     const kept = this.keepScanned();
@@ -292,21 +292,41 @@ Object.assign(Arena, {
     }
     row.flags = !League.nameKey(row.name) ? ['noname'] : (row.pts === null ? ['nopts'] : []);
     item.classList.toggle("is-flagged", row.flags.length > 0);
-    const why = row.flags.map(flag => this.FLAG_TEXT[flag](row)).join(' ');
     // The warning is tied to both fields of the row, so a screen reader says why when it lands on either.
     const note = item.querySelector(".ocr-flag");
     const fields = item.querySelectorAll(".ocr-input");
+    if (note) note.remove();
     if (!row.flags.length) {
-      if (note) note.remove();
       fields.forEach(field => field.removeAttribute("aria-describedby"));
-    } else if (note) {
-      note.textContent = why;
     } else {
-      item.insertAdjacentHTML('beforeend', `<p class="ocr-flag" id="ocr-flag-${index}">${why}</p>`);
+      item.insertAdjacentHTML('beforeend', this.scanFlagHtml(row, index));
       fields.forEach(field => field.setAttribute("aria-describedby", `ocr-flag-${index}`));
     }
     this.updateScanSummary();
     this.renderLogPreview();
+  },
+
+  // A warning the person can settle without editing: they looked at the row and the picture is right. A missing name or
+  // missing points cannot be settled that way (the row could not be saved), so those stay until the figure is written.
+  MUST_FIX_FLAGS: ['noname', 'nopts'],
+
+  scanFlagHtml(row, i) {
+    const why = row.flags.map(flag => this.FLAG_TEXT[flag](row)).join(' ');
+    const canConfirm = row.flags.some(flag => !this.MUST_FIX_FLAGS.includes(flag));
+    return `<p class="ocr-flag"><span id="ocr-flag-${i}">${why}</span>`
+      + (canConfirm ? ` <button class="btn btn-secondary ocr-flag-ok js-confirm-scanned" type="button" onclick="Arena.confirmScanned(${i})">Está bien así<span class="visually-hidden">: ${esc(row.name) || `fila ${i + 1}`}</span></button>` : '')
+      + `</p>`;
+  },
+
+  // "Está bien así": the row's warnings go, nothing it says changes, and the row stays where it is. Focus goes to its name.
+  confirmScanned(index) {
+    const row = this._scanned[index];
+    if (!row) return;
+    row.flags = row.flags.filter(flag => this.MUST_FIX_FLAGS.includes(flag));
+    this.renderScanned();
+    this.renderLogPreview();
+    const field = document.querySelector(`[name="ocr-name-${index}"]`);
+    if (field) field.focus({ preventScroll: true });
   },
 
   // A player the scan could not find: the person adds the row by hand, with a name and points.
@@ -766,16 +786,15 @@ Object.assign(Arena, {
     if (!rows.length) return;
     this.updateScanSummary();
     this.renderSameDay();
-    // The rows that need a look come first, so they are never down a scroll; the rest keep the order of the screen.
-    const order = rows.map((row, i) => i).sort((a, b) => (rows[b].flags.length > 0) - (rows[a].flags.length > 0) || a - b);
-    document.getElementById("ocr-found-list").innerHTML = order.map((i) => {
-      const row = rows[i];
+    // Every row stays where the screen has it (the user's wish: a warning shows on the player's own row, it never moves the
+    // row to the top); the title says how many rows need a look.
+    document.getElementById("ocr-found-list").innerHTML = rows.map((row, i) => {
       const flagged = row.flags.length > 0;
       return `<li class="ocr-row ${flagged ? 'is-flagged' : ''}">`
         + `<input class="input-ctrl ocr-input" name="ocr-name-${i}" type="text" value="${esc(row.name)}" placeholder="Nombre" maxlength="60" autocomplete="off" spellcheck="false" onchange="Arena.editScanned(${i}, 'name', this)" aria-label="Nombre del jugador ${i + 1}"${flagged ? ` aria-describedby="ocr-flag-${i}"` : ''}>`
         + `<input class="input-ctrl ocr-input ocr-input-pts" name="ocr-pts-${i}" type="number" value="${row.pts === null ? '' : row.pts}" min="0" max="${League.MAX_PTS}" inputmode="numeric" autocomplete="off" onchange="Arena.editScanned(${i}, 'pts', this)" aria-label="Puntos de ${esc(row.name) || 'este jugador'}"${row.pts === null ? ' aria-invalid="true"' : ''}${flagged ? ` aria-describedby="ocr-flag-${i}"` : ''}>`
         + `<button class="btn-icon-del js-remove-scanned" type="button" onclick="Arena.removeScannedPlayer(${i}, this)" aria-label="Quitar a ${esc(row.name) || 'este jugador'} de la tabla leída">${TRASH_ICON.replace('<svg ', '<svg class="row-delete-icon" ')}</button>`
-        + (flagged ? `<p class="ocr-flag" id="ocr-flag-${i}">${row.flags.map(flag => this.FLAG_TEXT[flag](row)).join(' ')}</p>` : '')
+        + (flagged ? this.scanFlagHtml(row, i) : '')
         + `</li>`;
     }).join('');
     if (open) document.getElementById("ocr-review").open = true;

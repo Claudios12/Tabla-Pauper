@@ -435,6 +435,12 @@ button.board-main:hover .title-text { text-decoration: underline; text-underline
   font-size: 13px;
   color: var(--pill-avg-ink);
 }
+.ocr-flag-ok {
+  display: block;
+  min-height: 44px;
+  margin-block: 8px 4px;
+  background-color: var(--bg-main);
+}
 
 /* The climb: the person's points after each night against the top's line. One scale, two lines told apart by weight and
    dash as well as tone, the place written on each dot, and every figure in the table under the chart. */
