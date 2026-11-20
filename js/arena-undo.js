@@ -208,6 +208,9 @@ Object.assign(Arena, {
         return;
       }
       this.applyScan(result.scan, { images: result.images });
+      // The pictures are read: the picker is emptied, so they cannot be read again by mistake for another night. (A read that
+      // failed keeps them, to try again. Emptying it does not fire "change", so the table just read stays.)
+      fileInput.value = '';
     } catch (err) {
       console.error("Error OCR:", err);
       this.setStatus(`Error al procesar imagen: ${err.message}`, "var(--color-bad)");
