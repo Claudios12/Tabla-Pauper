@@ -59,3 +59,30 @@ test('a night is good, normal or bad by its points, everywhere', () => {
   const demo = app.Demo.build(new Date(2026, 10, 14));
   assert.ok(demo.historic.filter(night => night.deck !== 'No participó').every(night => night.type === app.tournamentType(night.pts)));
 });
+
+test('renaming a deck rewrites every tournament of it, and the night being marked', () => {
+  const app = boot();
+  const S = app.State;
+  S.load();
+  S.historic.push(entry('2026-10-01', 'Elfoss', 9, '3-1-0'), entry('2026-10-08', 'elfoss', 3, '1-3-0'), entry('2026-10-15', 'Burn', 6, '2-2-0'));
+  S.syncDecksList();
+  S.saveDraft({ date: '2026-11-19', deck: 'Elfoss', rounds: [{ r: 'W', vs: '' }] });
+  assert.strictEqual(S.renameDeck('Elfoss', '🟢 Elfos'), 2, 'both spellings change');
+  assert.deepStrictEqual(plain(S.decksList), ['🟢 Elfos', 'Burn']);
+  assert.strictEqual(S.loadDraft().deck, '🟢 Elfos');
+  S.load();
+  assert.deepStrictEqual(plain(S.historic.map(e => e.deck)), ['🟢 Elfos', '🟢 Elfos', 'Burn'], 'saved');
+  const stats = app.Analytics.getAllDeckStats(S.historic).filter(d => d.count > 0);
+  assert.deepStrictEqual(plain(stats.map(d => [d.deck, d.count])), [['🟢 Elfos', 2], ['Burn', 1]]);
+});
+
+test('renaming a deck to another one joins them', () => {
+  const app = boot();
+  const S = app.State;
+  S.load();
+  S.historic.push(entry('2026-10-01', 'Burn', 9, '3-1-0'), entry('2026-10-08', 'Burnn', 3, '1-3-0'));
+  S.syncDecksList();
+  S.renameDeck('Burnn', 'Burn');
+  const stats = app.Analytics.getAllDeckStats(S.historic).filter(d => d.count > 0);
+  assert.deepStrictEqual(plain(stats.map(d => [d.deck, d.count, d.totalPts])), [['Burn', 2, 12]]);
+});

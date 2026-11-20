@@ -243,3 +243,7 @@
 /* Save looks idle until a record is chosen, but stays clickable so its errors can teach */
 .btn-primary.is-idle { color: var(--text-secondary); background-color: var(--surface-3); }
 .btn-primary.is-idle:hover { background-color: #26384f; }
+
+/* Renaming a deck sits above deleting it, in the same quiet dress. */
+.detail-rename { max-width: 520px; margin-block-start: var(--gap); }
+.detail-rename .btn { width: auto; }

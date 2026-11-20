@@ -573,6 +573,35 @@
     </form>
   </dialog>
 
+  <dialog class="dialog" id="deck-dialog" aria-labelledby="dk-title" aria-describedby="dk-body">
+    <form class="dialog-in" id="deck-form" novalidate onsubmit="Arena.saveDeckRename(event)">
+      <h2 class="dialog-title" id="dk-title">Nombre y colores del mazo</h2>
+      <p class="dialog-body" id="dk-body">Se cambia en todos sus torneos, de todas las temporadas.</p>
+
+      <div class="field dialog-field">
+        <label class="field-label" for="dk-name">Nombre</label>
+        <input class="input-ctrl" id="dk-name" name="dk-name" type="text" maxlength="60" placeholder="Ej.: Bogles Hexproof" autocomplete="off" spellcheck="false" aria-describedby="dk-error">
+        <span class="field-error" id="dk-error" role="alert" hidden></span>
+      </div>
+
+      <fieldset class="deck-colours dialog-field">
+        <legend class="field-label">Colores</legend>
+        <div class="preset-records colour-picks">
+            <button class="preset-chip colour-pick js-dk-colour" data-colour="w" type="button" onclick="Arena.toggleRenameColour(this)" aria-pressed="false"><span class="pip mana-white"><img class="pip-image" src="./Imgs/mana/W.png" width="32" height="32" alt=""></span>Blanco</button>
+            <button class="preset-chip colour-pick js-dk-colour" data-colour="u" type="button" onclick="Arena.toggleRenameColour(this)" aria-pressed="false"><span class="pip mana-blue"><img class="pip-image" src="./Imgs/mana/U.png" width="32" height="32" alt=""></span>Azul</button>
+            <button class="preset-chip colour-pick js-dk-colour" data-colour="b" type="button" onclick="Arena.toggleRenameColour(this)" aria-pressed="false"><span class="pip mana-black"><img class="pip-image" src="./Imgs/mana/B.png" width="32" height="32" alt=""></span>Negro</button>
+            <button class="preset-chip colour-pick js-dk-colour" data-colour="r" type="button" onclick="Arena.toggleRenameColour(this)" aria-pressed="false"><span class="pip mana-red"><img class="pip-image" src="./Imgs/mana/R.png" width="32" height="32" alt=""></span>Rojo</button>
+            <button class="preset-chip colour-pick js-dk-colour" data-colour="g" type="button" onclick="Arena.toggleRenameColour(this)" aria-pressed="false"><span class="pip mana-green"><img class="pip-image" src="./Imgs/mana/G.png" width="32" height="32" alt=""></span>Verde</button>
+        </div>
+      </fieldset>
+
+      <div class="dialog-actions">
+        <button class="btn btn-secondary" type="button" onclick="this.closest('dialog').close()">Cancelar</button>
+        <button class="btn btn-primary" type="submit">Guardar nombre</button>
+      </div>
+    </form>
+  </dialog>
+
   <dialog class="dialog" id="edit-dialog" aria-labelledby="ed-title" aria-describedby="ed-body">
     <form class="dialog-in" id="edit-form" novalidate onsubmit="Arena.saveEdit(event)">
       <h2 class="dialog-title" id="ed-title">Editar torneo</h2>
