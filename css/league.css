@@ -331,7 +331,28 @@ button.board-main:hover .title-text { text-decoration: underline; text-underline
 .month-grid td.is-differs .month-reto { color: var(--pill-avg-ink); }
 .month-grid tr.is-doubtful th { color: var(--pill-avg-ink); }
 .month-grid td:last-child { font-weight: 600; }
-.month-fix { margin-block-end: 12px; }
+/* A row's warning sits right under it, in a row of its own across the table. The table scrolls sideways on a phone, so the
+   warning holds to the visible edge and is never wider than the screen: it reads without scrolling. */
+.month-grid tr.is-doubtful > * { background-color: var(--surface-3); }
+.month-grid .month-flagrow > td {
+  padding-block: 0 10px;
+  padding-inline: 8px;
+  text-align: start;
+  border-block-start: 0;
+  background-color: var(--surface-3);
+}
+.month-flag {
+  position: sticky;
+  inset-inline-start: 8px;
+  max-inline-size: calc(100vw - 80px);
+}
+.month-flag .month-fixnote { margin-block-start: 0; }
+.month-flag-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.month-flag-actions .month-yes { min-height: 44px; }
 .month-fixrow {
   min-width: 0;
   margin-block: 0 8px;
@@ -440,6 +461,59 @@ button.board-main:hover .title-text { text-decoration: underline; text-underline
   min-height: 44px;
   margin-block: 8px 4px;
   background-color: var(--bg-main);
+}
+
+/* The pictures read, next to what was read from them: small thumbnails that open the picture large in #picture-dialog */
+.pic-strip {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+  margin-block: 12px;
+}
+.pic-strip-label { flex-basis: 100%; font-size: 13px; color: var(--text-muted); }
+.pic-thumb {
+  padding: 0;
+  overflow: hidden;
+  border: 1px solid var(--rule);
+  border-radius: var(--radius-sm);
+  background-color: var(--surface-3);
+  cursor: zoom-in;
+  touch-action: manipulation;
+}
+.pic-thumb:hover { border-color: var(--text-muted); }
+.pic-thumb:focus-visible { outline: 2px solid var(--color-brand); outline-offset: 2px; }
+.pic-thumb img { display: block; width: 56px; height: 96px; object-fit: cover; object-position: top; }
+.dialog-picture { width: min(calc(100vw - 16px), 720px); }
+.dialog-picture .dialog-in { padding: 12px; }
+.pic-view {
+  max-block-size: 72vh;
+  margin-block: 8px;
+  overflow: auto;
+  overscroll-behavior: contain;
+  border-radius: var(--radius-sm);
+  background-color: var(--bg-main);
+}
+.pic-view img { display: block; width: 100%; height: auto; }
+.pic-view.is-zoomed img { width: 200%; max-width: none; }
+/* In "Corregir la fila": the row's picture above its figures, scrolling inside its own box */
+.pic-inline {
+  max-block-size: 34vh;
+  margin-block-start: 12px;
+  overflow: auto;
+  overscroll-behavior: contain;
+  border-radius: var(--radius-sm);
+  background-color: var(--bg-main);
+}
+.pic-inline img { display: block; width: 100%; height: auto; }
+.pic-inline:focus-visible { outline: 2px solid var(--color-brand); outline-offset: 2px; }
+.pic-open { width: 100%; margin-block: 8px 12px; }
+/* The month review put away: one line where the whole table was */
+.month-folded {
+  display: grid;
+  gap: 8px;
+  font-size: 15px;
+  color: var(--text-secondary);
 }
 
 /* The climb: the person's points after each night against the top's line. One scale, two lines told apart by weight and

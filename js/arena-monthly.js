@@ -122,7 +122,8 @@ Object.assign(Arena, {
       const typing = document.activeElement;
       if (adding && typing && typing.closest && typing.closest('#month-result') && typeof typing.blur === 'function') typing.blur();
       const ordered = Monthly.order(read.map(item => item.table));
-      const names = ordered.map(table => read.find(item => item.table === table).file.name);
+      const orderedFiles = ordered.map(table => read.find(item => item.table === table).file);
+      const names = orderedFiles.map(file => file.name);
       const joined = Monthly.join(adding ? [this._month.table, ...ordered] : ordered, adding ? ['la tabla que ya tenías', ...names] : names);
       if (!joined.ok) {
         this.setMonthStatus(joined.reason, 'bad');
@@ -149,7 +150,9 @@ Object.assign(Arena, {
       const guessed = [];
       if (guess) table.nights.forEach((night, n) => { if (!dates[n] && !cleared.includes(n)) { dates[n] = guess[n]; guessed.push(n); } });
       const kept = before.filter(n => dates[n] === (this._month ? this._month.dates[n] : null) && table.nights[n].day === null);
-      this._month = { table, dates, guessed: [...new Set([...kept, ...guessed])], cleared: cleared.filter(n => !dates[n]), weekday: guessed.length || kept.length ? weekday : (adding ? this._month.weekday : null), edited: adding ? this._month.edited : false };
+      // The pictures, in the order of table.sources (a row's `from` is its picture), to look at next to what was read.
+      const images = [...(adding ? this._month.images || [] : []), ...this.picturesOf(orderedFiles)];
+      this._month = { table, dates, images, guessed: [...new Set([...kept, ...guessed])], cleared: cleared.filter(n => !dates[n]), weekday: guessed.length || kept.length ? weekday : (adding ? this._month.weekday : null), edited: adding ? this._month.edited : false };
       this.setMonthStatus('');
       this.renderMonth(true);
       // The button that brought these pictures was drawn again with the table: focus goes back to it, unless the person went elsewhere.
@@ -175,7 +178,7 @@ Object.assign(Arena, {
     if (joined.same) parts.push(`${plural(joined.same, 'jugador salía', 'jugadores salían')} en más de una captura con las mismas cifras y se contó una vez.`);
     if (joined.filled) parts.push(`${plural(joined.filled, 'jugador se completó', 'jugadores se completaron')} con otra captura donde se leía mejor.`);
     if (joined.kept) parts.push(`${plural(joined.kept, 'jugador salía', 'jugadores salían')} en dos capturas con cifras distintas y se dejó la primera lectura (corregida por ti, en disputa o dudosa la otra).`);
-    if (joined.conflicts) parts.push(`${plural(joined.conflicts, 'jugador tiene', 'jugadores tienen')} cifras distintas en dos capturas: míralo${joined.conflicts === 1 ? '' : 's'} en «Filas por revisar».`);
+    if (joined.conflicts) parts.push(`${plural(joined.conflicts, 'jugador tiene', 'jugadores tienen')} cifras distintas en dos capturas: ${joined.conflicts === 1 ? 'tiene' : 'tienen'} el aviso en su fila de la tabla.`);
     else parts.push('Revísala más abajo.');
     return parts.join(' ');
   },
@@ -273,6 +276,12 @@ Object.assign(Arena, {
       return;
     }
     result.hidden = false;
+    // Done and hidden ("Ocultar la revisión"): one line in its place, so the league table is not under a page of month table.
+    if (this._month.folded) {
+      result.innerHTML = `<p class="month-folded"><span>${esc(this.monthTitle())}: revisión terminada y oculta.</span>`
+        + `<button class="btn btn-secondary" id="month-unfold" type="button" onclick="Arena.unfoldMonthReview()">Ver la revisión otra vez</button></p>`;
+      return;
+    }
     const { table, dates } = this._month;
     const guessed = this._month.guessed || [];
 
@@ -284,27 +293,71 @@ Object.assign(Arena, {
       ? `<p class="ocr-help">No pude leer ${guessed.length === dates.length ? 'las fechas' : 'todas las fechas'} de la imagen: ${guessed.length === dates.length ? 'propuse' : 'propuse para las columnas sin fecha'} ${weekdays} de ese mes (el día de tu liga). Revisa que sean esas.</p>`
       : (table.flags.includes('dates') ? '<p class="ocr-help">No pude leer todas las fechas de la imagen: revisa las de abajo.</p>' : '');
 
+    const images = this._month.images || [];
     result.innerHTML = `<h3 class="month-title">${esc(this.monthTitle())}</h3>`
       + `<p class="month-summary" id="month-summary"></p>`
+      + (images.length ? `<div class="pic-strip"><span class="pic-strip-label">${images.length === 1 ? 'La captura' : 'Las capturas'} (tócala para verla grande):</span>${this.pictureStripHtml(images, 'month')}</div>` : '')
       + `<fieldset class="month-dates"><legend class="field-label">Fechas de la tabla</legend>${datesNote}<div class="month-date-fields">${dateFields}</div></fieldset>`
       + `<div id="month-compare"></div>`
-      + `<div class="month-fix" id="month-fix" hidden></div>`
       + `<div id="month-table"></div>`
       + `<div class="btn-row month-actions" id="month-actions"></div>`;
     this.renderMonthFix();
     this.renderMonthReport();
   },
 
-  // The rows that need the person's hand, each in its own editor. Redrawn when a date changes (the labels name the dates) or a row
-  // is confirmed, never while typing, so a field keeps its place.
+  // A row that needs the person's hand stays in its place in the table (the user's wish: a warning shows on the player's own row,
+  // it never moves the row elsewhere), with its warning, "Está bien así" and "Corregir la fila", which opens its editor in
+  // #month-row-dialog. The editor lives in the dialog because the table is drawn again on every change: a field there would lose
+  // its place while typing. Redrawn when a date changes (the labels name the dates), never while typing.
   renderMonthFix() {
-    const host = document.getElementById("month-fix");
-    if (!host || !this._month) return;
-    const fixing = this._month.table.rows.map((row, i) => ({ row, i })).filter(({ row }) => this.monthRowProblem(row));
-    host.hidden = !fixing.length;
-    host.innerHTML = fixing.length
-      ? `<h3 class="month-title">Filas por revisar</h3><p class="ocr-help">Estas filas no se leyeron del todo bien. Mira la imagen y corrige lo que haga falta, o confirma la fila si está bien como la leí: hasta entonces no se comparan ni se guardan.</p>${fixing.map(({ row, i }) => this.monthEditorHtml(row, i)).join('')}`
+    const dialog = document.getElementById("month-row-dialog");
+    if (!dialog || !dialog.open) return;
+    const i = this._monthFixing;
+    const row = this._month && this._month.table.rows[i];
+    if (!row) { dialog.close(); return; }
+    document.getElementById("mr-editor").innerHTML = this.monthEditorHtml(row, i);
+  },
+
+  openMonthRow(i) {
+    const dialog = document.getElementById("month-row-dialog");
+    const row = this._month && this._month.table.rows[i];
+    if (!dialog || typeof dialog.showModal !== 'function' || !row) return;
+    this._monthFixing = i;
+    document.getElementById("mr-title").textContent = `Corregir la fila de ${row.name || `la fila ${i + 1}`}`;
+    document.getElementById("mr-editor").innerHTML = this.monthEditorHtml(row, i);
+    // The picture the row is on, right above its figures, to read them off without leaving the dialog.
+    const images = this._month.images || [];
+    const k = row.from !== undefined && images[row.from] ? row.from : 0;
+    document.getElementById("mr-picture").innerHTML = images[k]
+      ? `<div class="pic-inline" role="region" aria-label="La captura de esta fila" tabindex="0"><img src="${esc(images[k].url)}" alt="La captura «${esc(images[k].name)}», donde está esta fila"></div>`
+        + `<button class="btn btn-secondary pic-open" type="button" onclick="Arena.showPicture('month', ${k}, this)" aria-haspopup="dialog">Ver la captura grande</button>`
       : '';
+    dialog.showModal();
+    const first = document.querySelector('#mr-editor .ocr-input');
+    if (first) first.focus();
+  },
+
+  // The dialog closed (Listo, Esc, or a row confirmed): focus goes back to the row it was opened from, which the table has drawn
+  // again by now: its "Corregir" button while the row still has a warning, else its name.
+  monthRowClosed() {
+    const i = this._monthFixing;
+    this._monthFixing = undefined;
+    document.getElementById("mr-editor").innerHTML = '';
+    document.getElementById("mr-picture").innerHTML = '';
+    if (i === undefined) return;
+    const target = document.querySelector(`#month-table [data-fix-row="${i}"]`) || document.querySelector(`#month-table [data-row-name="${i}"]`);
+    if (target) target.focus();
+  },
+
+  // The warning under a row of the table: what is doubted, and what can be done about it in place.
+  monthFlagHtml(row, i, columns) {
+    const yes = this.monthRowNeedsYes(row)
+      ? `<button class="btn btn-secondary month-yes" type="button" onclick="Arena.confirmMonthRow(${i})">Está bien así<span class="visually-hidden">: ${esc(row.name || `fila ${i + 1}`)}</span></button>`
+      : '';
+    return `<tr class="month-flagrow"><td colspan="${columns}"><div class="month-flag">`
+      + `<p class="month-fixnote" id="month-flag-${i}">${esc(this.monthRowProblem(row))} Hasta entonces no se compara ni se guarda.</p>`
+      + `<div class="month-flag-actions">${yes}<button class="btn btn-secondary month-yes" data-fix-row="${i}" type="button" onclick="Arena.openMonthRow(${i})" aria-haspopup="dialog">Corregir la fila<span class="visually-hidden">: ${esc(row.name || `fila ${i + 1}`)}</span></button></div>`
+      + `</div></td></tr>`;
   },
 
   monthTitle() {
@@ -363,7 +416,7 @@ Object.assign(Arena, {
           ? `Totales del mes: coinciden ${exactTotals} de ${comparable}${pendingRetos ? '; faltan por guardar los retos' : ''}.`
           : 'Los totales del mes no se pueden comparar mientras falte la tabla de alguna fecha.');
         const waiting = table.rows.length - rows.length;
-        if (waiting) parts.push(`${plural(waiting, 'fila espera', 'filas esperan')} tu revisión (más abajo) y no ${waiting === 1 ? 'cuenta' : 'cuentan'} todavía.`);
+        if (waiting) parts.push(`${plural(waiting, 'fila espera', 'filas esperan')} tu revisión (el aviso está en su fila de la tabla) y no ${waiting === 1 ? 'cuenta' : 'cuentan'} todavía.`);
         if (canMake) parts.push('Puedes crear las noches que faltan con la tabla de la tienda.');
         const unlisted = this.monthUnlisted(report);
         if (unlisted) parts.push(unlisted);
@@ -391,7 +444,8 @@ Object.assign(Arena, {
         const shown = `${night === null ? unread : night}${retoHtml(row.retos[n])}`;
         return `<td class="${differs ? 'is-differs' : ''}">${shown}${differs ? `<span class="visually-hidden"> (no coincide con tu tabla)</span>` : ''}</td>`;
       }).join('');
-      return `<tr class="${bad ? 'is-doubtful' : ''}"><th scope="row">${esc(row.name || `Fila ${i + 1}`)}${bad ? '<span class="visually-hidden"> (revisar)</span>' : ''}</th>${cells}<td class="num">${row.total === null ? unread : row.total}</td></tr>`;
+      return `<tr class="${bad ? 'is-doubtful' : ''}"><th scope="row" data-row-name="${i}" tabindex="-1"${bad ? ` aria-describedby="month-flag-${i}"` : ''}>${esc(row.name || `Fila ${i + 1}`)}${bad ? '<span class="visually-hidden"> (revisar)</span>' : ''}</th>${cells}<td class="num">${row.total === null ? unread : row.total}</td></tr>`
+        + (bad ? this.monthFlagHtml(row, i, dates.length + 2) : '');
     }).join('');
     document.getElementById("month-table").innerHTML = `<p class="table-hint">Desliza horizontalmente para ver todas las columnas.</p><div class="table-wrap month-table" role="region" aria-label="Lo que leí de la tabla de la tienda" tabindex="0"><table class="month-grid">`
       + `<caption>Lo que leí de la tabla de la tienda: los puntos de cada noche, con sus puntos de reto cuando los hay</caption>`
@@ -405,6 +459,9 @@ Object.assign(Arena, {
       + (needsPoints ?`<button class="btn btn-secondary" id="month-points" type="button" onclick="Arena.useStorePoints()">Usar los puntos de la tienda donde no coinciden</button>` : '')
       + `<button class="btn btn-secondary" id="month-more" type="button" onclick="document.getElementById('month-more-file').click()">Agregar otra captura de esta tabla</button>`
       + `<button class="btn btn-danger" id="month-discard" type="button" onclick="Arena.discardMonth()">Descartar la tabla del mes</button>`;
+    // Everything checked, the retos saved and no night left to make: the review can be put away.
+    const done = rows.length > 0 && rows.length === table.rows.length && !missingNights && !pendingRetos && !canMake;
+    if (done) document.getElementById("month-actions").insertAdjacentHTML('afterbegin', `<button class="btn btn-primary" id="month-hide" type="button" onclick="Arena.foldMonthReview()">Listo: ocultar la revisión</button>`);
   },
 
   // A row that needs the person's hand: the name and every figure, each in a field with its own label.
@@ -481,16 +538,36 @@ Object.assign(Arena, {
   confirmMonthRow(i) {
     const row = this._month && this._month.table.rows[i];
     if (!row) return;
+    const month = this._month;
+    const before = { how: [...(row.how || [])], flags: [...row.flags], touched: row.touched, edited: month.edited };
     row.how = (row.how || []).map(how => (how === 'derived' ? 'confirmed' : how));
     row.flags = row.flags.filter(flag => !['snapped', 'conflict'].includes(flag));
     this._month.edited = true;
     row.touched = true;
-    this.renderMonthFix();
     this.renderMonthReport();
-    // The row's editor is gone: focus goes on to the next row to look at, or to the button that saves.
-    const next = document.querySelector('#month-fix .month-fixrow .ocr-input');
-    (next || document.querySelector('#month-actions .btn-primary'))?.focus();
-    this.notify(`«${row.name}» confirmada: ya cuenta en la comparación.`);
+    // The row stays where it is and its warning goes. From the dialog, closing it puts focus back on the row (monthRowClosed);
+    // from the table, focus goes on to the next row with a warning, or stays on this row's name.
+    const dialog = document.getElementById("month-row-dialog");
+    if (dialog && dialog.open) dialog.close();
+    else {
+      const later = [...document.querySelectorAll('#month-table [data-fix-row]')].find(button => Number(button.dataset.fixRow) > i);
+      (later || document.querySelector(`#month-table [data-row-name="${i}"]`))?.focus();
+    }
+    this.notify(`«${row.name}» confirmada: ya cuenta en la comparación.`, {
+      action: {
+        label: 'Deshacer',
+        run: () => {
+          // Only while it is the same table: one discarded or read again since then is not this row any more.
+          if (this._month !== month || month.table.rows[i] !== row) return;
+          Object.assign(row, { how: before.how, flags: before.flags, touched: before.touched });
+          month.edited = before.edited;
+          month.folded = false;
+          this.renderMonth(true);
+          document.querySelector(`#month-table [data-fix-row="${i}"]`)?.focus();
+          this.notify(`«${row.name}» vuelve a esperar tu revisión.`);
+        }
+      }
+    });
   },
 
   // ─────────────────────────────────────────────────────────────
@@ -524,7 +601,7 @@ Object.assign(Arena, {
       : `Esos retos ya estaban guardados.${rest}`;
     this.notify(message, changed.retos ? { action: { label: 'Deshacer', run: () => { this.restoreSnapshot(before); this.renderMonth(); this.focusMonthAction('month-save'); this.notify('Retos quitados: tus tablas volvieron a como estaban.'); } } } : {});
     this.renderMonth();
-    this.focusMonthAction('month-save');
+    this.focusMonthAction('month-hide', 'month-save');
   },
 
   // The nights where the store and the person's table mostly disagree, in words, or '': that looks more like the wrong date than
@@ -575,7 +652,7 @@ Object.assign(Arena, {
       action: { label: 'Deshacer', run: () => { this.restoreSnapshot(before); this.renderMonth(); this.focusMonthAction('month-save'); this.notify('Tus tablas volvieron a como estaban.'); } }
     });
     this.renderMonth();
-    this.focusMonthAction('month-save');
+    this.focusMonthAction('month-hide', 'month-save');
   },
 
   // Gives the person the nights the poster has and they lack (see Monthly.plan), so the general list can have the whole month without
@@ -619,7 +696,29 @@ Object.assign(Arena, {
       action: { label: 'Deshacer', run: () => { this.restoreSnapshot(before); this.renderMonth(); this.focusMonthAction('month-make', 'month-save'); this.notify('Las noches volvieron a como estaban.'); } }
     });
     this.renderMonth();
-    this.focusMonthAction('month-make', 'month-save');
+    this.focusMonthAction('month-hide', 'month-make', 'month-save');
+  },
+
+  // The review is done: it shrinks to one line, and the card closes, so the league table is right under it again. The table held
+  // stays (for this visit), and "Ver la revisión otra vez" brings it back as it was.
+  foldMonthReview() {
+    if (!this._month) return;
+    this._month.folded = true;
+    this.renderMonth();
+    const card = document.getElementById("league-month");
+    if (card) {
+      card.open = false;
+      this.rememberFold(card);
+      card.querySelector('summary')?.focus();
+    }
+    this.notify('Revisión del mes oculta. Ábrela otra vez desde «Tabla del mes de la tienda».');
+  },
+
+  unfoldMonthReview() {
+    if (!this._month) return;
+    this._month.folded = false;
+    this.renderMonth(true);
+    this.focusMonthAction('month-hide', 'month-save');
   },
 
   discardMonth() {

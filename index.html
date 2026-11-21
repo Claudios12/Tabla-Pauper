@@ -412,6 +412,7 @@
                   <p class="ocr-notes" id="ocr-found-notes" hidden></p>
                   <button class="btn btn-secondary ocr-add-image" type="button" onclick="document.getElementById('ocr-more').click()">Agregar otra captura de esta tabla</button>
                   <input id="ocr-more" name="ocr-more" type="file" accept="image/*" multiple hidden onchange="Arena.addScreenshots(this)" aria-label="Otra captura de la misma tabla">
+                  <div class="pic-strip" id="ocr-pictures" hidden></div>
                   <ul class="ocr-list" id="ocr-found-list"></ul>
                   <div class="btn-row">
                     <button class="btn btn-secondary" type="button" onclick="Arena.addScannedRow()">Agregar jugador</button>
@@ -600,6 +601,29 @@
         <button class="btn btn-primary" type="submit">Guardar nombre</button>
       </div>
     </form>
+  </dialog>
+
+  <dialog class="dialog dialog-picture" id="picture-dialog" aria-labelledby="pic-title" onclose="Arena.pictureClosed()">
+    <div class="dialog-in">
+      <h2 class="dialog-title" id="pic-title">Captura</h2>
+      <div class="pic-view" id="pic-view"></div>
+      <div class="dialog-actions">
+        <button class="btn btn-secondary" id="pic-zoom" type="button" onclick="Arena.zoomPicture()" aria-pressed="false">Ampliar</button>
+        <button class="btn btn-secondary" type="button" onclick="this.closest('dialog').close()">Cerrar</button>
+      </div>
+    </div>
+  </dialog>
+
+  <dialog class="dialog" id="month-row-dialog" aria-labelledby="mr-title" onclose="Arena.monthRowClosed()">
+    <div class="dialog-in">
+      <h2 class="dialog-title" id="mr-title">Corregir la fila</h2>
+      <p class="dialog-body">Mira la imagen y escribe las cifras que se leyeron mal. Lo que cambies se compara al momento.</p>
+      <div id="mr-picture"></div>
+      <div id="mr-editor"></div>
+      <div class="dialog-actions">
+        <button class="btn btn-secondary" type="button" onclick="this.closest('dialog').close()">Listo</button>
+      </div>
+    </div>
   </dialog>
 
   <dialog class="dialog" id="edit-dialog" aria-labelledby="ed-title" aria-describedby="ed-body">

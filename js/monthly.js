@@ -47,7 +47,7 @@ const Monthly = {
     // A day or a month of 0 is not one: it was not read.
     const nights = data.columns.map(col => ({ day: clampInt(col && col.day, 31, 1) }));
 
-    // A row that is no row at all (null, a bare text) is read as an empty one: it shows under "Filas por revisar", it does not
+    // A row that is no row at all (null, a bare text) is read as an empty one: it is flagged on its row of the table, it does not
     // stop the table.
     const rows = data.rows.map(given => {
       const raw = given && typeof given === 'object' ? given : {};
