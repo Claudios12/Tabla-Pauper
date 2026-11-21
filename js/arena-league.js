@@ -214,7 +214,7 @@ Object.assign(Arena, {
 
   // A copy of the table read, to put it back.
   keepScanned() {
-    return { rows: this._scanned.map(row => ({ ...row, flags: [...row.flags] })), notes: { ...this._scanNotes, places: [...(this._scanNotes.places || [])] } };
+    return { rows: this._scanned.map(row => ({ ...row, flags: [...row.flags] })), notes: { ...this._scanNotes, places: [...(this._scanNotes.places || [])] }, pictures: [...this._scanPictures] };
   },
 
   // Puts a kept table back (Deshacer), and opens the list so the person sees it.
@@ -222,6 +222,7 @@ Object.assign(Arena, {
     this._scanRun++;
     this._scanned = kept.rows.map(row => ({ ...row, flags: [...row.flags] }));
     this._scanNotes = { ...kept.notes };
+    this._scanPictures = [...(kept.pictures || [])];
     this.renderScanned(true);
     this.renderLogPreview();
     this.notify('Tabla recuperada.');
@@ -238,6 +239,7 @@ Object.assign(Arena, {
     const kept = reason ? this.keepScanned() : null;
     this._scanned = [];
     this._scanNotes = { missing: 0, places: [] };
+    this._scanPictures = [];
     this.renderScanned();
     this.renderLogPreview();
     if (reason === true) this.setStatus('Tabla descartada: el torneo se guardará solo con tu resultado.', 'var(--text-secondary)');
@@ -319,14 +321,90 @@ Object.assign(Arena, {
   },
 
   // "Está bien así": the row's warnings go, nothing it says changes, and the row stays where it is. Focus goes to its name.
+  // Deshacer puts the warnings back, on that same row.
   confirmScanned(index) {
     const row = this._scanned[index];
     if (!row) return;
+    const flags = [...row.flags];
+    const run = this._scanRun;
     row.flags = row.flags.filter(flag => this.MUST_FIX_FLAGS.includes(flag));
     this.renderScanned();
     this.renderLogPreview();
-    const field = document.querySelector(`[name="ocr-name-${index}"]`);
-    if (field) field.focus({ preventScroll: true });
+    const focusRow = () => document.querySelector(`[name="ocr-name-${index}"]`)?.focus({ preventScroll: true });
+    focusRow();
+    this.notify(`Aviso quitado de ${row.name || 'la fila'}.`, {
+      action: {
+        label: 'Deshacer',
+        run: () => {
+          // Only while it is the same table: one read or discarded since then is not this row any more.
+          if (run !== this._scanRun || this._scanned[index] !== row) return;
+          row.flags = flags;
+          this.renderScanned(true);
+          this.renderLogPreview();
+          focusRow();
+          this.notify(`El aviso de ${row.name || 'la fila'} volvió.`);
+        }
+      }
+    });
+  },
+
+  // ─────────────────────────────────────────────────────────────
+  // THE PICTURES, NEXT TO WHAT WAS READ FROM THEM
+  // ─────────────────────────────────────────────────────────────
+  // The pictures read for the night's table, kept for this visit only (an address on the device, never stored), so the person can
+  // check a warning against the picture without leaving the page. They go with the table (discarded, saved, read again).
+  _scanPictures: [],
+
+  picturesOf(files) {
+    return files.map(file => ({ url: URL.createObjectURL(file), name: file.name || 'captura' }));
+  },
+
+  // A row of thumbnails; each opens its picture large (kind: 'scan' or 'month', where the list lives).
+  pictureStripHtml(pictures, kind) {
+    return pictures.map((pic, k) => `<button class="pic-thumb" type="button" onclick="Arena.showPicture('${kind}', ${k}, this)" aria-haspopup="dialog">`
+      + `<img src="${esc(pic.url)}" width="56" height="96" alt="" loading="lazy"><span class="visually-hidden">Ver la captura ${pictures.length > 1 ? `${k + 1}, ` : ''}«${esc(pic.name)}»</span></button>`).join('');
+  },
+
+  renderScanPictures() {
+    const host = document.getElementById("ocr-pictures");
+    if (!host) return;
+    const pictures = this._scanned.length ? this._scanPictures : [];
+    host.hidden = !pictures.length;
+    host.innerHTML = pictures.length
+      ? `<span class="pic-strip-label">${pictures.length === 1 ? 'La captura' : 'Las capturas'} (tócala para verla grande):</span>${this.pictureStripHtml(pictures, 'scan')}`
+      : '';
+  },
+
+  showPicture(kind, k, opener) {
+    const list = kind === 'scan' ? this._scanPictures : ((this._month && this._month.images) || []);
+    const pic = list[k];
+    const dialog = document.getElementById("picture-dialog");
+    if (!pic || !dialog || typeof dialog.showModal !== 'function') return;
+    this._pictureOpener = opener || document.activeElement;
+    document.getElementById("pic-title").textContent = list.length > 1 ? `Captura ${k + 1} de ${list.length}` : 'Captura';
+    document.getElementById("pic-view").innerHTML = `<img src="${esc(pic.url)}" alt="La captura «${esc(pic.name)}», tal como la subiste">`;
+    const zoom = document.getElementById("pic-zoom");
+    zoom.setAttribute("aria-pressed", "false");
+    zoom.textContent = 'Ampliar';
+    document.getElementById("pic-view").classList.remove("is-zoomed");
+    dialog.showModal();
+  },
+
+  // The picture fits the screen, or is shown twice as wide to read small figures (the box scrolls both ways).
+  zoomPicture() {
+    const view = document.getElementById("pic-view");
+    const zoom = document.getElementById("pic-zoom");
+    const on = !view.classList.contains("is-zoomed");
+    view.classList.toggle("is-zoomed", on);
+    zoom.setAttribute("aria-pressed", String(on));
+    zoom.textContent = on ? 'Ajustar a la pantalla' : 'Ampliar';
+  },
+
+  pictureClosed() {
+    document.getElementById("pic-view").innerHTML = '';
+    const opener = this._pictureOpener;
+    this._pictureOpener = null;
+    if (opener && opener.isConnected) opener.focus();
   },
 
   // A player the scan could not find: the person adds the row by hand, with a name and points.
@@ -729,7 +807,7 @@ Object.assign(Arena, {
       return;
     }
     const before = this.snapshot();
-    const kept = { rows: this._scanned.map(row => ({ ...row, flags: [...row.flags] })), notes: { ...this._scanNotes } };
+    const kept = { rows: this._scanned.map(row => ({ ...row, flags: [...row.flags] })), notes: { ...this._scanNotes }, pictures: [...this._scanPictures] };
     const merged = League.mergeStored(entry.playerResults || [], incoming);
     entry.playerResults = merged.rows;
     // A night made from the store's table for this day gives way to the tournament's own table, and brings what it lacks.
@@ -755,6 +833,7 @@ Object.assign(Arena, {
           this.restoreSnapshot(before);
           this._scanned = kept.rows;
           this._scanNotes = kept.notes;
+          this._scanPictures = kept.pictures || [];
           this.renderScanned();
           this.renderLogPreview();
           this.notify('Deshecho: la tabla volvió a la lista, sin sumarse.');
@@ -786,6 +865,7 @@ Object.assign(Arena, {
     if (!rows.length) return;
     this.updateScanSummary();
     this.renderSameDay();
+    this.renderScanPictures();
     // Every row stays where the screen has it (the user's wish: a warning shows on the player's own row, it never moves the
     // row to the top); the title says how many rows need a look.
     document.getElementById("ocr-found-list").innerHTML = rows.map((row, i) => {

@@ -283,7 +283,7 @@ Object.assign(Arena, {
     State.syncDecksList();
     State.save();
     // Undo takes the tournament out of the history, but the table took a while to check: it goes back to the form.
-    const keptScan = { rows: this._scanned.map(row => ({ ...row, flags: [...row.flags] })), notes: { ...this._scanNotes } };
+    const keptScan = { rows: this._scanned.map(row => ({ ...row, flags: [...row.flags] })), notes: { ...this._scanNotes }, pictures: [...this._scanPictures] };
     this.clearScannedStandings();
     const keptDraft = this._draft ? { ...this._draft, rounds: this._draft.rounds.map(round => ({ ...round })) } : null;
     this.forgetDraft();
@@ -341,6 +341,7 @@ Object.assign(Arena, {
           if (keptScan.rows.length) {
             this._scanned = keptScan.rows;
             this._scanNotes = keptScan.notes;
+            this._scanPictures = keptScan.pictures || [];
             this.renderScanned();
             this.renderLogPreview();
           }

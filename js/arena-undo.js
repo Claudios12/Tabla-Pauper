@@ -202,11 +202,14 @@ Object.assign(Arena, {
     // Choosing another image, discarding the table or saving while this read runs makes its result out of date.
     const run = ++this._scanRun;
     try {
-      const result = await this.readPictures([...fileInput.files], []);
+      const files = [...fileInput.files];
+      const result = await this.readPictures(files, []);
       if (run !== this._scanRun) {
         this.setStatus("La imagen cambió mientras se leía, así que se descartó esa lectura. Pulsa «Leer imagen» otra vez.", "var(--text-secondary)");
         return;
       }
+      // The pictures stay on screen next to the list, to check a warning against them.
+      this._scanPictures = this.picturesOf(files);
       this.applyScan(result.scan, { images: result.images });
       // The pictures are read: the picker is emptied, so they cannot be read again by mistake for another night. (A read that
       // failed keeps them, to try again. Emptying it does not fire "change", so the table just read stays.)
@@ -239,6 +242,7 @@ Object.assign(Arena, {
         this.setStatus("La tabla cambió mientras se leía, así que se descartó esa lectura. Agrega la captura otra vez.", "var(--text-secondary)");
         return;
       }
+      this._scanPictures = [...this._scanPictures, ...this.picturesOf(files)];
       this.applyScan(result.scan, { ...result, adding: true });
     } catch (err) {
       console.error("Error OCR:", err);
