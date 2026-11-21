@@ -1,5 +1,5 @@
 // Arena: confirmations, undo and deleting tournaments or decks.
-/* global State, Analytics, League, plural, deckInfo, isStoreNight, Arena, Gemini */
+/* global State, Analytics, League, plural, deckInfo, isStoreNight, Arena, Gemini, isIsoDate, pictureDayOff */
 
 Object.assign(Arena, {
   // ─────────────────────────────────────────────────────────────
@@ -186,6 +186,33 @@ Object.assign(Arena, {
     return false;
   },
 
+  // The day the table is for: the saved tournament it goes to when the person chose one (or the page made one out), else the
+  // form's date.
+  scanDayIso() {
+    const chosen = this._scanChoice && this._scanChoice !== 'new' && State.historic.includes(this._scanChoice) ? this._scanChoice : null;
+    const target = chosen || (this._scanned.length ? this.scanTarget() : null);
+    if (target && isIsoDate(target.isoDate)) return target.isoDate;
+    return document.getElementById("log-date")?.value || '';
+  },
+
+  // Before a picture is read, its day is set against the tournament's (pictureDayOff: that day or the next one is fine). A picture
+  // of another day asks first, because a table of another night would go into this one. True to read.
+  async picturesFitDay(files) {
+    const iso = this.scanDayIso();
+    const off = files.map(file => ({ file, day: pictureDayOff(file.lastModified, iso) })).filter(item => item.day);
+    if (!off.length) return true;
+    const days = [...new Set(off.map(item => item.day))].map(day => this.dayLabel(day));
+    const which = files.length === 1 ? 'Esta captura es' : (off.length === 1 ? `La captura «${off[0].file.name}» es` : `${off.length} de las capturas son`);
+    const ok = await this.confirmDialog({
+      title: '¿Es de este torneo?',
+      body: `${which} del ${days.join(' y del ')}, y el torneo es del ${this.dayLabel(iso)}. Si es de otra noche, su tabla se sumaría a esta. (Una captura tomada pasada la medianoche cuenta como de esa noche: no pregunto por ella.)`,
+      confirmLabel: 'Sí, leerla igual',
+      danger: false
+    });
+    if (!ok) this.setStatus(`No se leyó: elige la captura de la noche del ${this.dayLabel(iso)}, o cambia la fecha del torneo.`, "var(--text-secondary)");
+    return ok;
+  },
+
   async processOcrScreenshot() {
     if (this._ocrRunning) {
       this.setStatus("Espera a que termine la lectura que está en curso.", "var(--color-bad)");
@@ -197,6 +224,7 @@ Object.assign(Arena, {
       return;
     }
     if (!this.requireApiKey()) return;
+    if (!(await this.picturesFitDay([...fileInput.files]))) return;
 
     this._ocrRunning = true;
     // Choosing another image, discarding the table or saving while this read runs makes its result out of date.
@@ -233,6 +261,7 @@ Object.assign(Arena, {
       return;
     }
     if (!this.requireApiKey()) return;
+    if (!(await this.picturesFitDay(files))) return;
     this._ocrRunning = true;
     const run = ++this._scanRun;
     try {

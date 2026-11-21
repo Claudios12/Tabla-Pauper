@@ -4,7 +4,8 @@
          shortDate, TRASH_ICON, EDIT_ICON, logRowHtml, pickLead, deckExtremes, statusPillClass, deckPillHtml,
          deltaHtml, localIsoDate, seasonOf, SEASON_FORMAT, nextSeason, seasonEndBounds, isIsoDate,
          cleanSeasonEnds, cleanSeasonTop, longDate, deckNameWithColours, weekdayName, cleanProfile,
-         PROFILE_NAME_MAX, isStoreNight, tournamentType, countEntries, cleanNameLinks, cleanRounds, cleanMonthsLog */
+         PROFILE_NAME_MAX, isStoreNight, tournamentType, countEntries, cleanNameLinks, cleanRounds, cleanMonthsLog,
+         pictureDayOff */
 
 // ══════════════════════════════════════════════════════════════════
 // DISPLAY HELPERS (formatting, deck names as mana pips)
@@ -236,6 +237,16 @@ function seasonEndBounds(season) {
 }
 
 // A real calendar date written YYYY-MM-DD ("2026-02-31" is not one).
+// The day a picture was taken (the time its file carries, as the phone keeps it) against the day of the tournament. A picture of
+// that day, or of the next one (the night ends after midnight: the user's rule), is of that night and gives ''. Any other day comes
+// back as 'YYYY-MM-DD', so the page asks before reading it. A file with no time, or a tournament with no date, gives '' (no guess).
+function pictureDayOff(lastModified, tournamentIso) {
+  if (!Number.isFinite(lastModified) || lastModified <= 0 || !isIsoDate(tournamentIso)) return '';
+  const [y, m, d] = tournamentIso.split('-').map(Number);
+  const taken = localIsoDate(new Date(lastModified));
+  return taken === tournamentIso || taken === localIsoDate(new Date(y, m - 1, d + 1)) ? '' : taken;
+}
+
 function isIsoDate(text) {
   if (typeof text !== 'string' || !/^\d{4}-\d{2}-\d{2}$/.test(text)) return false;
   const [y, m, d] = text.split('-').map(Number);
