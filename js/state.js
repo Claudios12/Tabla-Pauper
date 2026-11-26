@@ -380,6 +380,28 @@ const State = {
     return changed;
   },
 
+  // An opponent's deck written wrong in the rounds ("Afinity"): every round against it, in every tournament of every deck and
+  // season and in the night being marked, takes the new name (the old one whatever its capitals). A bye has no opponent and is
+  // never touched. Giving it the name of another opponent joins the two, since rounds are grouped by name. Returns how many
+  // saved rounds changed.
+  renameOpponent(from, to) {
+    const key = String(from || '').trim().toLowerCase();
+    const name = String(to || '').replace(/\s+/g, ' ').trim().slice(0, 40);
+    if (!key || !name) return 0;
+    const fix = (rounds) => {
+      let n = 0;
+      if (Array.isArray(rounds)) rounds.forEach(round => {
+        if (round && round.r !== 'B' && typeof round.vs === 'string' && round.vs.trim().toLowerCase() === key) { round.vs = name; n++; }
+      });
+      return n;
+    };
+    const changed = this.historic.reduce((sum, item) => sum + (item ? fix(item.rounds) : 0), 0);
+    const draft = this.loadDraft();
+    if (draft && fix(draft.rounds)) this.saveDraft(draft);
+    this.save();
+    return changed;
+  },
+
   deleteDeck(deckName) {
     if (!deckName) return;
     const normalized = deckName.trim();

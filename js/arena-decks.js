@@ -1,7 +1,7 @@
 // Arena: the deck cards, the matrix and the Detalle por mazo page.
 /* global CONFIG, State, Analytics, nf0, nf1, pct, plural, esc, deckInfo, pipsHtml, stripeHtml,
          deckNameHtml, shortDate, TRASH_ICON, logRowHtml, pickLead, statusPillClass, deckPillHtml,
-         deltaHtml, deckNameWithColours, Arena */
+         deltaHtml, deckNameWithColours, Arena, EDIT_ICON, cleanRounds */
 
 Object.assign(Arena, {
   // ─────────────────────────────────────────────────────────────
@@ -140,6 +140,99 @@ Object.assign(Arena, {
   },
 
   // ─────────────────────────────────────────────────────────────
+  // RENAMING AN OPPONENT'S DECK in the rounds ("Afinity" for "Affinity"), or joining it to another written by mistake
+  // ─────────────────────────────────────────────────────────────
+  // Every opponent named in a round (saved or being marked), one per name whatever its capitals, with how many rounds name it.
+  opponentRounds() {
+    const seen = new Map();
+    const add = (round) => {
+      if (!round.vs) return;
+      const key = round.vs.toLowerCase();
+      if (!seen.has(key)) seen.set(key, { vs: round.vs, n: 0 });
+      seen.get(key).n++;
+    };
+    State.historic.forEach(entry => cleanRounds(entry.rounds).forEach(add));
+    if (this._draft) cleanRounds(this._draft.rounds).forEach(add);
+    return seen;
+  },
+
+  openOpponentRename(vs, opener) {
+    const dialog = document.getElementById("vs-dialog");
+    if (!dialog || typeof dialog.showModal !== 'function' || !vs) return;
+    this._renameVs = vs;
+    this._renameVsOpener = opener || document.activeElement;
+    const input = document.getElementById("vs-name");
+    input.value = vs;
+    input.removeAttribute("aria-invalid");
+    const error = document.getElementById("vs-error");
+    error.textContent = '';
+    error.hidden = true;
+    dialog.showModal();
+    input.select();
+  },
+
+  async saveOpponentRename(event) {
+    event.preventDefault();
+    const from = this._renameVs;
+    const input = document.getElementById("vs-name");
+    const error = document.getElementById("vs-error");
+    const dialog = document.getElementById("vs-dialog");
+    const name = input.value.replace(/\s+/g, ' ').trim();
+    if (!name) {
+      error.textContent = 'Escribe el nombre del mazo rival.';
+      error.hidden = false;
+      input.setAttribute("aria-invalid", "true");
+      input.focus();
+      return;
+    }
+    if (!from || name === from) { dialog.close(); return; }
+    let to = name;
+    // The name of another opponent already written: the same deck written two ways, so the two are joined, after asking.
+    const all = this.opponentRounds();
+    const twin = name.toLowerCase() !== from.toLowerCase() ? all.get(name.toLowerCase()) : null;
+    if (twin) {
+      dialog.close();
+      const mine = (all.get(from.toLowerCase()) || { n: 0 }).n;
+      const ok = await this.confirmDialog({
+        title: `Unir «${from}» con «${twin.vs}»`,
+        body: `Ya anotaste «${twin.vs}» en ${plural(twin.n, 'ronda', 'rondas')}. Si sigues, ${mine === 1 ? 'la ronda' : `las ${mine} rondas`} contra «${from}» ${mine === 1 ? 'pasa' : 'pasan'} a «${twin.vs}» y cuentan juntas, con todos tus mazos. Podrás deshacerlo unos segundos después.`,
+        confirmLabel: 'Unir los nombres',
+        danger: false
+      });
+      if (!ok) { this._renameVsOpener?.focus(); return; }
+      to = twin.vs;
+    }
+    const before = this.snapshot();
+    // The night being marked is not in the undo copy (it is a draft on the device), so it is kept apart and put back too.
+    const storedDraft = State.loadDraft();
+    const draftBefore = this._draft ? { ...this._draft, rounds: this._draft.rounds.map(round => ({ ...round })) } : null;
+    // State rewrites the draft on the device; the one on screen is the same night, so it takes the same name.
+    const changed = State.renameOpponent(from, to);
+    if (this._draft) {
+      this._draft.rounds.forEach(round => { if (round.r !== 'B' && round.vs && round.vs.trim().toLowerCase() === from.toLowerCase()) round.vs = to; });
+      this.renderRounds();
+    }
+    if (dialog.open) dialog.close();
+    this.renderDeckDetail();
+    const focusVs = (vs) => [...document.querySelectorAll(".js-rename-vs")].find(button => button.dataset.vs.toLowerCase() === vs.toLowerCase())?.focus();
+    focusVs(to);
+    const what = twin ? `«${from}» se unió a «${to}»` : `El mazo rival ahora se llama «${to}»`;
+    this.notify(`${what}: ${plural(changed, 'ronda cambiada', 'rondas cambiadas')}.`, {
+      action: {
+        label: 'Deshacer',
+        run: () => {
+          this.restoreSnapshot(before);
+          if (storedDraft) State.saveDraft(storedDraft);
+          if (draftBefore) { this._draft = draftBefore; this.renderRounds(); }
+          this.renderDeckDetail();
+          focusVs(from);
+          this.notify(`El mazo rival volvió a llamarse «${from}».`);
+        }
+      }
+    });
+  },
+
+  // ─────────────────────────────────────────────────────────────
   // RENAMING A DECK (name and colours), or joining it to another written by mistake
   // ─────────────────────────────────────────────────────────────
   openDeckRename(deck, opener) {
@@ -268,7 +361,7 @@ Object.assign(Arena, {
           <table class="month-grid matchup-grid">
             <caption>Récord de ${esc(info.name)} contra cada mazo rival${esc(this.inSeason())}, de las rondas que anotaste</caption>
             <thead><tr><th scope="col">Mazo rival</th><th scope="col">Rondas</th><th scope="col">Récord</th><th scope="col">% victorias</th></tr></thead>
-            <tbody>${matchups.map(row => `<tr><th scope="row">${row.vs ? esc(row.vs) : '<span class="muted">Sin anotar</span>'}</th><td>${row.played}</td><td>${row.w}-${row.l}-${row.d}</td><td class="${row.winRate >= 50 ? 'win-rate-good' : ''}">${pct(row.winRate)}</td></tr>`).join('')}</tbody>
+            <tbody>${matchups.map(row => `<tr><th scope="row">${row.vs ? `<span class="matchup-name"><span class="matchup-vs">${esc(row.vs)}</span><button class="btn-icon-edit js-rename-vs" data-vs="${esc(row.vs)}" type="button" onclick="Arena.openOpponentRename(this.dataset.vs, this)" aria-haspopup="dialog" aria-label="Corregir el nombre de «${esc(row.vs)}»">${EDIT_ICON.replace('<svg ', '<svg class="row-delete-icon" ')}</button></span>` : '<span class="muted">Sin anotar</span>'}</th><td>${row.played}</td><td>${row.w}-${row.l}-${row.d}</td><td class="${row.winRate >= 50 ? 'win-rate-good' : ''}">${pct(row.winRate)}</td></tr>`).join('')}</tbody>
           </table>
         </div>
         <p class="hint matchup-note">Sale de las rondas que marcas en Registrar, en «Llevar la cuenta ronda a ronda». Con pocas rondas contra un mazo, el porcentaje dice poco.</p>

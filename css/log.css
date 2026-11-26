@@ -145,4 +145,12 @@
 .matchup-card { margin-block-start: 16px; }
 .matchup-wrap { padding-inline: 16px; }
 .matchup-grid th:first-child { min-width: 120px; }
+/* The opponent's name with its pencil, to correct a name written wrong in the rounds */
+.matchup-name {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+.matchup-vs { min-width: 0; overflow-wrap: anywhere; }
+.matchup-grid tbody th { padding-block: 2px; }
 .matchup-note { padding-block: 8px 16px; padding-inline: 16px; }

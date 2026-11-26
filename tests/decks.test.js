@@ -86,3 +86,25 @@ test('renaming a deck to another one joins them', () => {
   const stats = app.Analytics.getAllDeckStats(S.historic).filter(d => d.count > 0);
   assert.deepStrictEqual(plain(stats.map(d => [d.deck, d.count, d.totalPts])), [['Burn', 2, 12]]);
 });
+
+test('renaming an opponent deck rewrites every round against it, and the night being marked', () => {
+  const app = boot();
+  const S = app.State;
+  S.load();
+  const a = entry('2026-10-01', 'Burn', 9, '3-1-0');
+  a.rounds = [{ r: 'W', vs: 'Afinity' }, { r: 'L', vs: 'Elves' }, { r: 'B', vs: '' }];
+  const b = entry('2026-10-08', 'Elves', 6, '2-2-0');
+  b.rounds = [{ r: 'W', vs: 'afinity' }, { r: 'D', vs: 'Affinity' }];
+  S.historic.push(a, b);
+  S.syncDecksList();
+  S.saveDraft({ date: '2026-11-19', deck: 'Burn', rounds: [{ r: 'L', vs: 'AFINITY' }] });
+  assert.strictEqual(S.renameOpponent('Afinity', 'Affinity'), 2, 'both spellings, in two decks');
+  assert.strictEqual(S.loadDraft().rounds[0].vs, 'Affinity');
+  S.load();
+  assert.deepStrictEqual(plain(S.historic.flatMap(e => e.rounds.map(r => r.vs))), ['Affinity', 'Elves', '', 'Affinity', 'Affinity'], 'saved; the bye untouched');
+  const burn = app.Analytics.matchups(S.historic, 'Burn');
+  assert.deepStrictEqual(plain(burn.map(m => [m.vs, m.w, m.l])), [['Affinity', 1, 0], ['Elves', 0, 1]]);
+  const elves = app.Analytics.matchups(S.historic, 'Elves');
+  assert.deepStrictEqual(plain(elves.map(m => [m.vs, m.w, m.d])), [['Affinity', 1, 1]], 'joined with the one written right');
+  assert.strictEqual(S.renameOpponent('Affinity', '  '), 0, 'an empty name changes nothing');
+});
