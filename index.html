@@ -626,6 +626,24 @@
     </div>
   </dialog>
 
+  <dialog class="dialog" id="vs-dialog" aria-labelledby="vs-title" aria-describedby="vs-body">
+    <form class="dialog-in" id="vs-form" novalidate onsubmit="Arena.saveOpponentRename(event)">
+      <h2 class="dialog-title" id="vs-title">Nombre del mazo rival</h2>
+      <p class="dialog-body" id="vs-body">Se cambia en todas las rondas contra ese mazo, con cualquiera de tus mazos y en todas las temporadas.</p>
+
+      <div class="field dialog-field">
+        <label class="field-label" for="vs-name">Nombre</label>
+        <input class="input-ctrl" id="vs-name" name="vs-name" type="text" maxlength="40" placeholder="Ej.: Affinity" autocomplete="off" spellcheck="false" aria-describedby="vs-error">
+        <span class="field-error" id="vs-error" role="alert" hidden></span>
+      </div>
+
+      <div class="dialog-actions">
+        <button class="btn btn-secondary" type="button" onclick="this.closest('dialog').close()">Cancelar</button>
+        <button class="btn btn-primary" type="submit">Guardar nombre</button>
+      </div>
+    </form>
+  </dialog>
+
   <dialog class="dialog" id="edit-dialog" aria-labelledby="ed-title" aria-describedby="ed-body">
     <form class="dialog-in" id="edit-form" novalidate onsubmit="Arena.saveEdit(event)">
       <h2 class="dialog-title" id="ed-title">Editar torneo</h2>
