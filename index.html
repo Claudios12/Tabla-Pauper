@@ -125,14 +125,14 @@
       <div class="cols duo">
         <section class="card diag-card" aria-labelledby="h-diag">
           <div class="card-head">
-            <h2 id="h-diag">Diagnóstico competitivo</h2>
+            <span class="title-info"><h2 id="h-diag">Diagnóstico competitivo</h2><button class="info-btn" type="button" onclick="Arena.showInfo('diagnostic', this)" aria-haspopup="dialog" aria-label="Qué es «Diagnóstico competitivo» y cómo se calcula"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 11v5M12 8h.01"/></svg></button></span>
             <span class="sec-meta">Referencia: 50&nbsp;% de victorias</span>
           </div>
           <div id="insights-container"></div>
         </section>
 
         <section class="card chart-card" aria-labelledby="h-chart">
-          <div class="card-head"><h2 id="h-chart">Puntos por torneo</h2></div>
+          <div class="card-head"><span class="title-info"><h2 id="h-chart">Puntos por torneo</h2><button class="info-btn" type="button" onclick="Arena.showInfo('chart', this)" aria-haspopup="dialog" aria-label="Qué es «Puntos por torneo» y cómo se calcula"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 11v5M12 8h.01"/></svg></button></span></div>
           <div class="legend chart-legend" id="points-legend"></div>
           <div class="chart-wrap" id="points-chart"></div>
         </section>
@@ -151,15 +151,15 @@
           <thead>
             <tr>
               <th scope="col">Mazo</th>
-              <th scope="col">Torneos</th>
-              <th scope="col">Partidas (W-L-D)</th>
-              <th scope="col">% de victorias</th>
-              <th scope="col">Efectividad (MP %)</th>
-              <th scope="col">Pts reales</th>
-              <th scope="col">Pts por torneo</th>
-              <th scope="col">Pos. prom.</th>
-              <th scope="col">Mejor pos.</th>
-              <th scope="col">Top 4 / Top 8</th>
+              <th scope="col"><span class="th-info">Torneos<button class="info-btn" type="button" onclick="Arena.showInfo('count', this)" aria-haspopup="dialog" aria-label="Qué es «Torneos» y cómo se calcula"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 11v5M12 8h.01"/></svg></button></span></th>
+              <th scope="col"><span class="th-info">Partidas (W-L-D)<button class="info-btn" type="button" onclick="Arena.showInfo('record', this)" aria-haspopup="dialog" aria-label="Qué es «Partidas (W-L-D)» y cómo se calcula"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 11v5M12 8h.01"/></svg></button></span></th>
+              <th scope="col"><span class="th-info">% de victorias<button class="info-btn" type="button" onclick="Arena.showInfo('winrate', this)" aria-haspopup="dialog" aria-label="Qué es «% de victorias» y cómo se calcula"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 11v5M12 8h.01"/></svg></button></span></th>
+              <th scope="col"><span class="th-info">Efectividad (MP %)<button class="info-btn" type="button" onclick="Arena.showInfo('mp', this)" aria-haspopup="dialog" aria-label="Qué es «Efectividad (MP %)» y cómo se calcula"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 11v5M12 8h.01"/></svg></button></span></th>
+              <th scope="col"><span class="th-info">Pts reales<button class="info-btn" type="button" onclick="Arena.showInfo('totalPts', this)" aria-haspopup="dialog" aria-label="Qué es «Pts reales» y cómo se calcula"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 11v5M12 8h.01"/></svg></button></span></th>
+              <th scope="col"><span class="th-info">Pts por torneo<button class="info-btn" type="button" onclick="Arena.showInfo('ppt', this)" aria-haspopup="dialog" aria-label="Qué es «Pts por torneo» y cómo se calcula"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 11v5M12 8h.01"/></svg></button></span></th>
+              <th scope="col"><span class="th-info">Pos. prom.<button class="info-btn" type="button" onclick="Arena.showInfo('avgRank', this)" aria-haspopup="dialog" aria-label="Qué es «Pos. prom.» y cómo se calcula"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 11v5M12 8h.01"/></svg></button></span></th>
+              <th scope="col"><span class="th-info">Mejor pos.<button class="info-btn" type="button" onclick="Arena.showInfo('bestRank', this)" aria-haspopup="dialog" aria-label="Qué es «Mejor pos.» y cómo se calcula"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 11v5M12 8h.01"/></svg></button></span></th>
+              <th scope="col"><span class="th-info">Top 4 / Top 8<button class="info-btn" type="button" onclick="Arena.showInfo('top48', this)" aria-haspopup="dialog" aria-label="Qué es «Top 4 / Top 8» y cómo se calcula"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 11v5M12 8h.01"/></svg></button></span></th>
             </tr>
           </thead>
           <tbody id="deck-matrix-tbody"></tbody>
@@ -234,7 +234,7 @@
       <div class="cols logger">
         <div class="side-col">
           <section class="card card-pad" aria-labelledby="h-preview">
-            <h2 id="h-preview">Así quedará en tu historial</h2>
+            <div class="title-info"><h2 id="h-preview">Así quedará en tu historial</h2><button class="info-btn" type="button" onclick="Arena.showInfo('nightColour', this)" aria-haspopup="dialog" aria-label="Qué es «Color de cada torneo» y cómo se calcula"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 11v5M12 8h.01"/></svg></button></div>
             <div class="log log-preview" id="log-preview"></div>
           </section>
 
@@ -310,9 +310,10 @@
                 </div>
                 <div class="field">
                   <label class="field-label" for="round-vs" id="round-vs-label">Mazo del rival</label>
-                  <input class="input-ctrl" id="round-vs" name="round-vs" type="text" list="round-vs-list" maxlength="40" placeholder="Ej.: Affinity" autocomplete="off" spellcheck="false" onchange="Arena.setRoundDeck(this.value)" onkeydown="if (event.key === 'Enter') { event.preventDefault(); event.stopPropagation(); Arena.setRoundDeck(this.value); Arena.closeRoundEditor(); }">
+                  <input class="input-ctrl" id="round-vs" name="round-vs" type="text" list="round-vs-list" maxlength="40" placeholder="Ej.: Affinity" autocomplete="off" spellcheck="false" onchange="Arena.setRoundDeck(this.value)" oninput="Arena.renderVsPicks(this.value)" onkeydown="if (event.key === 'Enter') { event.preventDefault(); event.stopPropagation(); Arena.setRoundDeck(this.value); Arena.closeRoundEditor(); }">
                   <datalist id="round-vs-list"></datalist>
                 </div>
+                <div class="preset-records round-vs-picks" id="round-vs-picks" role="group" aria-labelledby="round-vs-picks-label" hidden></div>
                 <div class="btn-row">
                   <button class="btn btn-secondary" type="button" onclick="Arena.setRoundDeck(document.getElementById('round-vs').value); Arena.closeRoundEditor()">Listo</button>
                   <button class="btn btn-secondary" type="button" onclick="Arena.removeRound()">Quitar esta ronda</button>
@@ -433,7 +434,7 @@
       <div class="cols hist">
         <section class="card" aria-labelledby="h-hlist">
           <div class="card-head">
-            <h2 id="h-hlist">Historial cronológico</h2>
+            <span class="title-info"><h2 id="h-hlist">Historial cronológico</h2><button class="info-btn" type="button" onclick="Arena.showInfo('nightColour', this)" aria-haspopup="dialog" aria-label="Qué es «Color de cada torneo» y cómo se calcula"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 11v5M12 8h.01"/></svg></button></span>
             <span class="sec-meta" id="history-entry-count">0 torneos</span>
           </div>
           <div class="repeated-note" id="history-repeated" role="status" hidden>
@@ -626,6 +627,19 @@
     </div>
   </dialog>
 
+  <dialog class="dialog dialog-explain" id="explain-dialog" aria-labelledby="ex-title" aria-describedby="ex-def ex-sum" onclose="Arena.explainClosed()">
+    <div class="dialog-in">
+      <h2 class="dialog-title" id="ex-title"></h2>
+      <div class="explain-def" id="ex-def"></div>
+      <p class="explain-sum" id="ex-sum"></p>
+      <div class="explain-notes" id="ex-notes"></div>
+      <div id="ex-table"></div>
+      <div class="dialog-actions">
+        <button class="btn btn-secondary" type="button" autofocus onclick="this.closest('dialog').close()">Cerrar</button>
+      </div>
+    </div>
+  </dialog>
+
   <dialog class="dialog" id="vs-dialog" aria-labelledby="vs-title" aria-describedby="vs-body">
     <form class="dialog-in" id="vs-form" novalidate onsubmit="Arena.saveOpponentRename(event)">
       <h2 class="dialog-title" id="vs-title">Nombre del mazo rival</h2>
@@ -714,7 +728,7 @@
       </div>
 
       <section class="player-section" id="pl-points-pane" aria-labelledby="pl-points-h">
-        <h3 class="player-h" id="pl-points-h">Puntos por mes</h3>
+        <div class="title-info"><h3 class="player-h" id="pl-points-h">Puntos por mes</h3><button class="info-btn" type="button" onclick="Arena.showInfo('playerPoints', this)" aria-haspopup="dialog" aria-label="Qué es «Puntos por mes» y cómo se calcula"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 11v5M12 8h.01"/></svg></button></div>
         <div id="pl-points"></div>
       </section>
 
@@ -822,6 +836,7 @@
   <script src="js/gemini.js" defer></script>
   <script src="js/arena.js" defer></script>
   <script src="js/arena-insights.js" defer></script>
+  <script src="js/arena-info.js" defer></script>
   <script src="js/arena-decks.js" defer></script>
   <script src="js/arena-history.js" defer></script>
   <script src="js/arena-league.js" defer></script>

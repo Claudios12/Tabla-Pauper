@@ -96,6 +96,42 @@ const Analytics = {
   },
 
   // Comprehensive Deck Statistics Calculation
+  // Where the figures of computeDeckStats come from, tournament by tournament ("¿De dónde sale?"): the same tournaments (a deck's,
+  // or every deck's with deckName null; never a night of "No participó"), read the same way, so the sums always give the figure on
+  // screen. Each row says how its points were got: typed (or read from the picture), worked out from the record, or none at all
+  // (it still counts as a tournament, with 0). Most recent first.
+  explainRows(entries, deckName = null) {
+    const key = deckName ? deckName.trim().toLowerCase() : null;
+    return (entries || [])
+      .filter(e => typeof e.deck === 'string' && e.deck && e.deck !== 'No participó' && (!key || e.deck.trim().toLowerCase() === key))
+      .map(e => {
+        const parsed = this.parseWLD(e.wl);
+        const typed = e.pts !== null && e.pts !== undefined && e.pts !== '' && !isNaN(Number(e.pts));
+        return {
+          entry: e,
+          w: parsed ? parsed.w : null,
+          l: parsed ? parsed.l : null,
+          d: parsed ? parsed.d : null,
+          pts: typed ? Number(e.pts) : (parsed ? this.calculatePoints(parsed.w, parsed.d) : 0),
+          ptsFrom: typed ? 'typed' : (parsed ? 'record' : 'none'),
+          rank: this.parseRankNumber(e.rank)
+        };
+      })
+      .sort((a, b) => this.parseDate(b.entry.date, b.entry.season, b.entry) - this.parseDate(a.entry.date, a.entry.season, a.entry));
+  },
+
+  // The sums of those rows: what every figure is made of.
+  explainTotals(rows) {
+    const t = { count: rows.length, w: 0, l: 0, d: 0, pts: 0, ranks: [] };
+    rows.forEach(row => {
+      if (row.w !== null) { t.w += row.w; t.l += row.l; t.d += row.d; }
+      t.pts += row.pts;
+      if (row.rank !== null) t.ranks.push(row.rank);
+    });
+    t.matches = t.w + t.l + t.d;
+    return t;
+  },
+
   computeDeckStats(deckName, entries) {
     const deckEntries = entries.filter(e => {
       if (typeof e.deck !== 'string' || !e.deck || e.deck === "No participó") return false;

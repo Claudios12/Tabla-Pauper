@@ -29,11 +29,13 @@ Object.assign(Arena, {
   },
 
   // One card that folds: its heading and a short figure in the summary, which is the button that opens and closes it.
-  foldCard(id, { title, peek = '', meta = '', body, cls = '' }) {
+  // info: the STAT_INFO key whose "what it means and how it is worked out" opens from the top of the card's body (a button
+  // cannot sit in the summary, which is itself the button that folds the card).
+  foldCard(id, { title, peek = '', meta = '', body, cls = '', info = '' }) {
     return `<details class="card fold ${cls}" data-fold="${id}"${this.isFoldOpen(id) ? ' open' : ''} ontoggle="Arena.rememberFold(this)">`
       + `<summary class="fold-head"><span class="fold-text"><h2 class="fold-title" id="h-${id}">${title}</h2>${peek ? `<span class="fold-peek">${peek}</span>` : ''}</span>`
       + `${meta ? `<span class="sec-meta fold-meta">${meta}</span>` : ''}<svg class="chevron" viewBox="0 0 24 24" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg></summary>`
-      + `${body}</details>`;
+      + `${info ? `<p class="fold-info">${this.infoButton(info, title.replace(/<[^>]*>/g, ''), 'Qué es y cómo se calcula')}</p>` : ''}${body}</details>`;
   },
 
   // ─────────────────────────────────────────────────────────────
@@ -91,7 +93,7 @@ Object.assign(Arena, {
     const el = document.getElementById("league-risk");
     if (!el) return;
     const { me, top } = table;
-    const card = (body, meta = '', peek = '') => this.foldCard('risk', { title: `Riesgo de quedar fuera del top ${top}`, peek, meta, cls: 'risk-card', body: `<div class="risk-body">${body}</div>` });
+    const card = (body, meta = '', peek = '') => this.foldCard('risk', { info: 'risk', title: `Riesgo de quedar fuera del top ${top}`, peek, meta, cls: 'risk-card', body: `<div class="risk-body">${body}</div>` });
     // A card that cannot give a figure says, closed, what it is missing.
     const say = (text, button = '', peek = 'falta un dato para calcularlo') => card(`<p class="risk-note">${text}</p>${button}`, '', peek);
     if (outlook.blocked === 'empty') {
@@ -195,6 +197,7 @@ Object.assign(Arena, {
       + `<ul class="how-to-list"><li class="how-to-item">Es una estimación: se juegan miles de veces las fechas que quedan, como en el riesgo, y se mira con cuántos puntos termina el ${top}°. La cifra es la del caso del medio.</li>`
       + `<li class="how-to-item">Cuenta que vas a todas las fechas que quedan. Los retos de la tienda también suman.</li></ul></details>`;
     el.innerHTML = this.foldCard('need', {
+      info: 'need',
       title: 'Lo que necesitas por fecha', meta: 'estimación', cls: 'risk-card need-card', peek: `${value}&nbsp;pts por fecha · ${label}`,
       body: `<div class="risk-body"><div class="risk-figure"><b class="risk-value ${tone}">${value}&nbsp;pts</b><span class="risk-label">${label}</span></div>`
         + `<p class="risk-note">${note}</p>${help}</div>`
@@ -256,6 +259,7 @@ Object.assign(Arena, {
     const above = players[at - 1], below = players[at + 1];
     const peek = [above ? `${esc(above.name)} a ${nf0.format(above.pts - me.pts)} arriba` : 'nadie arriba', below ? `${esc(below.name)} a ${nf0.format(me.pts - below.pts)} abajo` : ''].filter(Boolean).join(' · ');
     el.innerHTML = this.foldCard('rivals', {
+      info: 'rivals',
       title: 'Tus rivales', cls: 'rivals-card', peek, meta: lastDay ? `fecha del ${esc(day(lastDay))}` : '',
       body: (before ? `<p class="board-note">Lo que cambió la última fecha, frente a la tabla del ${esc(day(prevDay))}.</p>` : '')
         + `<ol class="board rivals">${html}</ol>`
@@ -277,6 +281,7 @@ Object.assign(Arena, {
     const top = table.top;
     const now = steps[steps.length - 1];
     const card = (body) => this.foldCard('progress', {
+      info: 'progress',
       title: `Tu camino al top ${top}`, cls: 'progress-card', meta: 'tras cada fecha', body,
       peek: steps.length > 1 ? `vas ${now.rank}° (empezaste ${steps[0].rank}°)${now.cut === null ? '' : ` · ${now.pts >= now.cut ? `${nf0.format(now.pts - now.cut)} sobre` : `a ${nf0.format(now.cut - now.pts)} de`} la línea`}` : ''
     });

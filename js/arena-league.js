@@ -78,18 +78,18 @@ Object.assign(Arena, {
       cutClass = '';
     }
 
-    const kpi = (label, value, note, cls) =>
-      `<div class="kpi"><div class="kpi-label">${label}</div><div class="kpi-value ${cls || ''}">${value}</div><div class="kpi-note">${note}</div></div>`;
+    const kpi = (label, value, note, cls, info) =>
+      `<div class="kpi"><div class="kpi-label kpi-label-info">${label}${this.infoButton(info, label)}</div><div class="kpi-value ${cls || ''}">${value}</div><div class="kpi-note">${note}</div></div>`;
     const kpis = document.getElementById("league-kpis");
     if (kpis) {
       kpis.innerHTML =
         kpi('Tu puesto', me ? `${me.rank}°` : '—',
           me ? `de ${plural(table.players.length, 'jugador', 'jugadores')}` : (table.players.length ? 'No aparece tu nombre' : 'Sin tabla guardada'),
-          me ? '' : 'dash') +
+          me ? '' : 'dash', 'myRank') +
         kpi('Tus puntos', myCount ? nf0.format(myPts) : '—',
           myCount ? `${plural(myCount, 'torneo', 'torneos')} · ${nf1.format((myPts - myRetos) / myCount)} por torneo${myRetos ? ` · ${nf0.format(myRetos)} de retos` : ''}` : 'Sin torneos',
-          myCount ? '' : 'dash') +
-        kpi(cutLabel, cutValue, cutNote, cutClass) +
+          myCount ? '' : 'dash', 'myPts') +
+        kpi(cutLabel, cutValue, cutNote, cutClass, 'cut') +
         this.seasonCountdownCard();
     }
 
@@ -156,7 +156,7 @@ Object.assign(Arena, {
 
     const anyDecided = table.players.some(p => p.mark);
     el.innerHTML = `<section class="card board-card" aria-labelledby="h-board">`
-      + `<div class="card-head"><h2 id="h-board">Tabla de la liga</h2><span class="sec-meta">${esc(season)} · ${plural(table.players.length, 'jugador', 'jugadores')} · clasifican ${top}</span></div>`
+      + `<div class="card-head"><span class="title-info"><h2 id="h-board">Tabla de la liga</h2>${this.infoButton('board', 'Tabla de la liga')}</span><span class="sec-meta">${esc(season)} · ${plural(table.players.length, 'jugador', 'jugadores')} · clasifican ${top}</span></div>`
       + `<p class="board-note">${covered}</p>`
       + (table.dropped ? `<p class="board-note">${plural(table.dropped, 'fila no se sumó', 'filas no se sumaron')}: el mismo jugador sale dos veces en una misma noche y solo cuenta la primera. Corrige esa noche con el lápiz del torneo, en Historial.</p>` : '')
       + (table.players.some(p => p.members.every(m => League.isTruncated(m.name))) ? `<p class="board-note">«Nombre cortado»: la captura cortó ese nombre y no se pudo saber de quién es, así que sus puntos van aparte. Toca la fila y únelo con su jugador, o escribe su nombre completo.</p>` : '')

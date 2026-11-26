@@ -519,6 +519,45 @@ Object.assign(Arena, {
     this.renderRoundList();
   },
 
+  // The decks already played against, as buttons: one tap writes the rival and closes the round, so the same name is never typed
+  // again (and never spelled two ways). Most played first; while typing, only the ones that contain what is typed.
+  opponentPicks(typed = '') {
+    const counts = new Map();
+    const add = (round) => {
+      if (!round.vs) return;
+      const key = round.vs.toLowerCase();
+      if (!counts.has(key)) counts.set(key, { vs: round.vs, n: 0 });
+      counts.get(key).n++;
+    };
+    State.historic.forEach(entry => cleanRounds(entry.rounds).forEach(add));
+    // The round being written is not a suggestion for itself.
+    (this._draft ? this._draft.rounds : []).forEach((round, i) => { if (i !== this._roundEdit) add(round); });
+    const needle = String(typed || '').trim().toLowerCase();
+    return [...counts.values()]
+      .filter(item => !needle || item.vs.toLowerCase().includes(needle))
+      .sort((a, b) => (b.n - a.n) || a.vs.localeCompare(b.vs, 'es'))
+      .slice(0, this.VS_PICKS);
+  },
+  VS_PICKS: 8,
+
+  renderVsPicks(typed) {
+    const host = document.getElementById("round-vs-picks");
+    const round = this._draft && this._draft.rounds[this._roundEdit];
+    if (!host) return;
+    const picks = round && round.r !== 'B' ? this.opponentPicks(typed) : [];
+    host.hidden = !picks.length;
+    const current = round ? round.vs.toLowerCase() : '';
+    host.innerHTML = !picks.length ? '' : `<span class="rounds-next" id="round-vs-picks-label">${typed && typed.trim() ? 'Coinciden:' : 'Ya jugaste contra:'}</span>`
+      + picks.map(item => `<button class="preset-chip js-vs-pick" data-vs="${esc(item.vs)}" type="button" onclick="Arena.pickOpponent(this.dataset.vs)" aria-pressed="${item.vs.toLowerCase() === current}">${esc(item.vs)}</button>`).join('');
+  },
+
+  pickOpponent(vs) {
+    const input = document.getElementById("round-vs");
+    if (input) input.value = vs;
+    this.setRoundDeck(vs);
+    this.closeRoundEditor();
+  },
+
   closeRoundEditor() {
     const at = this._roundEdit;
     this._roundEdit = -1;
@@ -654,5 +693,6 @@ Object.assign(Arena, {
       editor.querySelectorAll(".js-round-result").forEach(button => button.setAttribute("aria-pressed", String(button.dataset.r === round.r)));
       document.getElementById("round-vs-list").innerHTML = this.opponentDecks().map(name => `<option value="${esc(name)}"></option>`).join('');
     }
+    this.renderVsPicks(round && document.activeElement === document.getElementById("round-vs") ? document.getElementById("round-vs").value : '');
   },
 });

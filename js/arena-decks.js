@@ -79,12 +79,12 @@ Object.assign(Arena, {
             ${stripeHtml(stat.deck)}
             <div class="deck-head">
               <button class="deck-title" type="button" onclick="Arena.openDeckDetail(this.closest('[data-deck]').dataset.deck)" aria-label="Ver detalle de ${esc(info.name)}">${pipsHtml(info.pips)}<span class="title-text">${esc(info.name)}</span></button>
-              <span class="deck-pills">${deckPillHtml(stat, isLead)}</span>
+              <span class="deck-pills">${deckPillHtml(stat, isLead)}${this.infoButton('status', 'Estado del mazo')}</span>
             </div>
 
             <div class="deck-body">
               <div class="win-rate">
-                <b class="win-rate-value">${pct(stat.winRate)}</b>
+                <button class="win-rate-value explain-figure" type="button" onclick="Arena.explainFigure('winrate', this.dataset.deck, this)" data-deck="${esc(stat.deck)}" aria-haspopup="dialog">${pct(stat.winRate)}<span class="visually-hidden"> de victorias con ${esc(info.name)}. ¿De dónde sale?</span></button>
                 <small class="win-rate-detail">
                   <span>${plural(stat.count, 'torneo', 'torneos')} · ${stat.totalWins}W-${stat.totalLosses}L-${stat.totalDraws}D</span>
                   ${deltaHtml(stat)}
@@ -96,7 +96,7 @@ Object.assign(Arena, {
                 <div class="meter" role="img" aria-label="${pct(stat.winRate)} de victorias. La marca central es el 50 %."><i class="meter-fill" style="--w:${Math.min(100, stat.winRate).toFixed(1)}%"></i></div>
                 <div class="meter-scale" aria-hidden="true"><span>0 %</span><span>50 %</span><span class="meter-scale-max">100 %</span></div>
                 <div class="form-row">
-                  <span class="form-label">Última racha</span>
+                  <span class="form-label">Última racha${this.infoButton('form', 'Última racha')}</span>
                   <div class="form-pills">${formHtml}</div>
                 </div>
               </div>
@@ -325,6 +325,10 @@ Object.assign(Arena, {
     const entries = this.getFilteredEntries();
     const stat = Analytics.computeDeckStats(deckName, entries);
     const info = deckInfo(stat.deck);
+    // Each figure opens its "¿De dónde sale?" (Arena.explainFigure) once there is something to explain.
+    const figure = (label, value, kind, has) => (has
+      ? this.explainKpi(label, value, '', '', kind, stat.deck)
+      : `<div class="kpi"><div class="kpi-label">${label}</div><div class="kpi-value">${value}</div></div>`);
 
     let timelineHtml = '';
     if (stat.entries.length === 0) {
@@ -356,7 +360,7 @@ Object.assign(Arena, {
     const matchups = Analytics.matchups(entries, deckName);
     const matchupHtml = !matchups.some(row => row.vs) ? '' : `
       <section class="card matchup-card" aria-labelledby="h-matchups">
-        <div class="card-head"><h2 id="h-matchups">Contra qué mazos</h2><span class="sec-meta">${plural(matchups.reduce((sum, row) => sum + row.played, 0), 'ronda', 'rondas')} anotadas</span></div>
+        <div class="card-head"><span class="title-info"><h2 id="h-matchups">Contra qué mazos</h2>${this.infoButton('matchups', 'Contra qué mazos')}</span><span class="sec-meta">${plural(matchups.reduce((sum, row) => sum + row.played, 0), 'ronda', 'rondas')} anotadas</span></div>
         <div class="table-wrap matchup-wrap" role="region" aria-label="Récord de ${esc(info.name)} contra cada mazo" tabindex="0">
           <table class="month-grid matchup-grid">
             <caption>Récord de ${esc(info.name)} contra cada mazo rival${esc(this.inSeason())}, de las rondas que anotaste</caption>
@@ -373,7 +377,7 @@ Object.assign(Arena, {
           ${stripeHtml(stat.deck)}
           <h2 class="dossier-name" id="h-dossier">${pipsHtml(info.pips)}<span class="title-text">${esc(info.name)}</span></h2>
           <div class="dossier-status">
-            <span class="pill ${statusPillClass(stat)}">${esc(statusLabel)}</span>
+            <span class="pill ${statusPillClass(stat)}">${esc(statusLabel)}</span>${this.infoButton('status', 'Estado del mazo')}
             <span>${esc(statusDesc)}</span>
           </div>
           ${digest}
@@ -381,10 +385,10 @@ Object.assign(Arena, {
           <div class="dossier-wr">
             <div>
               <div class="caption">% de victorias</div>
-              <b class="dossier-wr-value ${stat.status.class === 'good' ? 'win-rate-good' : ''}">${none ? '—' : pct(Analytics.roundPct(stat.winRate))}</b>
+              ${none ? '<b class="dossier-wr-value">—</b>' : `<button class="dossier-wr-value explain-figure ${stat.status.class === 'good' ? 'win-rate-good' : ''}" type="button" onclick="Arena.explainFigure('winrate', this.dataset.deck, this)" data-deck="${esc(stat.deck)}" aria-haspopup="dialog">${pct(Analytics.roundPct(stat.winRate))}<span class="visually-hidden">. ¿De dónde sale?</span></button>`}
             </div>
             <div class="record">${none ? 'Sin partidas' : `${stat.totalWins}W · ${stat.totalLosses}L · ${stat.totalDraws}D
-              <span class="record-detail">${plural(total, 'partida', 'partidas')} · MP ${pct(stat.matchPointRate)}</span>
+              <span class="record-detail">${plural(total, 'partida', 'partidas')} · <button class="explain-link" type="button" onclick="Arena.explainFigure('mp', this.dataset.deck, this)" data-deck="${esc(stat.deck)}" aria-haspopup="dialog">MP ${pct(stat.matchPointRate)}<span class="visually-hidden">. ¿De dónde sale?</span></button></span>
               ${deltaHtml(stat)}`}
             </div>
           </div>
@@ -399,16 +403,16 @@ Object.assign(Arena, {
           </div>
 
           <div class="kpis two dossier-kpis">
-            <div class="kpi"><div class="kpi-label">Torneos</div><div class="kpi-value">${stat.count}</div></div>
-            <div class="kpi"><div class="kpi-label">Pts por torneo</div><div class="kpi-value">${stat.count ? nf1.format(stat.ppg) : '—'}</div></div>
-            <div class="kpi"><div class="kpi-label">Mejor posición</div><div class="kpi-value">${stat.bestRank ? stat.bestRank + '°' : '—'}</div></div>
-            <div class="kpi"><div class="kpi-label">Posición promedio</div><div class="kpi-value">${stat.avgRank ? nf1.format(stat.avgRank) + '°' : '—'}</div></div>
+            ${figure('Torneos', stat.count, 'count', stat.count)}
+            ${figure('Pts por torneo', stat.count ? nf1.format(stat.ppg) : '—', 'ppt', stat.count)}
+            ${figure('Mejor posición', stat.bestRank ? stat.bestRank + '°' : '—', 'bestRank', stat.bestRank)}
+            ${figure('Posición promedio', stat.avgRank ? nf1.format(stat.avgRank) + '°' : '—', 'avgRank', stat.avgRank)}
           </div>
         </section>
 
         <section class="card" aria-labelledby="h-timeline">
           <div class="card-head">
-            <h2 id="h-timeline">Torneos con este mazo</h2>
+            <span class="title-info"><h2 id="h-timeline">Torneos con este mazo</h2>${this.infoButton('nightColour', 'Color de cada torneo')}</span>
             <span class="sec-meta">Más reciente primero</span>
           </div>
           ${timelineHtml}

@@ -1,4 +1,4 @@
-const CACHE_NAME = 'pauper-deck-arena-v11';
+const CACHE_NAME = 'pauper-deck-arena-v12';
 const FONT_CACHE = 'pauper-fonts-v1';
 
 // The app cannot start offline without these: if one fails, the new version does not install.
@@ -29,6 +29,7 @@ const SHELL = [
   '/js/gemini.js',
   '/js/arena.js',
   '/js/arena-insights.js',
+  '/js/arena-info.js',
   '/js/arena-decks.js',
   '/js/arena-history.js',
   '/js/arena-league.js',
