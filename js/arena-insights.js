@@ -43,11 +43,108 @@ Object.assign(Arena, {
     } else if (lastEnd) {
       note = `Cerró el ${day(lastEnd)}. Define la próxima.`;
     }
-    return `<button class="kpi kpi-action js-season-end" type="button" onclick="${opens}">`
+    return `<div class="kpi-stack">${this.infoButton('nightsLeft', 'Fechas restantes')}<button class="kpi kpi-action js-season-end" type="button" onclick="${opens}">`
       + `<span class="kpi-label">Fechas restantes<svg class="kpi-edit" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 20h9M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg></span>`
       + `<span class="kpi-value ${cls}">${value}</span>`
       + `<span class="kpi-note">${note}</span>`
-      + `<span class="visually-hidden">${hidden}</span></button>`;
+      + `<span class="visually-hidden">${hidden}</span></button></div>`;
+  },
+
+  // ─────────────────────────────────────────────────────────────
+  // "¿DE DÓNDE SALE?": a figure, tapped, shows its sum and the tournaments it is made of
+  // ─────────────────────────────────────────────────────────────
+  // kind: 'winrate', 'mp', 'ppt', 'count', 'avgRank' or 'bestRank'; deck: a deck's name, or '' for every deck. The rows and sums
+  // are Analytics.explainRows / explainTotals over the season on screen, the very tournaments the figure was worked out from,
+  // and the figure is written the way its card writes it, so the dialog never shows another number.
+  explainFigure(kind, deck, opener) {
+    const dialog = document.getElementById("explain-dialog");
+    if (!dialog || typeof dialog.showModal !== 'function') return;
+    this._explainOpener = opener || document.activeElement;
+    const rows = Analytics.explainRows(this.getFilteredEntries(), deck || null);
+    const t = Analytics.explainTotals(rows);
+    const where = `${deck ? ` con ${deckInfo(deck).name}` : ''}${this.inSeason()}`;
+    const n = (x) => nf0.format(x);
+    const notes = [];
+    const noRecord = rows.filter(row => row.w === null).length;
+    const fromRecord = rows.filter(row => row.ptsFrom === 'record').length;
+    const noPts = rows.filter(row => row.ptsFrom === 'none').length;
+    const noRank = rows.filter(row => row.rank === null).length;
+    let title, sum;
+    if (kind === 'winrate' || kind === 'mp') {
+      const rate = t.matches ? (kind === 'winrate' ? t.w / t.matches : (t.w * 3 + t.d) / (t.matches * 3)) * 100 : null;
+      const shown = rate === null ? '—' : pct(deck && kind === 'winrate' ? Analytics.roundPct(rate) : rate);
+      title = kind === 'winrate' ? `% de victorias${where}: ${shown}` : `Efectividad (MP)${where}: ${shown}`;
+      sum = !t.matches ? 'Aún no hay partidas con récord.'
+        : (kind === 'winrate'
+          ? `${plural(t.w, 'victoria', 'victorias')} de ${plural(t.matches, 'partida', 'partidas')} (${t.w}-${t.l}-${t.d}): ${n(t.w)} ÷ ${n(t.matches)} = ${shown}`
+          : `Puntos de partida conseguidos de los posibles: (${n(t.w)} × 3 + ${n(t.d)}) ÷ (${n(t.matches)} × 3) = ${n(t.w * 3 + t.d)} ÷ ${n(t.matches * 3)} = ${shown}`);
+      notes.push('Las partidas salen del récord de cada torneo (victorias-derrotas-empates); un bye cuenta como victoria cuando está en el récord.');
+      if (kind === 'mp') notes.push('Cada victoria vale 3, cada empate 1 y cada derrota 0, sin contar los puntos especiales de la tienda.');
+      if (noRecord) notes.push(`${plural(noRecord, 'torneo no tiene', 'torneos no tienen')} récord y no ${noRecord === 1 ? 'suma' : 'suman'} partidas.`);
+    } else if (kind === 'ppt') {
+      const shown = t.count ? nf1.format(t.pts / t.count) : '—';
+      title = `Pts por torneo${where}: ${shown}`;
+      sum = t.count ? `${n(t.pts)} pts ÷ ${plural(t.count, 'torneo', 'torneos')} = ${shown}` : 'Aún no hay torneos.';
+      notes.push('Son los puntos oficiales de cada torneo, los que escribiste o leyó la captura.');
+      if (fromRecord) notes.push(`En ${plural(fromRecord, 'torneo', 'torneos')} no había puntos escritos y salen del récord (3 por victoria, 1 por empate): ${fromRecord === 1 ? 'va marcado' : 'van marcados'} con *.`);
+      if (noPts) notes.push(`${plural(noPts, 'torneo no tiene', 'torneos no tienen')} ni puntos ni récord: ${noPts === 1 ? 'cuenta' : 'cuentan'} como torneo con 0 pts.`);
+    } else if (kind === 'count') {
+      title = `Torneos${where}: ${n(t.count)}`;
+      sum = deck ? `Todos los torneos que guardaste con este mazo${this.inSeason()}.` : `Todos los torneos que guardaste${this.inSeason()}, con cualquier mazo.`;
+      notes.push('Las noches en que no jugaste («No participó») y las noches creadas con la tabla del mes de la tienda no cuentan.');
+    } else {
+      const avg = t.ranks.length ? t.ranks.reduce((a, b) => a + b, 0) / t.ranks.length : null;
+      const best = t.ranks.length ? Math.min(...t.ranks) : null;
+      if (kind === 'avgRank') {
+        title = `Posición promedio${where}: ${avg === null ? '—' : `${nf1.format(avg)}°`}`;
+        sum = avg === null ? 'Ningún torneo tiene puesto.' : `(${t.ranks.length > 12 ? `${t.ranks.slice(0, 12).join(' + ')} + …` : t.ranks.join(' + ')}) ÷ ${t.ranks.length} = ${n(t.ranks.reduce((a, b) => a + b, 0))} ÷ ${t.ranks.length} = ${nf1.format(avg)}°`;
+      } else {
+        const at = rows.find(row => row.rank === best);
+        title = `Mejor posición${where}: ${best === null ? '—' : `${best}°`}`;
+        sum = best === null ? 'Ningún torneo tiene puesto.' : `El puesto más alto entre ${plural(t.ranks.length, 'torneo', 'torneos')} con puesto: ${best}°, el ${at.entry.date}.`;
+      }
+      if (noRank) notes.push(`${plural(noRank, 'torneo no tiene', 'torneos no tienen')} puesto y no ${noRank === 1 ? 'cuenta' : 'cuentan'} aquí.`);
+    }
+    document.getElementById("ex-title").textContent = title;
+    document.getElementById("ex-def").innerHTML = this.infoHtml(kind);
+    document.getElementById("ex-sum").innerHTML = `<strong>Con tus números.</strong> ${esc(sum)}`;
+    document.getElementById("ex-notes").innerHTML = notes.map(note => `<p>${esc(note)}</p>`).join('');
+    const showDeck = !deck;
+    const mark = (row) => {
+      if (kind === 'ppt' && row.ptsFrom === 'record') return `${row.pts}*<span class="visually-hidden"> (del récord)</span>`;
+      if (kind === 'ppt' && row.ptsFrom === 'none') return `0<span class="visually-hidden"> (sin puntos ni récord)</span>`;
+      return String(row.pts);
+    };
+    const quiet = (yes) => (yes ? ' class="is-out"' : '');
+    const body = rows.map(row => {
+      // What does not go into this figure is greyed (a tournament with no record for a rate, no place for a position).
+      const out = ((kind === 'winrate' || kind === 'mp') && row.w === null) || ((kind === 'avgRank' || kind === 'bestRank') && row.rank === null);
+      return `<tr${quiet(out)}><th scope="row">${esc(row.entry.date)}</th>${showDeck ? `<td class="explain-deck">${esc(deckInfo(row.entry.deck).name)}</td>` : ''}`
+        + `<td>${row.w === null ? '—' : `${row.w}-${row.l}-${row.d}`}</td><td>${mark(row)}</td><td>${row.rank === null ? '—' : `${row.rank}°`}</td></tr>`;
+    }).join('');
+    const foot = rows.length ? `<tfoot><tr><th scope="row">Total</th>${showDeck ? '<td></td>' : ''}<td>${t.w}-${t.l}-${t.d}</td><td>${n(t.pts)}</td><td></td></tr></tfoot>` : '';
+    document.getElementById("ex-table").innerHTML = !rows.length ? '' : `<div class="table-wrap explain-wrap" role="region" aria-label="Los torneos que forman esta cifra" tabindex="0"><table class="month-grid explain-grid">`
+      + `<caption>Los torneos que forman esta cifra, del más reciente al más antiguo</caption>`
+      + `<thead><tr><th scope="col">Fecha</th>${showDeck ? '<th scope="col">Mazo</th>' : ''}<th scope="col">Récord</th><th scope="col">Pts</th><th scope="col">Puesto</th></tr></thead>`
+      + `<tbody>${body}</tbody>${foot}</table></div>`;
+    dialog.showModal();
+  },
+
+  explainClosed() {
+    const opener = this._explainOpener;
+    this._explainOpener = null;
+    if (opener && opener.isConnected) opener.focus();
+  },
+
+  // The small mark that says a figure can be tapped to see where it comes from.
+  INFO_ICON: '<svg class="kpi-edit" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 11v5M12 8h.01"/></svg>',
+
+  // A figure that opens its "¿De dónde sale?": the card is a button, and says so to a screen reader.
+  explainKpi(label, value, note, cls, kind, deck = '') {
+    return `<button class="kpi kpi-action kpi-explain" type="button" onclick="Arena.explainFigure('${kind}', this.dataset.deck, this)" data-deck="${esc(deck)}" aria-haspopup="dialog">`
+      + `<span class="kpi-label">${label}${this.INFO_ICON}</span><span class="kpi-value ${cls || ''}">${value}</span>`
+      + (note ? `<span class="kpi-note">${note}</span>` : '')
+      + `<span class="visually-hidden">. ¿De dónde sale?</span></button>`;
   },
 
   renderHeroMetrics() {
@@ -73,13 +170,13 @@ Object.assign(Arena, {
     const kpis = document.getElementById("hero-kpis");
     if (kpis) {
       kpis.innerHTML =
-        kpi('% de victorias global', globalWr !== null ? pct(globalWr) : '—',
+        (matches ? this.explainKpi : kpi).call(this, '% de victorias global', globalWr !== null ? pct(globalWr) : '—',
           matches ? `${globalW}W-${globalL}L-${globalD}D · ${plural(matches, 'partida', 'partidas')}` : 'Sin partidas',
-          globalWr === null ? 'dash' : (globalWr >= 50 ? 'win-rate-good' : '')) +
-        kpi('Pts por torneo', sumCount ? nf1.format(sumPts / sumCount) : '—',
+          globalWr === null ? 'dash' : (globalWr >= 50 ? 'win-rate-good' : ''), 'winrate') +
+        (sumCount ? this.explainKpi : kpi).call(this, 'Pts por torneo', sumCount ? nf1.format(sumPts / sumCount) : '—',
           sumCount ? `${nf0.format(sumPts)} pts en ${plural(sumCount, 'torneo', 'torneos')}` : 'Sin torneos',
-          sumCount ? '' : 'dash') +
-        kpi('Torneos', nf0.format(sumCount), `${plural(allDeckStats.length, 'mazo', 'mazos')} · ${esc(this.seasonLabel())}`) +
+          sumCount ? '' : 'dash', 'ppt') +
+        (sumCount ? this.explainKpi : kpi).call(this, 'Torneos', nf0.format(sumCount), `${plural(allDeckStats.length, 'mazo', 'mazos')} · ${esc(this.seasonLabel())}`, '', 'count') +
         this.seasonCountdownCard();
     }
 

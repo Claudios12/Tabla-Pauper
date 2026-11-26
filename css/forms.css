@@ -345,6 +345,9 @@ legend { padding: 0; margin-block-end: 8px; }
   border-radius: var(--radius-sm);
   background-color: var(--surface-2);
 }
+/* The decks already played against, one tap each: the label on a line of its own, the names under it */
+.round-vs-picks { margin-block-start: 0; }
+.round-vs-picks .rounds-next { flex-basis: 100%; color: var(--text-secondary); }
 .rounds-editor .btn,
 .rounds-resume .btn,
 .round-conflict .btn { width: auto; }

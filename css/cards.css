@@ -62,6 +62,111 @@
   stroke-linejoin: round;
 }
 .kpi-action:hover .kpi-edit { color: var(--text-primary); }
+/* The ⓘ beside a figure (Arena.infoButton): what it means and how it is worked out, in #explain-dialog. A small mark that grows
+   to a 32px hit area without moving the text around it. */
+.info-btn {
+  display: inline-grid;
+  place-items: center;
+  flex: none;
+  width: 32px;
+  height: 32px;
+  margin-block: -8px;
+  padding: 0;
+  color: var(--text-muted);
+  vertical-align: middle;
+  background: none;
+  border: 0;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  touch-action: manipulation;
+}
+.info-btn svg {
+  width: 15px;
+  height: 15px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.8;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+.info-btn:hover { color: var(--text-primary); background-color: var(--surface-3); }
+.info-btn:focus-visible { outline: 2px solid var(--color-brand); outline-offset: -2px; }
+.info-btn-text {
+  display: inline-flex;
+  gap: 6px;
+  width: auto;
+  height: auto;
+  min-height: 44px;
+  margin-block: 0;
+  padding-inline: 8px;
+  font: inherit;
+  font-size: 14px;
+}
+/* A title and its ⓘ stay together, whatever the heading row does with the rest */
+.title-info {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  min-width: 0;
+}
+.kpi-label-info { display: flex; align-items: center; justify-content: space-between; gap: 4px; }
+.th-info { display: inline-flex; align-items: center; gap: 0; white-space: nowrap; }
+.fold-info { padding-inline: 8px; }
+/* The countdown tile: the card is the button that edits the closing date; its ⓘ sits on it, left of the pencil */
+.kpi-stack { position: relative; min-width: 0; }
+.kpi-stack > .info-btn {
+  position: absolute;
+  z-index: 1;
+  inset-block-start: 14px;
+  inset-inline-end: 30px;
+}
+.explain-def p { margin-block-start: 8px; font-size: 15px; }
+.explain-def strong,
+.explain-sum strong { color: var(--text-primary); }
+
+/* A figure that opens "¿De dónde sale?" (#explain-dialog): its sum and the tournaments it is made of */
+.explain-figure,
+.explain-link {
+  padding: 0;
+  font: inherit;
+  color: inherit;
+  background: none;
+  border: 0;
+  cursor: pointer;
+  touch-action: manipulation;
+}
+.explain-figure {
+  text-decoration: underline dotted;
+  text-decoration-thickness: 2px;
+  text-underline-offset: 6px;
+}
+.explain-link { text-decoration: underline dotted; text-underline-offset: 3px; }
+.explain-figure:hover,
+.explain-link:hover { color: var(--text-primary); }
+.explain-figure:focus-visible,
+.explain-link:focus-visible { outline: 2px solid var(--color-brand); outline-offset: 2px; }
+.dialog-explain { width: min(calc(100vw - 16px), 560px); }
+.explain-sum {
+  margin-block-start: 10px;
+  font-size: 16px;
+  font-variant-numeric: tabular-nums;
+  overflow-wrap: anywhere;
+}
+.explain-notes p { margin-block-start: 8px; font-size: 14px; color: var(--text-secondary); }
+.explain-wrap {
+  max-block-size: 50vh;
+  margin-block-start: 12px;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+.explain-grid tr.is-out > * { color: var(--text-muted); }
+.explain-grid .explain-deck { text-align: start; }
+.explain-grid tfoot th,
+.explain-grid tfoot td {
+  font-weight: 600;
+  border-block-start: 2px solid var(--rule);
+}
+
 .kpi-note {
   margin-block-start: 2px;
   display: flex;
